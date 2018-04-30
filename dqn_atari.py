@@ -18,13 +18,13 @@ from keras.layers import TimeDistributed, BatchNormalization, MaxPool2D
 
 import gym
 
-env = gym.make('CartPole-v0')
+env = gym.make('Breakout-v4')
 env.reset()
 
 # a network to predict q values for every action
 num_actions = env.action_space.n
 batch_size = 12
-input_shape = (4, 105, 80)
+input_shape = (105, 80, 4)
 
 def preprocess(frame):
     downsampled = frame[::2, ::2]
@@ -65,10 +65,27 @@ gamma = 0.99  # for discounting future rewards
 eps = 0.1  # for eps-greedy policy
 
 
-retrain = False
+retrain = True
+
+
+def get_starting_state():
+    state = []
+    frame = env.reset()
+    state.append(preprocess(frame))
+    for i in range(3):
+        action = env.action_space.sample()
+        observation = env.step(action)
+        state.append(preprocess(observation[0]))
+
+    return state
+
+
+state = get_starting_state()
+
+
 
 if retrain:
-    for i in tqdm(range(1000000)):
+    for i in tqdm(range(1000)):
 
         # interact with the environment
         # take random or best action
@@ -80,7 +97,10 @@ if retrain:
             action = q_values.argmax()
 
         # record environments reaction for the chosen action
-        new_state, reward, done, _ = env.step(action)
+        observation, reward, done, _ = env.step(action)
+        new_frame = preprocess(observation)
+
+        new_state = state[1:] + [new_frame]
 
         # done means the environment had to restart, this is bad
         if done:
@@ -94,7 +114,7 @@ if retrain:
         if not done:
             state = new_state
         else:
-            state = env.reset()
+            state = get_starting_state()
 
         # train the q function approximator
         if len(replay_memory) > batch_size:
