@@ -48,14 +48,14 @@ target_network_update_freq = 1e4
 noop_max = 30
 noop_counter = 0
 
-replay_memory_size = 1e5
-replay_start_size = 1e4
+replay_memory_size = 5e5
+replay_start_size = 2e4
 
 total_interactions = int(1e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
-final_exploration_frame = int(1e5)
+final_exploration_frame = total_interactions
 
 # multiplying exploration by this factor brings it down to final_exploration
 # after final_exploration_frame frames
