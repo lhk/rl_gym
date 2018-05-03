@@ -45,6 +45,7 @@ learning_rate = 0.00025
 target_network_update_freq = 1e4
 
 noop_max = 30
+noop_counter = 0
 
 replay_memory_size = 1e6
 replay_start_size = 5e4
@@ -53,12 +54,16 @@ initial_exploration = 1.0
 final_exploration = 0.1
 final_exploration_frame = 1e6
 
+total_interactions = int(1e6)
+
 gamma = 0.99
+
+retrain = True
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(Adam(1e-3), loss="mse")
+q_approximator.compile(Adam(learning_rate), loss="mse")
 
 # a queue for past observations
 replay_memory = []
@@ -66,13 +71,6 @@ replay_memory = []
 from tqdm import tqdm
 
 res_values = []
-state = env.reset()
-
-# parameters
-gamma = 0.98  # for discounting future rewards
-eps = 0.1  # for eps-greedy policy
-
-retrain = False
 
 
 def get_starting_state():
@@ -90,12 +88,12 @@ def get_starting_state():
 
 state = get_starting_state()
 
-# import time
-# debug = True
-
-
 if retrain:
-    for i in tqdm(range(10000)):
+    for interaction in tqdm(range(total_interactions)):
+
+        # anneal an the epsilon
+        annealing_percentage = min(interaction/final_exploration_frame, 1.0)
+        eps = (1-annealing_percentage) * initial_exploration + annealing_percentage*final_exploration
 
         # interact with the environment
         # take random or best action
@@ -105,6 +103,17 @@ if retrain:
         else:
             q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape), np.ones((1, num_actions))])
             action = q_values.argmax()
+
+        # 0 is noop action,
+        # we allow only a limited amount of noop actions
+        if action==0:
+            noop_counter+=1
+
+        if noop_counter > noop_max:
+            while action == 0:
+                action=env.action_space.sample()
+
+            noop_counter=0
 
         # record environments reaction for the chosen action
         observation, reward, done, _ = env.step(action)
@@ -116,15 +125,19 @@ if retrain:
         new_state[:, :, -1] = new_frame
 
         # done means the environment had to restart, this is bad
+        # please note: the restart reward is chosen as -1
+        # the rewards are clipped to [-1, 1] according to the paper
+        # if that would not be done, we would have to scale this reward
+        # to align to the other replays given in the game
         if done:
-            reward = - 100
+            reward = - 1
 
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
 
         replay_memory.append((state, action, reward, new_state))
 
-        if len(replay_memory) > 100000:
+        if len(replay_memory) > replay_memory_size:
             replay_memory.pop(0)
 
         if not done:
@@ -133,7 +146,7 @@ if retrain:
             state = get_starting_state()
 
         # train the q function approximator
-        if len(replay_memory) > batch_size:
+        if len(replay_memory) > replay_start_size:
             batch = random.sample(replay_memory, batch_size)
 
             current_states = [replay[0] for replay in batch]
@@ -165,7 +178,7 @@ if retrain:
             res = q_approximator.train_on_batch([current_states, mask], targets)
             res_values.append(res)
 
-        if i % 500 == 0:
+        if interaction % target_network_update_freq == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
 
     q_approximator.save_weights("q_approx.hdf5")
