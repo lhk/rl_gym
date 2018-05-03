@@ -1,36 +1,25 @@
 # coding: utf-8
 
-import numpy as np
-import tensorflow as tf
-
-import matplotlib.pyplot as plt
-
 import random
 
-from visualization_helpers import *
-
-import keras
-import keras.backend as K
-from keras.layers import Conv2D, Dense, Activation, Flatten, Input, Multiply
-from keras.optimizers import Adam
-from keras.models import Model
-
-from keras.regularizers import l2
-from keras.layers import TimeDistributed, BatchNormalization, MaxPool2D
-
 import gym
+import keras
+import numpy as np
+from keras.layers import Conv2D, Flatten, Input, Multiply
+from keras.models import Model
+from keras.optimizers import Adam
 
 env = gym.make('Breakout-v4')
 env.reset()
 
 # a network to predict q values for every action
 num_actions = env.action_space.n
-batch_size = 20
 input_shape = (105, 80, 4)
+
 
 def preprocess(frame):
     downsampled = frame[::2, ::2]
-    grayscale = downsampled.mean(axis=2)/255
+    grayscale = downsampled.mean(axis=2) / 255
     return grayscale
 
 
@@ -49,6 +38,23 @@ def create_model():
     return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
 
 
+# parameters, taken from the paper
+
+batch_size = 32
+learning_rate = 0.00025
+target_network_update_freq = 1e4
+
+noop_max = 30
+
+replay_memory_size = 1e6
+replay_start_size = 5e4
+
+initial_exploration = 1.0
+final_exploration = 0.1
+final_exploration_frame = 1e6
+
+gamma = 0.99
+
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
@@ -65,7 +71,6 @@ state = env.reset()
 # parameters
 gamma = 0.98  # for discounting future rewards
 eps = 0.1  # for eps-greedy policy
-
 
 retrain = False
 
@@ -85,8 +90,8 @@ def get_starting_state():
 
 state = get_starting_state()
 
-#import time
-#debug = True
+# import time
+# debug = True
 
 
 if retrain:
@@ -113,7 +118,6 @@ if retrain:
         # done means the environment had to restart, this is bad
         if done:
             reward = - 100
-
 
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
@@ -161,7 +165,7 @@ if retrain:
             res = q_approximator.train_on_batch([current_states, mask], targets)
             res_values.append(res)
 
-        if i%500 == 0:
+        if i % 500 == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
 
     q_approximator.save_weights("q_approx.hdf5")
@@ -181,7 +185,7 @@ state = get_starting_state()
 done = False
 while True:
     env.render()
-    q_values = q_approximator.predict([state.reshape((1,*input_shape)), np.ones((1, num_actions))])
+    q_values = q_approximator.predict([state.reshape((1, *input_shape)), np.ones((1, num_actions))])
     action = q_values.argmax()
 
     observation, reward, done, _ = env.step(action)
@@ -196,4 +200,3 @@ while True:
     if done:
         state = get_starting_state()
         print("resetting")
-
