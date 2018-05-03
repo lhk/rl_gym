@@ -19,7 +19,7 @@ input_shape = (105, 80, 4)
 
 def preprocess(frame):
     downsampled = frame[::2, ::2]
-    grayscale = downsampled.mean(axis=2) / 255
+    grayscale = downsampled.mean(axis=2).astype(np.uint8)
     return grayscale
 
 
@@ -42,19 +42,25 @@ def create_model():
 
 batch_size = 32
 learning_rate = 0.00025
+network_updates = 0
 target_network_update_freq = 1e4
 
 noop_max = 30
 noop_counter = 0
 
-replay_memory_size = 1e6
-replay_start_size = 5e4
+replay_memory_size = 1e5
+replay_start_size = 1e4
+
+total_interactions = int(1e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
-final_exploration_frame = 1e6
+final_exploration_frame = int(1e5)
 
-total_interactions = int(1e6)
+# multiplying exploration by this factor brings it down to final_exploration
+# after final_exploration_frame frames
+exploration_factor = (final_exploration / initial_exploration) ** (1 / final_exploration_frame)
+exploration = initial_exploration
 
 gamma = 0.99
 
@@ -74,7 +80,7 @@ res_values = []
 
 
 def get_starting_state():
-    state = np.zeros(input_shape, dtype=np.float32)
+    state = np.zeros(input_shape, dtype=np.uint8)
     frame = env.reset()
     state[:, :, 0] = preprocess(frame)
 
@@ -92,13 +98,14 @@ if retrain:
     for interaction in tqdm(range(total_interactions)):
 
         # anneal an the epsilon
-        annealing_percentage = min(interaction/final_exploration_frame, 1.0)
-        eps = (1-annealing_percentage) * initial_exploration + annealing_percentage*final_exploration
+        exploration *= exploration_factor
+        if exploration < final_exploration:
+            exploration_factor = 1
 
         # interact with the environment
         # take random or best action
         action = None
-        if random.random() < eps:
+        if random.random() < exploration:
             action = env.action_space.sample()
         else:
             q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape), np.ones((1, num_actions))])
@@ -106,14 +113,14 @@ if retrain:
 
         # 0 is noop action,
         # we allow only a limited amount of noop actions
-        if action==0:
-            noop_counter+=1
+        if action == 0:
+            noop_counter += 1
 
-        if noop_counter > noop_max:
-            while action == 0:
-                action=env.action_space.sample()
+            if noop_counter > noop_max:
+                while action == 0:
+                    action = env.action_space.sample()
 
-            noop_counter=0
+                noop_counter = 0
 
         # record environments reaction for the chosen action
         observation, reward, done, _ = env.step(action)
@@ -151,6 +158,7 @@ if retrain:
 
             current_states = [replay[0] for replay in batch]
             current_states = np.array(current_states)
+            current_states_float = current_states / 255.
 
             # the target is
             # r + gamma * max Q(s_next)
@@ -158,8 +166,9 @@ if retrain:
             # we need to get the predictions for the next state
             next_states = [replay[3] for replay in batch]
             next_states = np.array(next_states)
+            next_states_float = next_states / 255.
 
-            q_predictions = q_approximator_fixed.predict([next_states, np.ones((batch_size, num_actions))])
+            q_predictions = q_approximator_fixed.predict([next_states_float, np.ones((batch_size, num_actions))])
             q_max = q_predictions.max(axis=1, keepdims=True)
 
             rewards = [replay[2] for replay in batch]
@@ -175,11 +184,13 @@ if retrain:
 
             targets = targets * mask
 
-            res = q_approximator.train_on_batch([current_states, mask], targets)
+            network_updates += 1
+            res = q_approximator.train_on_batch([current_states_float, mask], targets)
             res_values.append(res)
 
-        if interaction % target_network_update_freq == 0:
+        if network_updates % target_network_update_freq == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
+            network_updates = 0
 
     q_approximator.save_weights("q_approx.hdf5")
 else:
@@ -198,7 +209,7 @@ state = get_starting_state()
 done = False
 while True:
     env.render()
-    q_values = q_approximator.predict([state.reshape((1, *input_shape)), np.ones((1, num_actions))])
+    q_values = q_approximator.predict([state.reshape((1, *input_shape)) / 255., np.ones((1, num_actions))])
     action = q_values.argmax()
 
     observation, reward, done, _ = env.step(action)
