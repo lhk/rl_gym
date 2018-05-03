@@ -63,10 +63,10 @@ gamma = 0.99  # for discounting future rewards
 eps = 0.1  # for eps-greedy policy
 
 
-retrain = False
+retrain = True
 
 if retrain:
-    for i in tqdm(range(1000000)):
+    for i in tqdm(range(100000)):
 
         # interact with the environment
         # take random or best action
