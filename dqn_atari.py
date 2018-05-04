@@ -10,6 +10,10 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
+import keras.backend as K
+import tensorflow as tf
+K.set_session(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
+
 from loss_functions import huber_loss
 
 matplotlib.use('Qt5Agg')
@@ -51,21 +55,21 @@ def create_model():
 batch_size = 128
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 5e2
+target_network_update_freq = 3e2
 
 noop_max = 20
 noop_counter = 0
 
 replay_memory_size = int(1e6)
-replay_start_size = int(5e4)
+replay_start_size = int(1e4)
 
-total_interactions = int(2e4)
+total_interactions = int(1e4)
 
 initial_exploration = 1.0
 final_exploration = 0.1
-final_exploration_frame = total_interactions
+final_exploration_frame = int(total_interactions/2)
 
-repeat_action = 2
+repeat_action = 3
 
 # multiplying exploration by this factor brings it down to final_exploration
 # after final_exploration_frame frames
