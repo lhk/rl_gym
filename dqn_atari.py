@@ -48,15 +48,15 @@ def create_model():
 batch_size = 32
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 5e2
+target_network_update_freq = 1e3
 
-noop_max = 30
+noop_max = 20
 noop_counter = 0
 
-replay_memory_size = 1e6
-replay_start_size = 3e4
+replay_memory_size = int(1e6)
+replay_start_size = int(1e5)
 
-total_interactions = int(1e5)
+total_interactions = int(1e6)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -104,7 +104,7 @@ if retrain:
     # sample random behaviour to fill the replay queue
     # please note: according to the paper, the annealing of epsilon seems to start here already
     # but that seems detrimental, we are not yet training the network
-    for interaction in tqdm(range(replay_start_size)):
+    for interaction in tqdm(range(replay_start_size), smoothing=0.9):
         action = env.action_space.sample()
 
         # record environments reaction for the chosen action
@@ -135,7 +135,7 @@ if retrain:
             state = get_starting_state()
 
     # now train the network
-    for interaction in tqdm(range(total_interactions), smoothing=1):
+    for interaction in tqdm(range(total_interactions), smoothing=0.9):
 
         # anneal an the epsilon
         exploration *= exploration_factor
@@ -164,6 +164,7 @@ if retrain:
 
         # record environments reaction for the chosen action
         observation, reward, done, _ = env.step(action)
+        env.render()
 
         new_frame = preprocess(observation)
 
