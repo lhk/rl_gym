@@ -7,7 +7,7 @@ import keras
 import numpy as np
 from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
-from keras.optimizers import Adam, RMSprop
+from keras.optimizers import RMSprop
 
 env = gym.make('Breakout-v4')
 env.reset()
