@@ -44,7 +44,7 @@ def create_model():
 batch_size = 32
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 1e3
+target_network_update_freq = 5e2
 
 noop_max = 20
 noop_counter = 0
@@ -52,7 +52,7 @@ noop_counter = 0
 replay_memory_size = int(1e6)
 replay_start_size = int(1e5)
 
-total_interactions = int(1e6)
+total_interactions = int(1e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
