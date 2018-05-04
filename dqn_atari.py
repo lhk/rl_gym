@@ -9,6 +9,11 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
+
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
+
 env = gym.make('Breakout-v4')
 env.reset()
 
@@ -84,13 +89,13 @@ def get_starting_state():
     frame = env.reset()
     state[:, :, 0] = preprocess(frame)
 
+    action = 1
     for i in range(1, 4):
-        action = env.action_space.sample()
         observation = env.step(action)
         state[:, :, i] = preprocess(observation[0])
+        action = env.action_space.sample()
 
     return state
-
 
 state = get_starting_state()
 
@@ -204,11 +209,6 @@ if retrain:
     q_approximator.save_weights("q_approx.hdf5")
 else:
     q_approximator.load_weights("q_approx.hdf5")
-
-import matplotlib.pyplot as plt
-
-plt.plot(res_values)
-plt.show()
 
 env.reset()
 
