@@ -9,8 +9,10 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
+import tensorflow as tf
 
 import matplotlib
+
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
@@ -54,9 +56,9 @@ noop_max = 30
 noop_counter = 0
 
 replay_memory_size = 5e5
-replay_start_size = 1e4
+replay_start_size = 1e3
 
-total_interactions = int(3e4)
+total_interactions = int(6e4)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -74,7 +76,19 @@ retrain = True
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss="mse")
+
+def huber_loss(y_true, y_pred):
+    # huber loss
+    delta = 1
+    diff = y_true - y_pred
+    mask = tf.abs(diff) < delta
+    mask = tf.cast(mask, tf.float32)
+
+    huber = 1 / 2 * diff ** 2 * mask + delta * (tf.abs(diff) - 1 / 2 * delta) * (1 - mask)
+    return huber
+
+
+q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss=huber_loss)
 
 # a queue for past observations
 replay_memory = []
@@ -97,10 +111,13 @@ def get_starting_state():
 
     return state
 
+
 state = get_starting_state()
 
+total_reward = 0
+
 if retrain:
-    for interaction in tqdm(range(total_interactions), smoothing=0.95):
+    for interaction in tqdm(range(total_interactions), smoothing=1):
 
         # anneal an the epsilon
         exploration *= exploration_factor
@@ -143,6 +160,11 @@ if retrain:
         # to align to the other replays given in the game
         if done:
             reward = - 1
+
+        total_reward += reward
+        total_reward *= gamma
+        if (interaction % 10 == 0):
+            print(total_reward)
 
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
@@ -221,6 +243,17 @@ while True:
     env.render()
     q_values = q_approximator.predict([state.reshape((1, *input_shape)) / 255., np.ones((1, num_actions))])
     action = q_values.argmax()
+
+    # 0 is noop action,
+    # we allow only a limited amount of noop actions
+    if action == 0:
+        noop_counter += 1
+
+        if noop_counter > noop_max:
+            while action == 0:
+                action = env.action_space.sample()
+
+            noop_counter = 0
 
     observation, reward, done, _ = env.step(action)
     new_frame = preprocess(observation)
