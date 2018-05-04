@@ -64,7 +64,7 @@ exploration = initial_exploration
 
 gamma = 0.99
 
-retrain = True
+retrain = False
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
@@ -142,7 +142,7 @@ if retrain:
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
 
-        replay_memory.append((state, action, reward, new_state))
+        replay_memory.append((state, action, reward, new_state, done))
 
         if len(replay_memory) > replay_memory_size:
             replay_memory.pop(0)
@@ -175,7 +175,16 @@ if retrain:
             rewards = np.array(rewards)
             rewards = rewards.reshape((batch_size, 1))
 
-            targets = rewards + gamma * q_max
+            dones = [replay[4] for replay in batch]
+            dones = np.array(dones, dtype=np.bool)
+            not_dones = np.logical_not(dones)
+
+            # the value is immediate reward and discounted expected future reward
+            # by definition, in a terminal state, the future reward is 0
+            immediate_rewards = rewards
+            future_rewards = gamma * q_max * (not_dones)
+
+            targets = immediate_rewards + future_rewards
 
             actions = [replay[1] for replay in batch]
             actions = np.array(actions)
