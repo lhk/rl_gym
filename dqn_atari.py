@@ -100,6 +100,41 @@ def get_starting_state():
 state = get_starting_state()
 
 if retrain:
+
+    # sample random behaviour to fill the replay queue
+    # please note: according to the paper, the annealing of epsilon seems to start here already
+    # but that seems detrimental, we are not yet training the network
+    for interaction in tqdm(range(replay_start_size)):
+        action = env.action_space.sample()
+
+        # record environments reaction for the chosen action
+        observation, reward, done, _ = env.step(action)
+
+        new_frame = preprocess(observation)
+
+        new_state = np.empty_like(state)
+        new_state[:, :, :-1] = state[:, :, 1:]
+        new_state[:, :, -1] = new_frame
+
+        # done means the environment had to restart, this is bad
+        # please note: the restart reward is chosen as -1
+        # the rewards are clipped to [-1, 1] according to the paper
+        # if that would not be done, we would have to scale this reward
+        # to align to the other replays given in the game
+        if done:
+            reward = - 1
+
+        # this is given in the paper, they use only the sign
+        reward = np.sign(reward)
+
+        replay_memory.append((state, action, reward, new_state, done))
+
+        if not done:
+            state = new_state
+        else:
+            state = get_starting_state()
+
+    # now train the network
     for interaction in tqdm(range(total_interactions), smoothing=1):
 
         # anneal an the epsilon
@@ -150,7 +185,7 @@ if retrain:
         replay_memory.append((state, action, reward, new_state, done))
 
         if len(replay_memory) > replay_memory_size:
-            replay_memory.pop(0)
+            replay_memory.pop(np.random.randint(len(replay_memory)))
 
         if not done:
             state = new_state
@@ -158,54 +193,53 @@ if retrain:
             state = get_starting_state()
 
         # train the q function approximator
-        if len(replay_memory) > replay_start_size:
-            batch = random.sample(replay_memory, batch_size)
+        batch = random.sample(replay_memory, batch_size)
 
-            current_states = [replay[0] for replay in batch]
-            current_states = np.array(current_states)
-            current_states_float = current_states / 255.
+        current_states = [replay[0] for replay in batch]
+        current_states = np.array(current_states)
+        current_states_float = current_states / 255.
 
-            # the target is
-            # r + gamma * max Q(s_next)
-            #
-            # we need to get the predictions for the next state
-            next_states = [replay[3] for replay in batch]
-            next_states = np.array(next_states)
-            next_states_float = next_states / 255.
+        # the target is
+        # r + gamma * max Q(s_next)
+        #
+        # we need to get the predictions for the next state
+        next_states = [replay[3] for replay in batch]
+        next_states = np.array(next_states)
+        next_states_float = next_states / 255.
 
-            q_predictions = q_approximator_fixed.predict([next_states_float, np.ones((batch_size, num_actions))])
-            q_max = q_predictions.max(axis=1, keepdims=True)
+        q_predictions = q_approximator_fixed.predict([next_states_float, np.ones((batch_size, num_actions))])
+        q_max = q_predictions.max(axis=1, keepdims=True)
 
-            rewards = [replay[2] for replay in batch]
-            rewards = np.array(rewards)
-            rewards = rewards.reshape((batch_size, 1))
+        rewards = [replay[2] for replay in batch]
+        rewards = np.array(rewards)
+        rewards = rewards.reshape((batch_size, 1))
 
-            dones = [replay[4] for replay in batch]
-            dones = np.array(dones, dtype=np.bool)
-            not_dones = np.logical_not(dones)
-            not_dones = not_dones.reshape((batch_size, 1))
+        dones = [replay[4] for replay in batch]
+        dones = np.array(dones, dtype=np.bool)
+        not_dones = np.logical_not(dones)
+        not_dones = not_dones.reshape((batch_size, 1))
 
-            # the value is immediate reward and discounted expected future reward
-            # by definition, in a terminal state, the future reward is 0
-            immediate_rewards = rewards
-            future_rewards = gamma * q_max * (not_dones)
+        # the value is immediate reward and discounted expected future reward
+        # by definition, in a terminal state, the future reward is 0
+        immediate_rewards = rewards
+        future_rewards = gamma * q_max * (not_dones)
 
-            targets = immediate_rewards + future_rewards
+        targets = immediate_rewards + future_rewards
 
-            actions = [replay[1] for replay in batch]
-            actions = np.array(actions)
-            mask = np.zeros((batch_size, num_actions))
-            mask[np.arange(batch_size), actions] = 1
+        actions = [replay[1] for replay in batch]
+        actions = np.array(actions)
+        mask = np.zeros((batch_size, num_actions))
+        mask[np.arange(batch_size), actions] = 1
 
-            targets = targets * mask
+        targets = targets * mask
 
-            network_updates += 1
-            res = q_approximator.train_on_batch([current_states_float, mask], targets)
-            res_values.append(res)
+        network_updates += 1
+        res = q_approximator.train_on_batch([current_states_float, mask], targets)
+        res_values.append(res)
 
-            if network_updates % target_network_update_freq == 0:
-                q_approximator_fixed.set_weights(q_approximator.get_weights())
-                network_updates = 0
+        if network_updates % target_network_update_freq == 0:
+            q_approximator_fixed.set_weights(q_approximator.get_weights())
+            network_updates = 0
 
     q_approximator.save_weights("q_approx.hdf5")
 else:
@@ -213,10 +247,7 @@ else:
 
 env.reset()
 
-env.render()
-
 state = get_starting_state()
-done = False
 while True:
     env.render()
     q_values = q_approximator.predict([state.reshape((1, *input_shape)) / 255., np.ones((1, num_actions))])
