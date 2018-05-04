@@ -164,7 +164,6 @@ if retrain:
 
         # record environments reaction for the chosen action
         observation, reward, done, _ = env.step(action)
-        env.render()
 
         new_frame = preprocess(observation)
 
