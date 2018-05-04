@@ -22,10 +22,13 @@ num_actions = env.action_space.n
 input_shape = (105, 80, 4)
 
 
-def preprocess(frame):
+def preprocess_frame(frame):
     downsampled = frame[::2, ::2]
     grayscale = downsampled.mean(axis=2).astype(np.uint8)
     return grayscale
+
+def preprocess_state(state):
+    return state / 255.
 
 
 def create_model():
@@ -62,6 +65,8 @@ initial_exploration = 1.0
 final_exploration = 0.1
 final_exploration_frame = total_interactions
 
+repeat_action = 2
+
 # multiplying exploration by this factor brings it down to final_exploration
 # after final_exploration_frame frames
 exploration_factor = (final_exploration / initial_exploration) ** (1 / final_exploration_frame)
@@ -83,21 +88,40 @@ from tqdm import tqdm
 
 res_values = []
 
+def interact(state, action):
+
+    # record environments reaction for the chosen action
+    observation, reward, done, _ = env.step(action)
+
+    new_frame = preprocess_frame(observation)
+
+    new_state = np.empty_like(state)
+    new_state[:, :, :-1] = state[:, :, 1:]
+    new_state[:, :, -1] = new_frame
+
+    return new_state, reward, done
+
+def interact_multiple(state, action, times):
+    total_reward = 0
+
+    for i in range(times):
+        state, reward, done = interact(state, action)
+        total_reward+= reward
+
+        if(done):
+            break
+
+    return state, total_reward, done
 
 def get_starting_state():
     state = np.zeros(input_shape, dtype=np.uint8)
     frame = env.reset()
-    state[:, :, 0] = preprocess(frame)
-
-    for i in range(1, 4):
-        action = env.action_space.sample()
-        observation = env.step(action)
-        state[:, :, i] = preprocess(observation[0])
-
-    return state
+    state[:, :, -1] = preprocess_frame(frame)
+    state, _, _ = interact_multiple(state, 0, 3)
 
 
 state = get_starting_state()
+
 
 if retrain:
 
@@ -110,7 +134,7 @@ if retrain:
         # record environments reaction for the chosen action
         observation, reward, done, _ = env.step(action)
 
-        new_frame = preprocess(observation)
+        new_frame = preprocess_frame(observation)
 
         new_state = np.empty_like(state)
         new_state[:, :, :-1] = state[:, :, 1:]
@@ -165,7 +189,7 @@ if retrain:
         # record environments reaction for the chosen action
         observation, reward, done, _ = env.step(action)
 
-        new_frame = preprocess(observation)
+        new_frame = preprocess_frame(observation)
 
         new_state = np.empty_like(state)
         new_state[:, :, :-1] = state[:, :, 1:]
@@ -265,7 +289,7 @@ while True:
             noop_counter = 0
 
     observation, reward, done, _ = env.step(action)
-    new_frame = preprocess(observation)
+    new_frame = preprocess_frame(observation)
 
     new_state = np.empty_like(state)
     new_state[:, :, :-1] = state[:, :, 1:]
