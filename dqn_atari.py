@@ -48,15 +48,15 @@ def create_model():
 batch_size = 32
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 1e4
+target_network_update_freq = 1e3
 
 noop_max = 30
 noop_counter = 0
 
 replay_memory_size = 5e5
-replay_start_size = 2e4
+replay_start_size = 1e4
 
-total_interactions = int(1e5)
+total_interactions = int(3e4)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -69,7 +69,7 @@ exploration = initial_exploration
 
 gamma = 0.99
 
-retrain = False
+retrain = True
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
@@ -100,7 +100,7 @@ def get_starting_state():
 state = get_starting_state()
 
 if retrain:
-    for interaction in tqdm(range(total_interactions)):
+    for interaction in tqdm(range(total_interactions), smoothing=0.95):
 
         # anneal an the epsilon
         exploration *= exploration_factor
@@ -183,6 +183,7 @@ if retrain:
             dones = [replay[4] for replay in batch]
             dones = np.array(dones, dtype=np.bool)
             not_dones = np.logical_not(dones)
+            not_dones = not_dones.reshape((batch_size, 1))
 
             # the value is immediate reward and discounted expected future reward
             # by definition, in a terminal state, the future reward is 0
