@@ -57,7 +57,7 @@ noop_max = 20
 noop_counter = 0
 
 replay_memory_size = int(1e6)
-replay_start_size = int(1e5)
+replay_start_size = int(5e5)
 
 total_interactions = int(1e6)
 
@@ -119,6 +119,8 @@ def get_starting_state():
     state[:, :, -1] = preprocess_frame(frame)
     state, _, _ = interact_multiple(state, 0, 3)
 
+    return state
+
 
 state = get_starting_state()
 
@@ -132,13 +134,7 @@ if retrain:
         action = env.action_space.sample()
 
         # record environments reaction for the chosen action
-        observation, reward, done, _ = env.step(action)
-
-        new_frame = preprocess_frame(observation)
-
-        new_state = np.empty_like(state)
-        new_state[:, :, :-1] = state[:, :, 1:]
-        new_state[:, :, -1] = new_frame
+        new_state, reward, done = interact_multiple(state, action, repeat_action)
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -187,13 +183,7 @@ if retrain:
                 noop_counter = 0
 
         # record environments reaction for the chosen action
-        observation, reward, done, _ = env.step(action)
-
-        new_frame = preprocess_frame(observation)
-
-        new_state = np.empty_like(state)
-        new_state[:, :, :-1] = state[:, :, 1:]
-        new_state[:, :, -1] = new_frame
+        new_state, reward, done = interact_multiple(state, action, repeat_action)
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -221,7 +211,6 @@ if retrain:
 
         current_states = [replay[0] for replay in batch]
         current_states = np.array(current_states)
-        current_states_float = current_states / 255.
 
         # the target is
         # r + gamma * max Q(s_next)
@@ -229,9 +218,8 @@ if retrain:
         # we need to get the predictions for the next state
         next_states = [replay[3] for replay in batch]
         next_states = np.array(next_states)
-        next_states_float = next_states / 255.
 
-        q_predictions = q_approximator_fixed.predict([next_states_float, np.ones((batch_size, num_actions))])
+        q_predictions = q_approximator_fixed.predict([preprocess_state(next_states), np.ones((batch_size, num_actions))])
         q_max = q_predictions.max(axis=1, keepdims=True)
 
         rewards = [replay[2] for replay in batch]
@@ -258,7 +246,7 @@ if retrain:
         targets = targets * mask
 
         network_updates += 1
-        res = q_approximator.train_on_batch([current_states_float, mask], targets)
+        res = q_approximator.train_on_batch([preprocess_state(current_states), mask], targets)
         res_values.append(res)
 
         if network_updates % target_network_update_freq == 0:
@@ -274,7 +262,7 @@ env.reset()
 state = get_starting_state()
 while True:
     env.render()
-    q_values = q_approximator.predict([state.reshape((1, *input_shape)) / 255., np.ones((1, num_actions))])
+    q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
     action = q_values.argmax()
 
     # 0 is noop action,
@@ -288,14 +276,7 @@ while True:
 
             noop_counter = 0
 
-    observation, reward, done, _ = env.step(action)
-    new_frame = preprocess_frame(observation)
-
-    new_state = np.empty_like(state)
-    new_state[:, :, :-1] = state[:, :, 1:]
-    new_state[:, :, -1] = new_frame
-
-    state = new_state
+    state, reward, done = interact_multiple(state, action, repeat_action)
 
     if done:
         state = get_starting_state()
