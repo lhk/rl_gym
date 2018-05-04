@@ -4,17 +4,15 @@ import random
 
 import gym
 import keras
+import matplotlib
 import numpy as np
 from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
-import tensorflow as tf
-
-import matplotlib
+from loss_functions import huber_loss
 
 matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
 
 env = gym.make('Breakout-v4')
 env.reset()
@@ -50,15 +48,15 @@ def create_model():
 batch_size = 32
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 1e3
+target_network_update_freq = 5e2
 
 noop_max = 30
 noop_counter = 0
 
-replay_memory_size = 5e5
-replay_start_size = 1e3
+replay_memory_size = 1e6
+replay_start_size = 3e4
 
-total_interactions = int(6e4)
+total_interactions = int(1e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -76,18 +74,6 @@ retrain = True
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-
-def huber_loss(y_true, y_pred):
-    # huber loss
-    delta = 1
-    diff = y_true - y_pred
-    mask = tf.abs(diff) < delta
-    mask = tf.cast(mask, tf.float32)
-
-    huber = 1 / 2 * diff ** 2 * mask + delta * (tf.abs(diff) - 1 / 2 * delta) * (1 - mask)
-    return huber
-
-
 q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss=huber_loss)
 
 # a queue for past observations
@@ -103,18 +89,15 @@ def get_starting_state():
     frame = env.reset()
     state[:, :, 0] = preprocess(frame)
 
-    action = 1
     for i in range(1, 4):
+        action = env.action_space.sample()
         observation = env.step(action)
         state[:, :, i] = preprocess(observation[0])
-        action = env.action_space.sample()
 
     return state
 
 
 state = get_starting_state()
-
-total_reward = 0
 
 if retrain:
     for interaction in tqdm(range(total_interactions), smoothing=1):
@@ -160,11 +143,6 @@ if retrain:
         # to align to the other replays given in the game
         if done:
             reward = - 1
-
-        total_reward += reward
-        total_reward *= gamma
-        if (interaction % 10 == 0):
-            print(total_reward)
 
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
@@ -225,9 +203,9 @@ if retrain:
             res = q_approximator.train_on_batch([current_states_float, mask], targets)
             res_values.append(res)
 
-        if network_updates % target_network_update_freq == 0:
-            q_approximator_fixed.set_weights(q_approximator.get_weights())
-            network_updates = 0
+            if network_updates % target_network_update_freq == 0:
+                q_approximator_fixed.set_weights(q_approximator.get_weights())
+                network_updates = 0
 
     q_approximator.save_weights("q_approx.hdf5")
 else:
