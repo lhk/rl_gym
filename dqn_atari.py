@@ -48,18 +48,18 @@ def create_model():
 
 # parameters, taken from the paper
 
-batch_size = 32
+batch_size = 128
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 1e3
+target_network_update_freq = 5e2
 
 noop_max = 20
 noop_counter = 0
 
 replay_memory_size = int(1e6)
-replay_start_size = int(5e5)
+replay_start_size = int(5e4)
 
-total_interactions = int(1e6)
+total_interactions = int(2e4)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -117,7 +117,12 @@ def get_starting_state():
     state = np.zeros(input_shape, dtype=np.uint8)
     frame = env.reset()
     state[:, :, -1] = preprocess_frame(frame)
-    state, _, _ = interact_multiple(state, 0, 3)
+
+    action = 0
+
+    # we repeat the action 4 times, since our initial state needs 4 stacked frames
+    times = 4
+    state, _, _ = interact_multiple(state, action, times)
 
     return state
 
