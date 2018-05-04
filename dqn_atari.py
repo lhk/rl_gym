@@ -7,7 +7,7 @@ import keras
 import numpy as np
 from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
-from keras.optimizers import Adam
+from keras.optimizers import Adam, RMSprop
 
 env = gym.make('Breakout-v4')
 env.reset()
@@ -69,7 +69,7 @@ retrain = False
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(Adam(learning_rate), loss="mse")
+q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss="mse")
 
 # a queue for past observations
 replay_memory = []
