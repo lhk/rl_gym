@@ -44,7 +44,7 @@ def create_model():
 batch_size = 32
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 5e2
+target_network_update_freq = 1e3
 
 noop_max = 20
 noop_counter = 0
@@ -52,7 +52,7 @@ noop_counter = 0
 replay_memory_size = int(1e6)
 replay_start_size = int(1e5)
 
-total_interactions = int(1e5)
+total_interactions = int(2e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -65,7 +65,7 @@ exploration = initial_exploration
 
 gamma = 0.99
 
-retrain = True
+retrain = False
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
@@ -115,7 +115,8 @@ if retrain:
 
         # anneal an the epsilon
         exploration *= exploration_factor
-        if exploration < final_exploration:
+        if exploration <= final_exploration:
+            exploration = final_exploration
             exploration_factor = 1
 
         # interact with the environment
@@ -155,7 +156,7 @@ if retrain:
         replay_memory.append((state, action, reward, new_state, done))
 
         if len(replay_memory) > replay_memory_size:
-            replay_memory.pop(np.random.randint(len(replay_memory)))
+            replay_memory.pop(0)
 
         if not done:
             state = new_state
@@ -167,7 +168,6 @@ if retrain:
 
         current_states = [replay[0] for replay in batch]
         current_states = np.array(current_states)
-        current_states_float = current_states / 255.
 
         # the target is
         # r + gamma * max Q(s_next)
@@ -175,9 +175,8 @@ if retrain:
         # we need to get the predictions for the next state
         next_states = [replay[3] for replay in batch]
         next_states = np.array(next_states)
-        next_states_float = next_states / 255.
 
-        q_predictions = q_approximator_fixed.predict([next_states_float, np.ones((batch_size, num_actions))])
+        q_predictions = q_approximator_fixed.predict([next_states, np.ones((batch_size, num_actions))])
         q_max = q_predictions.max(axis=1, keepdims=True)
 
         rewards = [replay[2] for replay in batch]
@@ -204,7 +203,7 @@ if retrain:
         targets = targets * mask
 
         network_updates += 1
-        res = q_approximator.train_on_batch([current_states_float, mask], targets)
+        res = q_approximator.train_on_batch([current_states, mask], targets)
         res_values.append(res)
 
         if network_updates % target_network_update_freq == 0:
@@ -220,7 +219,7 @@ env.reset()
 state = env.reset()
 while True:
     env.render()
-    q_values = q_approximator.predict([state.reshape((1, *input_shape)) / 255., np.ones((1, num_actions))])
+    q_values = q_approximator.predict([state.reshape((1, *input_shape)), np.ones((1, num_actions))])
     action = q_values.argmax()
 
     # 0 is noop action,
