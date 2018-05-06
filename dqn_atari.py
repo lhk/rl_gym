@@ -60,8 +60,8 @@ target_network_update_freq = 1e3
 noop_max = 20
 noop_counter = 0
 
-replay_memory_size = int(1e6)
-replay_start_size = int(5e5)
+replay_memory_size = int(2e5)
+replay_start_size = int(2e5)
 
 total_interactions = int(1e5)
 
