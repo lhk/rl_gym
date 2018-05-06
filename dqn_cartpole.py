@@ -63,10 +63,10 @@ gamma = 0.99  # for discounting future rewards
 eps = 0.1  # for eps-greedy policy
 
 
-retrain = True
+retrain = False
 
 if retrain:
-    for i in tqdm(range(100000)):
+    for i in tqdm(range(20000)):
 
         # interact with the environment
         # take random or best action
@@ -82,7 +82,7 @@ if retrain:
 
         # done means the environment had to restart, this is bad
         if done:
-            reward = - 100
+            reward = - 1
 
         replay_memory.append((state, action, reward, new_state))
 

@@ -4,23 +4,35 @@ import random
 
 import gym
 import keras
+import matplotlib
 import numpy as np
 from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
-from keras.optimizers import Adam
+from keras.optimizers import RMSprop
 
-env = gym.make('Breakout-v4')
+import keras.backend as K
+import tensorflow as tf
+#K.set_session(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
+
+from loss_functions import huber_loss
+
+matplotlib.use('Qt5Agg')
+
+env = gym.make('Assault-v4')
 env.reset()
 
 # a network to predict q values for every action
 num_actions = env.action_space.n
-input_shape = (105, 80, 4)
+input_shape = (250//2, 160//2, 4)
 
 
-def preprocess(frame):
+def preprocess_frame(frame):
     downsampled = frame[::2, ::2]
     grayscale = downsampled.mean(axis=2).astype(np.uint8)
     return grayscale
+
+def preprocess_state(state):
+    return state / 255.
 
 
 def create_model():
@@ -40,22 +52,24 @@ def create_model():
 
 # parameters, taken from the paper
 
-batch_size = 32
+batch_size = 64
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 1e4
+target_network_update_freq = 1e3
 
-noop_max = 30
+noop_max = 20
 noop_counter = 0
 
-replay_memory_size = 5e5
-replay_start_size = 2e4
+replay_memory_size = int(1e6)
+replay_start_size = int(5e5)
 
 total_interactions = int(1e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
-final_exploration_frame = total_interactions
+final_exploration_frame = int(total_interactions)
+
+repeat_action = 1
 
 # multiplying exploration by this factor brings it down to final_exploration
 # after final_exploration_frame frames
@@ -69,7 +83,7 @@ retrain = True
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(Adam(learning_rate), loss="mse")
+q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss="mse")
 
 # a queue for past observations
 replay_memory = []
@@ -78,24 +92,79 @@ from tqdm import tqdm
 
 res_values = []
 
+def interact(state, action):
+
+    # record environments reaction for the chosen action
+    observation, reward, done, _ = env.step(action)
+
+    new_frame = preprocess_frame(observation)
+
+    new_state = np.empty_like(state)
+    new_state[:, :, :-1] = state[:, :, 1:]
+    new_state[:, :, -1] = new_frame
+
+    return new_state, reward, done
+
+def interact_multiple(state, action, times):
+    total_reward = 0
+
+    for i in range(times):
+        state, reward, done = interact(state, action)
+        total_reward+= reward
+
+        if(done):
+            break
+
+    return state, total_reward, done
 
 def get_starting_state():
     state = np.zeros(input_shape, dtype=np.uint8)
     frame = env.reset()
-    state[:, :, 0] = preprocess(frame)
+    state[:, :, -1] = preprocess_frame(frame)
 
-    for i in range(1, 4):
-        action = env.action_space.sample()
-        observation = env.step(action)
-        state[:, :, i] = preprocess(observation[0])
+    action = 0
+
+    # we repeat the action 4 times, since our initial state needs 4 stacked frames
+    times = 4
+    state, _, _ = interact_multiple(state, action, times)
 
     return state
 
 
 state = get_starting_state()
 
+
 if retrain:
-    for interaction in tqdm(range(total_interactions)):
+
+    # sample random behaviour to fill the replay queue
+    # please note: according to the paper, the annealing of epsilon seems to start here already
+    # but that seems detrimental, we are not yet training the network
+    for interaction in tqdm(range(replay_start_size), smoothing=0.9):
+        action = env.action_space.sample()
+
+        # record environments reaction for the chosen action
+        new_state, reward, done = interact_multiple(state, action, repeat_action)
+
+        # done means the environment had to restart, this is bad
+        # please note: the restart reward is chosen as -1
+        # the rewards are clipped to [-1, 1] according to the paper
+        # if that would not be done, we would have to scale this reward
+        # to align to the other replays given in the game
+        if done:
+            reward = - 1
+
+        # this is given in the paper, they use only the sign
+        reward = np.sign(reward)
+
+        replay_memory.append((state, action, reward, new_state, done))
+
+        if not done:
+            state = new_state
+        else:
+            state = get_starting_state()
+
+    # now train the network
+    for interaction in tqdm(range(total_interactions), smoothing=0.9):
 
         # anneal an the epsilon
         exploration *= exploration_factor
@@ -123,13 +192,7 @@ if retrain:
                 noop_counter = 0
 
         # record environments reaction for the chosen action
-        observation, reward, done, _ = env.step(action)
-
-        new_frame = preprocess(observation)
-
-        new_state = np.empty_like(state)
-        new_state[:, :, :-1] = state[:, :, 1:]
-        new_state[:, :, -1] = new_frame
+        new_state, reward, done = interact_multiple(state, action, repeat_action)
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -142,10 +205,10 @@ if retrain:
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
 
-        replay_memory.append((state, action, reward, new_state))
+        replay_memory.append((state, action, reward, new_state, done))
 
         if len(replay_memory) > replay_memory_size:
-            replay_memory.pop(0)
+            replay_memory.pop(np.random.randint(len(replay_memory)))
 
         if not done:
             state = new_state
@@ -153,40 +216,47 @@ if retrain:
             state = get_starting_state()
 
         # train the q function approximator
-        if len(replay_memory) > replay_start_size:
-            batch = random.sample(replay_memory, batch_size)
+        batch = random.sample(replay_memory, batch_size)
 
-            current_states = [replay[0] for replay in batch]
-            current_states = np.array(current_states)
-            current_states_float = current_states / 255.
+        current_states = [replay[0] for replay in batch]
+        current_states = np.array(current_states)
 
-            # the target is
-            # r + gamma * max Q(s_next)
-            #
-            # we need to get the predictions for the next state
-            next_states = [replay[3] for replay in batch]
-            next_states = np.array(next_states)
-            next_states_float = next_states / 255.
+        # the target is
+        # r + gamma * max Q(s_next)
+        #
+        # we need to get the predictions for the next state
+        next_states = [replay[3] for replay in batch]
+        next_states = np.array(next_states)
 
-            q_predictions = q_approximator_fixed.predict([next_states_float, np.ones((batch_size, num_actions))])
-            q_max = q_predictions.max(axis=1, keepdims=True)
+        q_predictions = q_approximator_fixed.predict([preprocess_state(next_states), np.ones((batch_size, num_actions))])
+        q_max = q_predictions.max(axis=1, keepdims=True)
 
-            rewards = [replay[2] for replay in batch]
-            rewards = np.array(rewards)
-            rewards = rewards.reshape((batch_size, 1))
+        rewards = [replay[2] for replay in batch]
+        rewards = np.array(rewards)
+        rewards = rewards.reshape((batch_size, 1))
 
-            targets = rewards + gamma * q_max
+        dones = [replay[4] for replay in batch]
+        dones = np.array(dones, dtype=np.bool)
+        not_dones = np.logical_not(dones)
+        not_dones = not_dones.reshape((batch_size, 1))
 
-            actions = [replay[1] for replay in batch]
-            actions = np.array(actions)
-            mask = np.zeros((batch_size, num_actions))
-            mask[np.arange(batch_size), actions] = 1
+        # the value is immediate reward and discounted expected future reward
+        # by definition, in a terminal state, the future reward is 0
+        immediate_rewards = rewards
+        future_rewards = gamma * q_max * (not_dones)
 
-            targets = targets * mask
+        targets = immediate_rewards + future_rewards
 
-            network_updates += 1
-            res = q_approximator.train_on_batch([current_states_float, mask], targets)
-            res_values.append(res)
+        actions = [replay[1] for replay in batch]
+        actions = np.array(actions)
+        mask = np.zeros((batch_size, num_actions))
+        mask[np.arange(batch_size), actions] = 1
+
+        targets = targets * mask
+
+        network_updates += 1
+        res = q_approximator.train_on_batch([preprocess_state(current_states), mask], targets)
+        res_values.append(res)
 
         if network_updates % target_network_update_freq == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
@@ -196,30 +266,25 @@ if retrain:
 else:
     q_approximator.load_weights("q_approx.hdf5")
 
-import matplotlib.pyplot as plt
-
-plt.plot(res_values)
-plt.show()
-
 env.reset()
 
-env.render()
-
 state = get_starting_state()
-done = False
 while True:
     env.render()
-    q_values = q_approximator.predict([state.reshape((1, *input_shape)) / 255., np.ones((1, num_actions))])
+    q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
     action = q_values.argmax()
 
-    observation, reward, done, _ = env.step(action)
-    new_frame = preprocess(observation)
+    # 0 is noop action,
+    # we allow only a limited amount of noop actions
+    if action != 1:
+        noop_counter += 1
 
-    new_state = np.empty_like(state)
-    new_state[:, :, :-1] = state[:, :, 1:]
-    new_state[:, :, -1] = new_frame
+        if noop_counter > noop_max:
+            while action == 0:
+                action = env.action_space.sample()
+            noop_counter = 0
 
-    state = new_state
+    state, reward, done = interact_multiple(state, action, repeat_action)
 
     if done:
         state = get_starting_state()
