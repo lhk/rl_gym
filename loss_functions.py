@@ -9,5 +9,5 @@ def huber_loss(y_true, y_pred):
     square = 1 / 2 * error**2
     linear = 1 / 2 * error
 
-    huber = tf.select(mask, square, linear)
-    return huber
+    huber = tf.where(mask, square, linear)
+    return tf.reduce_sum(huber)
