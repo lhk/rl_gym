@@ -10,7 +10,8 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
-import matplotlib.pyplot as plt
+from pylab import subplot, plot, title
+from drawnow import drawnow, figure
 
 from visualization_helpers import *
 
@@ -29,7 +30,7 @@ K.set_session(sess)
 
 from loss_functions import huber_loss
 
-matplotlib.use('Qt5Agg')
+#matplotlib.use('Qt5Agg')
 
 env = gym.make('Breakout-v0')
 env.reset()
@@ -163,16 +164,23 @@ total_durations = []
 total_reward = 0
 total_duration = 0
 
+figure()
+def draw_fig():
+    subplot(1, 1, 1)
+    title("rewards")
+    plot(total_rewards)
+
+"""
 plt.ion()
 fig = plt.figure()
 
-ax_rewards = fig.add_subplot(121)
+ax_rewards = fig.add_subplot(111)
 ax_rewards.set_title("rewards")
 line_rewards, = ax_rewards.plot([1, 2, 3])
+fig.show()
+"""
 
-ax_durations = fig.add_subplot(122)
-ax_durations.set_title("durations")
-line_durations, = ax_durations.plot([2, 3, 4])
+drawnow(draw_fig)
 
 if retrain:
 
@@ -240,17 +248,19 @@ if retrain:
             total_reward = 0
             total_duration = 0
 
-            line_rewards.set_xdata(range(len(total_rewards)))
-            line_rewards.set_ydata(total_rewards)
-            ax_rewards.set_ylim([0, max(total_rewards)])
+            drawnow(draw_fig)
 
-            line_durations.set_xdata(range(len(total_durations)))
-            line_durations.set_ydata(total_durations)
-            ax_durations.set_ylim([0, max(total_rewards)])
+            """ax_rewards.clear()
+            ax_rewards.plot(total_rewards)
+
+            #line_rewards.set_ydata(total_rewards)
+            #ax_rewards.set_ylim([0, max(total_rewards)])
 
             fig.canvas.draw()
-            plt.draw()
-            plt.pause(1e-17)
+            fig.canvas.flush_events()
+
+            plt.show()
+            plt.pause(0.01)"""
 
         # first fill the replay queue, then start training
         if interaction < replay_start_size:
