@@ -157,6 +157,8 @@ def get_starting_state():
 
 state = get_starting_state()
 
+plot_skips = 10
+
 total_rewards = []
 total_durations = []
 
@@ -169,11 +171,11 @@ figure()
 def draw_fig():
     subplot(2, 1, 1)
     title("rewards")
-    plot(total_rewards)
+    plot(total_rewards[-50::2])
 
     subplot(2, 1, 2)
     title("durations")
-    plot(total_durations)
+    plot(total_durations[-50::2])
 
 
 drawnow(draw_fig)
@@ -236,15 +238,16 @@ if retrain:
         else:
             state = get_starting_state()
 
-            print("an episode has finished")
-            print("total reward: ", total_reward)
-            print("total steps: ", total_duration)
+            # print("an episode has finished")
+            # print("total reward: ", total_reward)
+            # print("total steps: ", total_duration)
             total_rewards.append(total_reward)
             total_durations.append(total_duration)
             total_reward = 0
             total_duration = 0
 
-            drawnow(draw_fig)
+            if len(total_durations) % plot_skips == 0:
+                drawnow(draw_fig)
 
         # first fill the replay queue, then start training
         if interaction < replay_start_size:
