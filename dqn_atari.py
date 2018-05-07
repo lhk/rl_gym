@@ -4,33 +4,28 @@ import random
 
 import gym
 import keras
-import matplotlib
+# check wether tensorflow really runs on gpu
+import keras.backend as K
 import numpy as np
+import skimage.color
+import skimage.transform
+import tensorflow as tf
+from drawnow import drawnow, figure
 from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
-
 from pylab import subplot, plot, title
-from drawnow import drawnow, figure
 
-from visualization_helpers import *
-
-import skimage.transform
-import skimage.color
-
-# check wether tensorflow really runs on gpu
-import keras.backend as K
-import tensorflow as tf
 config = tf.ConfigProto()
-#config.gpu_options.allow_growth = True
-#config.log_device_placement=True
+# config.gpu_options.allow_growth = True
+# config.log_device_placement=True
 
 sess = tf.Session(config=config)
 K.set_session(sess)
 
 from loss_functions import huber_loss
 
-#matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 env = gym.make('Breakout-v0')
 env.reset()
@@ -46,8 +41,9 @@ random.seed(0)
 def preprocess_frame(frame):
     grayscale = skimage.color.rgb2gray(frame)
     downsampled = skimage.transform.resize(grayscale, frame_size)
-    casted = (downsampled*255).astype(np.uint8)
+    casted = (downsampled * 255).astype(np.uint8)
     return casted
+
 
 def preprocess_state(state):
     return state / 255.
@@ -61,7 +57,7 @@ def create_model():
     conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
     conv_flattened = Flatten()(conv)
-    
+
     hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
     output_layer = keras.layers.Dense(num_actions)(hidden)
 
@@ -113,12 +109,13 @@ q_approximator.compile(RMSprop(learning_rate, rho=rho, epsilon=epsilon), loss=hu
 
 # a queue for past observations
 from collections import deque
+
 replay_memory = deque(maxlen=replay_memory_size)
 
 from tqdm import tqdm
 
-def interact(state, action):
 
+def interact(state, action):
     # record environments reaction for the chosen action
     observation, reward, done, _ = env.step(action)
 
@@ -130,17 +127,19 @@ def interact(state, action):
 
     return new_state, reward, done
 
+
 def interact_multiple(state, action, times):
     total_reward = 0
 
     for i in range(times):
         state, reward, done = interact(state, action)
-        total_reward+= reward
+        total_reward += reward
 
-        if(done):
+        if (done):
             break
 
     return state, total_reward, done
+
 
 def get_starting_state():
     state = np.zeros(input_shape, dtype=np.uint8)
@@ -158,21 +157,24 @@ def get_starting_state():
 
 state = get_starting_state()
 
-total_rewards =[]
+total_rewards = []
 total_durations = []
 
 total_reward = 0
 total_duration = 0
 
 figure()
+
+
 def draw_fig():
-    subplot(1, 2, 1)
+    subplot(2, 1, 1)
     title("rewards")
     plot(total_rewards)
 
-    subplot(1, 2, 2)
+    subplot(2, 1, 2)
     title("durations")
     plot(total_durations)
+
 
 drawnow(draw_fig)
 
@@ -265,7 +267,8 @@ if retrain:
         next_states = [replay[3] for replay in batch]
         next_states = np.array(next_states)
 
-        q_predictions = q_approximator_fixed.predict([preprocess_state(next_states), np.ones((batch_size, num_actions))])
+        q_predictions = q_approximator_fixed.predict(
+            [preprocess_state(next_states), np.ones((batch_size, num_actions))])
         q_max = q_predictions.max(axis=1, keepdims=True)
 
         rewards = [replay[2] for replay in batch]
@@ -279,7 +282,7 @@ if retrain:
         # the value is immediate reward and discounted expected future reward
         # by definition, in a terminal state, the future reward is 0
         immediate_rewards = rewards
-        future_rewards = gamma * q_max * (1-dones)
+        future_rewards = gamma * q_max * (1 - dones)
 
         targets = immediate_rewards + future_rewards
 
@@ -305,18 +308,17 @@ env.reset()
 
 state = get_starting_state()
 
-
 episodes = 0
 max_episodes = 50
 total_reward = 0
 while True:
-    #env.render()
-    #q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
-    #action = q_values.argmax()
+    # env.render()
+    # q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
+    # action = q_values.argmax()
     action = env.action_space.sample()
     # 0 is noop action,
     # we allow only a limited amount of noop actions
-    #if action ==0:
+    # if action ==0:
     #    noop_counter += 1
 
     #    if noop_counter > noop_max:
@@ -330,8 +332,8 @@ while True:
     if done:
         state = get_starting_state()
         print("resetting", episodes)
-        episodes+=1
+        episodes += 1
         if episodes > max_episodes:
             break
 
-print(total_reward/episodes)
+print(total_reward / episodes)
