@@ -10,26 +10,31 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
-import keras.backend as K
-import tensorflow as tf
+
+import skimage.transform as transform
+
+# check wether tensorflow really runs on gpu
+#import keras.backend as K
+#import tensorflow as tf
 #K.set_session(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
 
 from loss_functions import huber_loss
 
 matplotlib.use('Qt5Agg')
 
-env = gym.make('Assault-v4')
+env = gym.make('Assault-v0')
 env.reset()
 
 # a network to predict q values for every action
 num_actions = env.action_space.n
-input_shape = (250//2, 160//2, 4)
+frame_size = (84, 84)
+input_shape = (*frame_size, 4)
 
 
 def preprocess_frame(frame):
-    downsampled = frame[::2, ::2]
-    grayscale = downsampled.mean(axis=2).astype(np.uint8)
-    return grayscale
+    grayscale = frame.mean(axis=2).astype(np.uint8)
+    downsampled = transform.resize(grayscale, frame_size)
+    return downsampled
 
 def preprocess_state(state):
     return state / 255.
@@ -40,7 +45,10 @@ def create_model():
 
     conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(input_layer)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
+    conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+
     conv_flattened = Flatten()(conv)
+    
     hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
     output_layer = keras.layers.Dense(num_actions)(hidden)
 
@@ -52,10 +60,10 @@ def create_model():
 
 # parameters, taken from the paper
 
-batch_size = 64
+batch_size = 32
 learning_rate = 0.00025
 network_updates = 0
-target_network_update_freq = 1e3
+target_network_update_freq = 1e4
 
 noop_max = 20
 noop_counter = 0
@@ -63,7 +71,7 @@ noop_counter = 0
 replay_memory_size = int(2e5)
 replay_start_size = int(2e5)
 
-total_interactions = int(1e5)
+total_interactions = int(2e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -73,7 +81,7 @@ repeat_action = 1
 
 # multiplying exploration by this factor brings it down to final_exploration
 # after final_exploration_frame frames
-exploration_factor = (final_exploration / initial_exploration) ** (1 / final_exploration_frame)
+exploration_step = (initial_exploration - final_exploration) / final_exploration_frame
 exploration = initial_exploration
 
 gamma = 0.99
@@ -86,7 +94,8 @@ q_approximator_fixed = create_model()
 q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss="mse")
 
 # a queue for past observations
-replay_memory = []
+from collections import deque
+replay_memory = deque(maxlen=replay_memory_size)
 
 from tqdm import tqdm
 
@@ -154,7 +163,7 @@ if retrain:
             reward = - 1
 
         # this is given in the paper, they use only the sign
-        reward = np.sign(reward)
+        reward = np.clip(reward, -1, 1)
 
         replay_memory.append((state, action, reward, new_state, done))
 
@@ -167,9 +176,8 @@ if retrain:
     for interaction in tqdm(range(total_interactions), smoothing=0.9):
 
         # anneal an the epsilon
-        exploration *= exploration_factor
-        if exploration < final_exploration:
-            exploration_factor = 1
+        if exploration > final_exploration:
+            exploration -= exploration_step
 
         # interact with the environment
         # take random or best action
@@ -208,7 +216,7 @@ if retrain:
         replay_memory.append((state, action, reward, new_state, done))
 
         if len(replay_memory) > replay_memory_size:
-            replay_memory.pop(np.random.randint(len(replay_memory)))
+            replay_memory.pop()
 
         if not done:
             state = new_state
@@ -269,23 +277,34 @@ else:
 env.reset()
 
 state = get_starting_state()
-while True:
-    env.render()
-    q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
-    action = q_values.argmax()
 
+
+episodes = 0
+max_episodes = 50
+total_reward = 0
+while True:
+    #env.render()
+    #q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
+    #action = q_values.argmax()
+    action = env.action_space.sample()
     # 0 is noop action,
     # we allow only a limited amount of noop actions
-    if action != 1:
-        noop_counter += 1
+    #if action ==0:
+    #    noop_counter += 1
 
-        if noop_counter > noop_max:
-            while action == 0:
-                action = env.action_space.sample()
-            noop_counter = 0
+    #    if noop_counter > noop_max:
+    #        while action == 0:
+    #            action = env.action_space.sample()
+    #        noop_counter = 0
 
     state, reward, done = interact_multiple(state, action, repeat_action)
+    total_reward += reward
 
     if done:
         state = get_starting_state()
-        print("resetting")
+        print("resetting", episodes)
+        episodes+=1
+        if episodes > max_episodes:
+            break
+
+print(total_reward/episodes)
