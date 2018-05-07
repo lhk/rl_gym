@@ -10,6 +10,8 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
+import matplotlib.pyplot as plt
+
 from visualization_helpers import *
 
 import skimage.transform
@@ -19,8 +21,8 @@ import skimage.color
 import keras.backend as K
 import tensorflow as tf
 config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-config.log_device_placement=True
+#config.gpu_options.allow_growth = True
+#config.log_device_placement=True
 
 sess = tf.Session(config=config)
 K.set_session(sess)
@@ -86,7 +88,7 @@ noop_counter = 0
 replay_memory_size = int(4e5)
 replay_start_size = int(5e4)
 
-total_interactions = int(2e5)
+total_interactions = int(5e5)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -113,8 +115,6 @@ from collections import deque
 replay_memory = deque(maxlen=replay_memory_size)
 
 from tqdm import tqdm
-
-res_values = []
 
 def interact(state, action):
 
@@ -163,45 +163,23 @@ total_durations = []
 total_reward = 0
 total_duration = 0
 
+plt.ion()
+fig = plt.figure()
+
+ax_rewards = fig.add_subplot(121)
+ax_rewards.set_title("rewards")
+line_rewards, = ax_rewards.plot([1, 2, 3])
+
+ax_durations = fig.add_subplot(122)
+ax_durations.set_title("durations")
+line_durations, = ax_durations.plot([2, 3, 4])
+
 if retrain:
 
-    # sample random behaviour to fill the replay queue
-    # please note: according to the paper, the annealing of epsilon seems to start here already
-    # but that seems detrimental, we are not yet training the network
-    for interaction in tqdm(range(replay_start_size), smoothing=0.9):
-        action = env.action_space.sample()
-
-        # record environments reaction for the chosen action
-        new_state, reward, done = interact_multiple(state, action, repeat_action)
-
-        # done means the environment had to restart, this is bad
-        # please note: the restart reward is chosen as -1
-        # the rewards are clipped to [-1, 1] according to the paper
-        # if that would not be done, we would have to scale this reward
-        # to align to the other replays given in the game
-        if done:
-            reward = - 1
-
-        # this is given in the paper, they use only the sign
-        reward = np.clip(reward, -1, 1)
-
-        replay_memory.append((state, action, reward, new_state, done))
-
-        if not done:
-            state = new_state
-        else:
-            state = get_starting_state()
-
-
-    # now train the network
     np.random.seed(0)
     state = get_starting_state()
 
     for interaction in tqdm(range(total_interactions), smoothing=0.9):
-
-        # anneal the epsilon
-        if exploration > final_exploration:
-            exploration -= exploration_step
 
         # interact with the environment
         # take random or best action
@@ -212,6 +190,10 @@ if retrain:
             q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape),
                                                      np.ones((1, num_actions))])
             action = q_values.argmax()
+
+        # anneal the epsilon
+        if exploration > final_exploration:
+            exploration -= exploration_step
 
         # 0 is noop action,
         # we allow only a limited amount of noop actions
@@ -258,7 +240,21 @@ if retrain:
             total_reward = 0
             total_duration = 0
 
+            line_rewards.set_xdata(range(len(total_rewards)))
+            line_rewards.set_ydata(total_rewards)
+            ax_rewards.set_ylim([0, max(total_rewards)])
 
+            line_durations.set_xdata(range(len(total_durations)))
+            line_durations.set_ydata(total_durations)
+            ax_durations.set_ylim([0, max(total_rewards)])
+
+            fig.canvas.draw()
+            plt.draw()
+            plt.pause(1e-17)
+
+        # first fill the replay queue, then start training
+        if interaction < replay_start_size:
+            continue
 
         # don't train the network at every step
         if interaction % train_skips != 0:
@@ -304,7 +300,6 @@ if retrain:
 
         network_updates += 1
         res = q_approximator.train_on_batch([preprocess_state(current_states), mask], targets)
-        res_values.append(res)
 
         if network_updates % target_network_update_freq == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
