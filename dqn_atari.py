@@ -166,19 +166,13 @@ total_duration = 0
 
 figure()
 def draw_fig():
-    subplot(1, 1, 1)
+    subplot(1, 2, 1)
     title("rewards")
     plot(total_rewards)
 
-"""
-plt.ion()
-fig = plt.figure()
-
-ax_rewards = fig.add_subplot(111)
-ax_rewards.set_title("rewards")
-line_rewards, = ax_rewards.plot([1, 2, 3])
-fig.show()
-"""
+    subplot(1, 2, 2)
+    title("durations")
+    plot(total_durations)
 
 drawnow(draw_fig)
 
@@ -249,18 +243,6 @@ if retrain:
             total_duration = 0
 
             drawnow(draw_fig)
-
-            """ax_rewards.clear()
-            ax_rewards.plot(total_rewards)
-
-            #line_rewards.set_ydata(total_rewards)
-            #ax_rewards.set_ylim([0, max(total_rewards)])
-
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-
-            plt.show()
-            plt.pause(0.01)"""
 
         # first fill the replay queue, then start training
         if interaction < replay_start_size:
