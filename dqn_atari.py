@@ -10,6 +10,7 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
+from loss_functions import huber_loss
 
 import skimage.transform as transform
 
@@ -29,6 +30,8 @@ env.reset()
 num_actions = env.action_space.n
 frame_size = (84, 84)
 input_shape = (*frame_size, 4)
+
+random.seed(0)
 
 
 def preprocess_frame(frame):
@@ -91,7 +94,7 @@ retrain = True
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss="mse")
+q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss=huber_loss)
 
 # a queue for past observations
 from collections import deque
