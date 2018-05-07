@@ -10,20 +10,26 @@ from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
 
-from loss_functions import huber_loss
+from visualization_helpers import *
 
-import skimage.transform as transform
+import skimage.transform
+import skimage.color
 
 # check wether tensorflow really runs on gpu
-#import keras.backend as K
-#import tensorflow as tf
-#K.set_session(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
+import keras.backend as K
+import tensorflow as tf
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+config.log_device_placement=True
+
+sess = tf.Session(config=config)
+K.set_session(sess)
 
 from loss_functions import huber_loss
 
 matplotlib.use('Qt5Agg')
 
-env = gym.make('Assault-v0')
+env = gym.make('Breakout-v0')
 env.reset()
 
 # a network to predict q values for every action
@@ -35,9 +41,10 @@ random.seed(0)
 
 
 def preprocess_frame(frame):
-    grayscale = frame.mean(axis=2).astype(np.uint8)
-    downsampled = transform.resize(grayscale, frame_size)
-    return downsampled
+    grayscale = skimage.color.rgb2gray(frame)
+    downsampled = skimage.transform.resize(grayscale, frame_size)
+    casted = (downsampled*255).astype(np.uint8)
+    return casted
 
 def preprocess_state(state):
     return state / 255.
@@ -64,15 +71,20 @@ def create_model():
 # parameters, taken from the paper
 
 batch_size = 32
+
 learning_rate = 0.00025
+rho = 0.95
+epsilon = 0.01
+
+train_skips = 3
 network_updates = 0
 target_network_update_freq = 1e4
 
 noop_max = 20
 noop_counter = 0
 
-replay_memory_size = int(2e5)
-replay_start_size = int(2e5)
+replay_memory_size = int(4e5)
+replay_start_size = int(5e4)
 
 total_interactions = int(2e5)
 
@@ -94,7 +106,7 @@ retrain = True
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(RMSprop(learning_rate, rho=0.95, epsilon=0.01), loss=huber_loss)
+q_approximator.compile(RMSprop(learning_rate, rho=rho, epsilon=epsilon), loss=huber_loss)
 
 # a queue for past observations
 from collections import deque
@@ -145,6 +157,11 @@ def get_starting_state():
 
 state = get_starting_state()
 
+total_rewards =[]
+total_durations = []
+
+total_reward = 0
+total_duration = 0
 
 if retrain:
 
@@ -175,10 +192,14 @@ if retrain:
         else:
             state = get_starting_state()
 
+
     # now train the network
+    np.random.seed(0)
+    state = get_starting_state()
+
     for interaction in tqdm(range(total_interactions), smoothing=0.9):
 
-        # anneal an the epsilon
+        # anneal the epsilon
         if exploration > final_exploration:
             exploration -= exploration_step
 
@@ -188,18 +209,18 @@ if retrain:
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
-            q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape), np.ones((1, num_actions))])
+            q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape),
+                                                     np.ones((1, num_actions))])
             action = q_values.argmax()
 
         # 0 is noop action,
         # we allow only a limited amount of noop actions
+        # TODO: this is hardcoding for the breakout setup, remove action=1, sample at random
         if action == 0:
             noop_counter += 1
 
             if noop_counter > noop_max:
-                while action == 0:
-                    action = env.action_space.sample()
-
+                action = 1
                 noop_counter = 0
 
         # record environments reaction for the chosen action
@@ -216,15 +237,32 @@ if retrain:
         # this is given in the paper, they use only the sign
         reward = np.sign(reward)
 
+        if len(replay_memory) == replay_memory_size:
+            replay_memory.pop()
+
         replay_memory.append((state, action, reward, new_state, done))
 
-        if len(replay_memory) > replay_memory_size:
-            replay_memory.pop()
+        total_reward += reward
+        total_duration += 1
 
         if not done:
             state = new_state
         else:
             state = get_starting_state()
+
+            print("an episode has finished")
+            print("total reward: ", total_reward)
+            print("total steps: ", total_duration)
+            total_rewards.append(total_reward)
+            total_durations.append(total_duration)
+            total_reward = 0
+            total_duration = 0
+
+
+
+        # don't train the network at every step
+        if interaction % train_skips != 0:
+            continue
 
         # train the q function approximator
         batch = random.sample(replay_memory, batch_size)
@@ -248,13 +286,12 @@ if retrain:
 
         dones = [replay[4] for replay in batch]
         dones = np.array(dones, dtype=np.bool)
-        not_dones = np.logical_not(dones)
-        not_dones = not_dones.reshape((batch_size, 1))
+        dones = dones.reshape((batch_size, 1))
 
         # the value is immediate reward and discounted expected future reward
         # by definition, in a terminal state, the future reward is 0
         immediate_rewards = rewards
-        future_rewards = gamma * q_max * (not_dones)
+        future_rewards = gamma * q_max * (1-dones)
 
         targets = immediate_rewards + future_rewards
 
