@@ -4,7 +4,6 @@ import random
 
 import gym
 import keras
-# check wether tensorflow really runs on gpu
 import keras.backend as K
 import numpy as np
 import skimage.color
@@ -16,6 +15,9 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
 
+from visualization_helpers import *
+
+# check wether tensorflow really runs on gpu
 config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
 # config.log_device_placement=True
@@ -27,7 +29,7 @@ from loss_functions import huber_loss
 
 # matplotlib.use('Qt5Agg')
 
-env = gym.make('Breakout-v0')
+env = gym.make('Breakout-v4')
 env.reset()
 
 # a network to predict q values for every action
@@ -54,7 +56,7 @@ def create_model():
 
     conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(input_layer)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+    #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
     conv_flattened = Flatten()(conv)
 
@@ -75,21 +77,21 @@ learning_rate = 0.00025
 rho = 0.95
 epsilon = 0.01
 
-train_skips = 3
+train_skips = 2
 network_updates = 0
 target_network_update_freq = 1e4
 
-noop_max = 20
+noop_max = 10
 noop_counter = 0
 
-replay_memory_size = int(4e5)
+replay_memory_size = int(3e5)
 replay_start_size = int(5e4)
 
-total_interactions = int(5e5)
+total_interactions = int(3e6)
 
 initial_exploration = 1.0
 final_exploration = 0.1
-final_exploration_frame = int(total_interactions)
+final_exploration_frame = int(total_interactions//2)
 
 repeat_action = 1
 
@@ -165,7 +167,9 @@ total_durations = []
 total_reward = 0
 total_duration = 0
 
-figure()
+highest_q_values = []
+highest_q_value = -np.inf
+#figure()
 
 
 def draw_fig():
@@ -178,14 +182,14 @@ def draw_fig():
     plot(total_durations[-50::2])
 
 
-drawnow(draw_fig)
+#drawnow(draw_fig)
 
 if retrain:
 
     np.random.seed(0)
     state = get_starting_state()
 
-    for interaction in tqdm(range(total_interactions), smoothing=0.9):
+    for interaction in tqdm(range(total_interactions), smoothing=0.95):
 
         # interact with the environment
         # take random or best action
@@ -193,9 +197,11 @@ if retrain:
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
-            q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape),
+            q_values = q_approximator_fixed.predict([preprocess_state(state.reshape(1, *input_shape)),
                                                      np.ones((1, num_actions))])
             action = q_values.argmax()
+            if q_values.max() > highest_q_value:
+                highest_q_value = q_values.max()
 
         # anneal the epsilon
         if exploration > final_exploration:
@@ -238,16 +244,19 @@ if retrain:
         else:
             state = get_starting_state()
 
-            # print("an episode has finished")
-            # print("total reward: ", total_reward)
-            # print("total steps: ", total_duration)
+            print("an episode has finished")
+            print("total reward: ", total_reward)
+            print("total steps: ", total_duration)
+            print("highest q-value: ", highest_q_value)
             total_rewards.append(total_reward)
             total_durations.append(total_duration)
+            highest_q_values.append(highest_q_value)
             total_reward = 0
             total_duration = 0
+            highest_q_value = -np.inf
 
-            if len(total_durations) % plot_skips == 0:
-                drawnow(draw_fig)
+            #if len(total_durations) % plot_skips == 0:
+            #    drawnow(draw_fig)
 
         # first fill the replay queue, then start training
         if interaction < replay_start_size:
