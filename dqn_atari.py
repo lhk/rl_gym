@@ -102,7 +102,7 @@ exploration = initial_exploration
 
 gamma = 0.99
 
-retrain = True
+retrain = False
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
@@ -324,19 +324,19 @@ episodes = 0
 max_episodes = 50
 total_reward = 0
 while True:
-    # env.render()
-    # q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
-    # action = q_values.argmax()
-    action = env.action_space.sample()
+    env.render()
+    q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
+    action = q_values.argmax()
+    #action = env.action_space.sample()
     # 0 is noop action,
     # we allow only a limited amount of noop actions
-    # if action ==0:
-    #    noop_counter += 1
+    if action ==0:
+       noop_counter += 1
 
-    #    if noop_counter > noop_max:
-    #        while action == 0:
-    #            action = env.action_space.sample()
-    #        noop_counter = 0
+       if noop_counter > noop_max:
+           while action == 0:
+               action = env.action_space.sample()
+           noop_counter = 0
 
     state, reward, done = interact_multiple(state, action, repeat_action)
     total_reward += reward
