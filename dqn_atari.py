@@ -10,10 +10,12 @@ import skimage.color
 import skimage.transform
 import tensorflow as tf
 from drawnow import drawnow, figure
-from keras.layers import Conv2D, Flatten, Input, Multiply
+from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
 from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
+
+import lycon
 
 from visualization_helpers import *
 
@@ -41,20 +43,17 @@ random.seed(0)
 
 
 def preprocess_frame(frame):
-    grayscale = skimage.color.rgb2gray(frame)
-    downsampled = skimage.transform.resize(grayscale, frame_size)
-    casted = (downsampled * 255).astype(np.uint8)
-    return casted
-
-
-def preprocess_state(state):
-    return state / 255.
+    downsampled = lycon.resize(frame, width=frame_size[0], height=frame_size[1],
+                               interpolation=lycon.Interpolation.NEAREST)
+    grayscale = downsampled.mean(axis=-1).astype(np.uint8)
+    return grayscale
 
 
 def create_model():
     input_layer = Input(input_shape)
 
-    conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(input_layer)
+    rescaled = Lambda(lambda x: x/255.)(input_layer)
+    conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
     #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
@@ -87,7 +86,7 @@ noop_counter = 0
 replay_memory_size = int(3e5)
 replay_start_size = int(5e4)
 
-total_interactions = int(3e6)
+total_interactions = int(6e6)
 
 initial_exploration = 1.0
 final_exploration = 0.1
@@ -102,7 +101,7 @@ exploration = initial_exploration
 
 gamma = 0.99
 
-retrain = False
+retrain = True
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
@@ -189,7 +188,7 @@ if retrain:
     np.random.seed(0)
     state = get_starting_state()
 
-    for interaction in tqdm(range(total_interactions), smoothing=0.95):
+    for interaction in tqdm(range(total_interactions), smoothing=1):
 
         # interact with the environment
         # take random or best action
@@ -197,7 +196,7 @@ if retrain:
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
-            q_values = q_approximator_fixed.predict([preprocess_state(state.reshape(1, *input_shape)),
+            q_values = q_approximator_fixed.predict([state.reshape(1, *input_shape),
                                                      np.ones((1, num_actions))])
             action = q_values.argmax()
             if q_values.max() > highest_q_value:
@@ -280,7 +279,7 @@ if retrain:
         next_states = np.array(next_states)
 
         q_predictions = q_approximator_fixed.predict(
-            [preprocess_state(next_states), np.ones((batch_size, num_actions))])
+            [next_states, np.ones((batch_size, num_actions))])
         q_max = q_predictions.max(axis=1, keepdims=True)
 
         rewards = [replay[2] for replay in batch]
@@ -306,15 +305,15 @@ if retrain:
         targets = targets * mask
 
         network_updates += 1
-        res = q_approximator.train_on_batch([preprocess_state(current_states), mask], targets)
+        res = q_approximator.train_on_batch([current_states, mask], targets)
 
         if network_updates % target_network_update_freq == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
             network_updates = 0
 
-    q_approximator.save_weights("q_approx.hdf5")
+    q_approximator.save_weights("q_approx_new.hdf5")
 else:
-    q_approximator.load_weights("q_approx.hdf5")
+    q_approximator.load_weights("q_approx_new.hdf5")
 
 env.reset()
 
@@ -325,7 +324,7 @@ max_episodes = 50
 total_reward = 0
 while True:
     env.render()
-    q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
+    q_values = q_approximator.predict([state.reshape((1, *input_shape)), np.ones((1, num_actions))])
     action = q_values.argmax()
     #action = env.action_space.sample()
     # 0 is noop action,
