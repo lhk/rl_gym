@@ -69,21 +69,22 @@ RHO = 0.95
 EPSILON = 0.01
 
 # parameters for the training
-TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops
-TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
+TOTAL_INTERACTIONS = int(1e7)  # after this many interactions, the training stops
+TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
 
 TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
+SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS // 2)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(1e6)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(3e5)
+REPLAY_MEMORY_SIZE = int(3.5e5)
 REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
@@ -91,6 +92,7 @@ REPLAY_START_SIZE = int(5e4)
 exploration = INITIAL_EXPLORATION  # chance of sampling a random action
 
 network_updates_counter = 0  # number of times the network has been updated
+target_network_updates_counter = 0  # number of times the target has been updated
 last_action = None  # action chosen at the last step
 repeat_action_counter = 0  # number of times this action has been repeated
 
@@ -177,6 +179,7 @@ def draw_fig():
     subplot(2, 1, 2)
     title("durations")
     plot(total_durations[-50::2])
+
 
 from drawnow import drawnow, figure
 
@@ -309,6 +312,10 @@ if RETRAIN:
         if network_updates_counter % TARGET_NETWORK_UPDATE_FREQ == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
             network_updates_counter = 0
+
+            target_network_updates_counter += 1
+            if target_network_updates_counter % SAVE_NETWORK_FREQ == 0:
+                q_approximator.save_weights("checkpoints/weights" + str(target_network_updates_counter) + ".hdf5")
 
     q_approximator.save_weights("q_approx_new.hdf5")
 else:
