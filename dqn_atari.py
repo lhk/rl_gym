@@ -1,25 +1,30 @@
 # coding: utf-8
 
 import random
+random.seed(0)
 
 import gym
 import keras
 import keras.backend as K
+import lycon
 import numpy as np
-import skimage.color
-import skimage.transform
 import tensorflow as tf
-from drawnow import drawnow, figure
 from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
 from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
 
-import lycon
 
-from visualization_helpers import *
+# a queue for past observations
+from collections import deque
 
-# check wether tensorflow really runs on gpu
+# force tensorflow to run on cpu
+# do this if you want to evaluate trained networks, without interrupting
+# an ongoing training process
+#import os
+#os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+# use this to influence the tensorflow behaviour
 config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
 # config.log_device_placement=True
@@ -29,17 +34,65 @@ K.set_session(sess)
 
 from loss_functions import huber_loss
 
-# matplotlib.use('Qt5Agg')
+# only a subset of matplotlib backends supports forwarding over X11
+# this Qt5Agg is compatible with remote debugging
+# you can ignore the setting
+import matplotlib
+matplotlib.use('Qt5Agg')
 
+# this is all that's needed to set up the openai gym
 env = gym.make('Breakout-v4')
 env.reset()
 
-# a network to predict q values for every action
+# parameters for the training setup
+# the parameters exposed here are taken from the deepmind paper
+# but their values are changed
+# do not assume that this is an optimal setup
+
+# parameters for the structure of the neural network
 num_actions = env.action_space.n
 frame_size = (84, 84)
 input_shape = (*frame_size, 4)
+batch_size = 32
 
-random.seed(0)
+# parameters for the reinforcement process
+gamma = 0.99 # discount factor for future updates
+
+# parameters for the optimizer
+learning_rate = 0.00025
+rho = 0.95
+epsilon = 0.01
+
+# parameters for the training
+total_interactions = int(3e6) # after this many interactions, the training stops
+train_skips = 2    # interact with the environment X times, update the network once
+
+target_network_update_freq = 1e4 # update the target network every X training steps
+
+# parameters for interacting with the environment
+initial_exploration = 1.0  # initial chance of sampling a random action
+final_exploration = 0.1  # final chance
+final_exploration_frame = int(total_interactions // 2) # frame at which final value is reached
+repeat_action_max = 30 # maximum number of repeated actions before sampling random action
+
+# parameters for the memory
+replay_memory_size = int(3e5)
+replay_start_size = int(5e4)
+
+# variables for the network
+exploration = initial_exploration
+exploration_step = (initial_exploration - final_exploration) / final_exploration_frame
+
+network_updates_counter = 0
+last_action = None
+repeat_action_counter = 0
+
+replay_memory = deque(maxlen=replay_memory_size)
+
+
+
+retrain = True
+
 
 
 def preprocess_frame(frame):
@@ -52,10 +105,10 @@ def preprocess_frame(frame):
 def create_model():
     input_layer = Input(input_shape)
 
-    rescaled = Lambda(lambda x: x/255.)(input_layer)
+    rescaled = Lambda(lambda x: x / 255.)(input_layer)
     conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+    # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
     conv_flattened = Flatten()(conv)
 
@@ -68,50 +121,12 @@ def create_model():
     return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
 
 
-# parameters, taken from the paper
-
-batch_size = 32
-
-learning_rate = 0.00025
-rho = 0.95
-epsilon = 0.01
-
-train_skips = 2
-network_updates = 0
-target_network_update_freq = 1e4
-
-noop_max = 10
-noop_counter = 0
-
-replay_memory_size = int(3e5)
-replay_start_size = int(5e4)
-
-total_interactions = int(6e6)
-
-initial_exploration = 1.0
-final_exploration = 0.1
-final_exploration_frame = int(total_interactions//2)
-
-repeat_action = 1
-
-# multiplying exploration by this factor brings it down to final_exploration
-# after final_exploration_frame frames
-exploration_step = (initial_exploration - final_exploration) / final_exploration_frame
-exploration = initial_exploration
-
-gamma = 0.99
-
-retrain = True
-
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
 q_approximator.compile(RMSprop(learning_rate, rho=rho, epsilon=epsilon), loss=huber_loss)
 
-# a queue for past observations
-from collections import deque
 
-replay_memory = deque(maxlen=replay_memory_size)
 
 from tqdm import tqdm
 
@@ -129,19 +144,6 @@ def interact(state, action):
     return new_state, reward, done
 
 
-def interact_multiple(state, action, times):
-    total_reward = 0
-
-    for i in range(times):
-        state, reward, done = interact(state, action)
-        total_reward += reward
-
-        if (done):
-            break
-
-    return state, total_reward, done
-
-
 def get_starting_state():
     state = np.zeros(input_shape, dtype=np.uint8)
     frame = env.reset()
@@ -151,7 +153,8 @@ def get_starting_state():
 
     # we repeat the action 4 times, since our initial state needs 4 stacked frames
     times = 4
-    state, _, _ = interact_multiple(state, action, times)
+    for i in range(times):
+        state, _, _ = interact(state, action)
 
     return state
 
@@ -168,7 +171,9 @@ total_duration = 0
 
 highest_q_values = []
 highest_q_value = -np.inf
-#figure()
+
+
+# figure()
 
 
 def draw_fig():
@@ -181,7 +186,7 @@ def draw_fig():
     plot(total_durations[-50::2])
 
 
-#drawnow(draw_fig)
+# drawnow(draw_fig)
 
 if retrain:
 
@@ -254,7 +259,7 @@ if retrain:
             total_duration = 0
             highest_q_value = -np.inf
 
-            #if len(total_durations) % plot_skips == 0:
+            # if len(total_durations) % plot_skips == 0:
             #    drawnow(draw_fig)
 
         # first fill the replay queue, then start training
@@ -304,12 +309,12 @@ if retrain:
 
         targets = targets * mask
 
-        network_updates += 1
+        network_updates_counter += 1
         res = q_approximator.train_on_batch([current_states, mask], targets)
 
-        if network_updates % target_network_update_freq == 0:
+        if network_updates_counter % target_network_update_freq == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
-            network_updates = 0
+            network_updates_counter = 0
 
     q_approximator.save_weights("q_approx_new.hdf5")
 else:
@@ -326,16 +331,16 @@ while True:
     env.render()
     q_values = q_approximator.predict([state.reshape((1, *input_shape)), np.ones((1, num_actions))])
     action = q_values.argmax()
-    #action = env.action_space.sample()
+    # action = env.action_space.sample()
     # 0 is noop action,
     # we allow only a limited amount of noop actions
-    if action ==0:
-       noop_counter += 1
+    if action == 0:
+        noop_counter += 1
 
-       if noop_counter > noop_max:
-           while action == 0:
-               action = env.action_space.sample()
-           noop_counter = 0
+        if noop_counter > noop_max:
+            while action == 0:
+                action = env.action_space.sample()
+            noop_counter = 0
 
     state, reward, done = interact_multiple(state, action, repeat_action)
     total_reward += reward
