@@ -159,8 +159,6 @@ q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=hu
 
 state = get_starting_state()
 
-plot_skips = 10
-
 total_rewards = []
 total_durations = []
 
@@ -180,9 +178,11 @@ def draw_fig():
     title("durations")
     plot(total_durations[-50::2])
 
+from drawnow import drawnow, figure
 
-# figure()
-# drawnow(draw_fig)
+PLOT_SKIPS = 10
+figure()
+drawnow(draw_fig)
 
 if RETRAIN:
 
