@@ -15,7 +15,6 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
 
-
 from tqdm import tqdm
 
 # a queue for past observations
@@ -89,13 +88,14 @@ REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
 # they are used to keep track of various properties of the training setup
-exploration = INITIAL_EXPLORATION # chance of sampling a random action
+exploration = INITIAL_EXPLORATION  # chance of sampling a random action
 
-network_updates_counter = 0 # number of times the network has been updated
-last_action = None # action chosen at the last step
-repeat_action_counter = 0 # number of times this action has been repeated
+network_updates_counter = 0  # number of times the network has been updated
+last_action = None  # action chosen at the last step
+repeat_action_counter = 0  # number of times this action has been repeated
 
-replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE) # a buffer for past observations
+replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)  # a buffer for past observations
+
 
 # helper methods
 
@@ -104,6 +104,7 @@ def preprocess_frame(frame):
                                interpolation=lycon.Interpolation.NEAREST)
     grayscale = downsampled.mean(axis=-1).astype(np.uint8)
     return grayscale
+
 
 def interact(state, action):
     observation, reward, done, _ = env.step(action)
@@ -131,6 +132,7 @@ def get_starting_state():
 
     return state
 
+
 def create_model():
     input_layer = Input(INPUT_SHAPE)
 
@@ -154,7 +156,6 @@ q_approximator = create_model()
 q_approximator_fixed = create_model()
 
 q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
-
 
 state = get_starting_state()
 
@@ -327,7 +328,7 @@ while True:
 
     # we allow only a limited amount of repeated actions
     if action == last_action:
-        repeat_action_counter+=1
+        repeat_action_counter += 1
 
         if repeat_action_counter > REPEAT_ACTION_MAX:
             action = env.action_space.sample()
