@@ -149,6 +149,11 @@ from multiprocessing import Value, Lock
 
 def interaction_generator(q_approximator_fixed, replay_memory, exploration,
                           interaction_counter, interaction_lock):
+
+    import keras
+    import keras.backend as K
+    import tensorflow as tf
+
     # initialize state of generator
     env = gym.make('Breakout-v4')
     env.reset()
@@ -158,7 +163,13 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
     last_action = None  # action chosen at the last step
     repeat_action_counter = 0  # number of times this action has been repeated
 
-    default_graph = tf.get_default_graph()
+    # use this to influence the tensorflow behaviour
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.log_device_placement = True
+
+    sess = tf.Session(config=config, graph= graph)
+    K.set_session(sess)
 
     # the generator will never stop interacting with the environment
     while True:
@@ -167,8 +178,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
-            with default_graph.as_default():
-                q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
+            q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
                                                          np.ones((1, NUM_ACTIONS))])
             action = q_values.argmax()
             if q_values.max() > highest_q_value:
@@ -269,10 +279,12 @@ q_approximator_fixed = create_model()
 
 # necessary for thread safe parallel prediction
 q_approximator._make_predict_function()
-q_approximator_fixed._make_predict_function()
 
 # only this one will be trained
 q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
+
+graph = tf.get_default_graph()
+#graph = K.get_session().graph
 
 if RETRAIN:
 
@@ -287,6 +299,6 @@ if RETRAIN:
                                                            interaction_lock),
                                      epochs=10, steps_per_epoch=BATCH_SIZE * 1000,
                                      use_multiprocessing=True,
-                                     workers=2)
+                                     workers=1)
 
-        q_approximator_fixed.set_weights(q_approximator.get_weights())
+        #q_approximator_fixed.set_weights(q_approximator.get_weights())
