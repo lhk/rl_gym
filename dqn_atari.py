@@ -52,7 +52,7 @@ env.reset()
 # but their values are changed
 # do not assume that this is an optimal setup
 
-RETRAIN = True
+RETRAIN = False
 
 # parameters for the structure of the neural network
 NUM_ACTIONS = env.action_space.n
@@ -78,7 +78,7 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(1e6)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(1e7)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
@@ -319,7 +319,7 @@ if RETRAIN:
 
     q_approximator.save_weights("q_approx_new.hdf5")
 else:
-    q_approximator.load_weights("q_approx_new.hdf5")
+    q_approximator.load_weights("checkpoints/weights225.hdf5")
 
 env.reset()
 

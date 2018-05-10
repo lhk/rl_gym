@@ -34,8 +34,8 @@ from collections import deque
 
 # use this to influence the tensorflow behaviour
 config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
-# config.log_device_placement=True
+config.gpu_options.allow_growth = True
+config.log_device_placement=True
 
 sess = tf.Session(config=config)
 K.set_session(sess)
@@ -81,7 +81,7 @@ REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling ran
 
 # parameters for the memory
 REPLAY_MEMORY_SIZE = int(3.5e5)
-REPLAY_START_SIZE = int(5e4)
+REPLAY_START_SIZE = int(5e2)
 
 # variables, these are not meant to be edited by the user
 # they are used to keep track of various properties of the training setup
@@ -162,6 +162,8 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
     last_action = None  # action chosen at the last step
     repeat_action_counter = 0  # number of times this action has been repeated
 
+    default_graph = tf.get_default_graph()
+
     # the generator will never stop interacting with the environment
     while True:
 
@@ -169,7 +171,8 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
-            q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
+            with default_graph.as_default():
+                q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
                                                      np.ones((1, NUM_ACTIONS))])
             action = q_values.argmax()
             if q_values.max() > highest_q_value:
@@ -288,6 +291,6 @@ if RETRAIN:
                                                            interaction_lock),
                                      epochs=10, steps_per_epoch=BATCH_SIZE*1000,
                                      use_multiprocessing=True,
-                                     workers= 4)
+                                     workers= 2)
 
         q_approximator_fixed.set_weights(q_approximator.get_weights())
