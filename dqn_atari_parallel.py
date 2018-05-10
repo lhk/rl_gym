@@ -19,9 +19,6 @@ import tensorflow as tf
 from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
 from keras.optimizers import RMSprop
-from pylab import subplot, plot, title
-
-from tqdm import tqdm
 
 # a queue for past observations
 from collections import deque
@@ -35,7 +32,7 @@ from collections import deque
 # use this to influence the tensorflow behaviour
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-config.log_device_placement=True
+config.log_device_placement = True
 
 sess = tf.Session(config=config)
 K.set_session(sess)
@@ -49,9 +46,8 @@ from loss_functions import huber_loss
 
 RETRAIN = True
 
-
 # parameters for the structure of the neural network
-NUM_ACTIONS = 4 # for breakout
+NUM_ACTIONS = 4  # for breakout
 FRAME_SIZE = (84, 84)
 INPUT_SHAPE = (*FRAME_SIZE, 4)
 BATCH_SIZE = 32
@@ -150,9 +146,9 @@ def create_model():
 
 from multiprocessing import Value, Lock
 
+
 def interaction_generator(q_approximator_fixed, replay_memory, exploration,
                           interaction_counter, interaction_lock):
-
     # initialize state of generator
     env = gym.make('Breakout-v4')
     env.reset()
@@ -173,7 +169,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
         else:
             with default_graph.as_default():
                 q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
-                                                     np.ones((1, NUM_ACTIONS))])
+                                                         np.ones((1, NUM_ACTIONS))])
             action = q_values.argmax()
             if q_values.max() > highest_q_value:
                 highest_q_value = q_values.max()
@@ -224,7 +220,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
             if interaction_counter.value < REPLAY_START_SIZE:
                 continue
 
-            if interaction_counter.value % TRAIN_SKIPS !=0 :
+            if interaction_counter.value % TRAIN_SKIPS != 0:
                 continue
 
         batch = random.sample(replay_memory, BATCH_SIZE)
@@ -267,6 +263,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
 
         yield ([current_states, mask], targets)
 
+
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
@@ -276,7 +273,6 @@ q_approximator_fixed._make_predict_function()
 
 # only this one will be trained
 q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
-
 
 if RETRAIN:
 
@@ -289,8 +285,8 @@ if RETRAIN:
                                                            exploration,
                                                            interaction_counter,
                                                            interaction_lock),
-                                     epochs=10, steps_per_epoch=BATCH_SIZE*1000,
+                                     epochs=10, steps_per_epoch=BATCH_SIZE * 1000,
                                      use_multiprocessing=True,
-                                     workers= 2)
+                                     workers=2)
 
         q_approximator_fixed.set_weights(q_approximator.get_weights())
