@@ -52,7 +52,7 @@ env.reset()
 # but their values are changed
 # do not assume that this is an optimal setup
 
-RETRAIN = False
+RETRAIN = True
 
 # parameters for the structure of the neural network
 NUM_ACTIONS = env.action_space.n
@@ -69,8 +69,8 @@ RHO = 0.95
 EPSILON = 0.01
 
 # parameters for the training
-TOTAL_INTERACTIONS = int(1e7)  # after this many interactions, the training stops
-TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
+TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops
+TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
 
 TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
@@ -78,13 +78,13 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(1e7)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = TOTAL_INTERACTIONS//2  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(3.5e5)
+REPLAY_MEMORY_SIZE = int(3e5)
 REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
