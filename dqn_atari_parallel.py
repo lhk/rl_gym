@@ -155,7 +155,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
     import tensorflow as tf
 
     # initialize state of generator
-    env = gym.make('Breakout-v4')
+    env = gym.make('SpaceInvaders-v4')
     env.reset()
 
     state = get_starting_state(env)

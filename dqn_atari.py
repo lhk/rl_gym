@@ -28,7 +28,7 @@ from collections import deque
 
 # use this to influence the tensorflow behaviour
 config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
+config.gpu_options.allow_growth = True
 # config.log_device_placement=True
 
 sess = tf.Session(config=config)
@@ -44,7 +44,7 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 # this is all that's needed to set up the openai gym
-env = gym.make('Breakout-v4')
+env = gym.make('SpaceInvaders-v4')
 env.reset()
 
 # parameters for the training setup
@@ -69,16 +69,16 @@ RHO = 0.95
 EPSILON = 0.01
 
 # parameters for the training
-TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops
-TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
+TOTAL_INTERACTIONS = int(9e6)  # after this many interactions, the training stops
+TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
 
-TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
+TARGET_NETWORK_UPDATE_FREQ = 1.5e4  # update the target network every X training steps
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = TOTAL_INTERACTIONS//2  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = TOTAL_INTERACTIONS // 2  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
@@ -230,7 +230,7 @@ if RETRAIN:
             reward = - 1
 
         # this is given in the paper, they use only the sign
-        reward = np.sign(reward)
+        # reward = np.sign(reward)
 
         if len(replay_memory) == REPLAY_MEMORY_SIZE:
             replay_memory.pop()
@@ -315,9 +315,7 @@ if RETRAIN:
 
             target_network_updates_counter += 1
             if target_network_updates_counter % SAVE_NETWORK_FREQ == 0:
-                q_approximator.save_weights("checkpoints/weights" + str(target_network_updates_counter) + ".hdf5")
-
-    q_approximator.save_weights("q_approx_new.hdf5")
+                q_approximator.save_weights("checkpoints/SpaceInvaders" + str(target_network_updates_counter) + ".hdf5")
 else:
     q_approximator.load_weights("checkpoints/weights225.hdf5")
 

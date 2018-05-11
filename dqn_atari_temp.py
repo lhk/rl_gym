@@ -2,22 +2,31 @@
 
 import random
 
+random.seed(0)
+
 import gym
 import keras
 import keras.backend as K
+import lycon
 import numpy as np
-import skimage.color
-import skimage.transform
 import tensorflow as tf
-from drawnow import drawnow, figure
-from keras.layers import Conv2D, Flatten, Input, Multiply
+from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
 from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
 
-from visualization_helpers import *
+from tqdm import tqdm
 
-# check wether tensorflow really runs on gpu
+# a queue for past observations
+from collections import deque
+
+# force tensorflow to run on cpu
+# do this if you want to evaluate trained networks, without interrupting
+# an ongoing training process
+# import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+# use this to influence the tensorflow behaviour
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 # config.log_device_placement=True
@@ -27,98 +36,88 @@ K.set_session(sess)
 
 from loss_functions import huber_loss
 
-# matplotlib.use('Qt5Agg')
+# only a subset of matplotlib backends supports forwarding over X11
+# this Qt5Agg is compatible with remote debugging
+# you can ignore the setting
+import matplotlib
 
+matplotlib.use('Qt5Agg')
+
+# this is all that's needed to set up the openai gym
 env = gym.make('Breakout-v4')
 env.reset()
 
-# a network to predict q values for every action
-num_actions = env.action_space.n
-frame_size = (84, 84)
-input_shape = (*frame_size, 4)
+# parameters for the training setup
+# the parameters exposed here are taken from the deepmind paper
+# but their values are changed
+# do not assume that this is an optimal setup
 
-random.seed(0)
+RETRAIN = False
 
+# parameters for the structure of the neural network
+NUM_ACTIONS = env.action_space.n
+FRAME_SIZE = (84, 84)
+INPUT_SHAPE = (*FRAME_SIZE, 4)
+BATCH_SIZE = 32
+
+# parameters for the reinforcement process
+GAMMA = 0.99  # discount factor for future updates
+
+# parameters for the optimizer
+LEARNING_RATE = 0.00025
+RHO = 0.95
+EPSILON = 0.01
+
+# parameters for the training
+TOTAL_INTERACTIONS = int(9e6)  # after this many interactions, the training stops
+TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
+
+TARGET_NETWORK_UPDATE_FREQ = 1.5e4  # update the target network every X training steps
+SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
+
+# parameters for interacting with the environment
+INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
+FINAL_EXPLORATION = 0.1  # final chance
+FINAL_EXPLORATION_FRAME = TOTAL_INTERACTIONS//2  # frame at which final value is reached
+EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
+
+REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
+
+# parameters for the memory
+REPLAY_MEMORY_SIZE = int(1e6)
+REPLAY_START_SIZE = int(5e4)
+
+# variables, these are not meant to be edited by the user
+# they are used to keep track of various properties of the training setup
+exploration = INITIAL_EXPLORATION  # chance of sampling a random action
+
+number_recorded_replays = 0 # index in the replay memory arrays
+
+network_updates_counter = 0  # number of times the network has been updated
+target_network_updates_counter = 0  # number of times the target has been updated
+last_action = None  # action chosen at the last step
+repeat_action_counter = 0  # number of times this action has been repeated
+
+
+# replay memory as memory mapped array
+from tempfile import mkstemp
+from_state_memory = np.memmap(mkstemp(dir="memory_maps"), dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+to_state_memory = np.memmap(mkstemp(dir="memory_maps"), dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+action_memory = np.memmap(mkstemp(dir="memory_maps"), dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+reward_memory = np.memmap(mkstemp(dir="memory_maps"), dtype=np.float32, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+terminal_memory = np.memmap(mkstemp(dir="memory_maps"), dtype=np.bool, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+
+
+# helper methods
 
 def preprocess_frame(frame):
-    grayscale = skimage.color.rgb2gray(frame)
-    downsampled = skimage.transform.resize(grayscale, frame_size)
-    casted = (downsampled * 255).astype(np.uint8)
-    return casted
-
-
-def preprocess_state(state):
-    return state / 255.
-
-
-def create_model():
-    input_layer = Input(input_shape)
-
-    conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(input_layer)
-    conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
-
-    conv_flattened = Flatten()(conv)
-
-    hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-    output_layer = keras.layers.Dense(num_actions)(hidden)
-
-    mask_layer = Input((num_actions,))
-
-    output_masked = Multiply()([output_layer, mask_layer])
-    return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
-
-
-# parameters, taken from the paper
-
-batch_size = 32
-
-learning_rate = 0.00025
-rho = 0.95
-epsilon = 0.01
-
-train_skips = 2
-network_updates = 0
-target_network_update_freq = 1e4
-
-noop_max = 10
-noop_counter = 0
-
-replay_memory_size = int(3e5)
-replay_start_size = int(5e4)
-
-total_interactions = int(3e6)
-
-initial_exploration = 1.0
-final_exploration = 0.1
-final_exploration_frame = int(total_interactions//2)
-
-repeat_action = 1
-
-# multiplying exploration by this factor brings it down to final_exploration
-# after final_exploration_frame frames
-exploration_step = (initial_exploration - final_exploration) / final_exploration_frame
-exploration = initial_exploration
-
-gamma = 0.99
-
-retrain = True
-
-q_approximator = create_model()
-q_approximator_fixed = create_model()
-
-q_approximator.compile(RMSprop(learning_rate, rho=rho, epsilon=epsilon), loss=huber_loss)
-
-# a queue for past observations
-from collections import deque
-
-replay_memory = deque(maxlen=replay_memory_size)
-
-from tqdm import tqdm
+    downsampled = lycon.resize(frame, width=FRAME_SIZE[0], height=FRAME_SIZE[1],
+                               interpolation=lycon.Interpolation.NEAREST)
+    grayscale = downsampled.mean(axis=-1).astype(np.uint8)
+    return grayscale
 
 
 def interact(state, action):
-    # record environments reaction for the chosen action
     observation, reward, done, _ = env.step(action)
 
     new_frame = preprocess_frame(observation)
@@ -130,21 +129,8 @@ def interact(state, action):
     return new_state, reward, done
 
 
-def interact_multiple(state, action, times):
-    total_reward = 0
-
-    for i in range(times):
-        state, reward, done = interact(state, action)
-        total_reward += reward
-
-        if (done):
-            break
-
-    return state, total_reward, done
-
-
 def get_starting_state():
-    state = np.zeros(input_shape, dtype=np.uint8)
+    state = np.zeros(INPUT_SHAPE, dtype=np.uint8)
     frame = env.reset()
     state[:, :, -1] = preprocess_frame(frame)
 
@@ -152,14 +138,37 @@ def get_starting_state():
 
     # we repeat the action 4 times, since our initial state needs 4 stacked frames
     times = 4
-    state, _, _ = interact_multiple(state, action, times)
+    for i in range(times):
+        state, _, _ = interact(state, action)
 
     return state
 
 
-state = get_starting_state()
+def create_model():
+    input_layer = Input(INPUT_SHAPE)
 
-plot_skips = 10
+    rescaled = Lambda(lambda x: x / 255.)(input_layer)
+    conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
+    conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
+    # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+
+    conv_flattened = Flatten()(conv)
+
+    hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
+    output_layer = keras.layers.Dense(NUM_ACTIONS)(hidden)
+
+    mask_layer = Input((NUM_ACTIONS,))
+
+    output_masked = Multiply()([output_layer, mask_layer])
+    return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
+
+
+q_approximator = create_model()
+q_approximator_fixed = create_model()
+
+q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
+
+state = get_starting_state()
 
 total_rewards = []
 total_durations = []
@@ -169,7 +178,6 @@ total_duration = 0
 
 highest_q_values = []
 highest_q_value = -np.inf
-#figure()
 
 
 def draw_fig():
@@ -182,43 +190,45 @@ def draw_fig():
     plot(total_durations[-50::2])
 
 
-#drawnow(draw_fig)
+from drawnow import drawnow, figure
 
-if retrain:
+PLOT_SKIPS = 10
+figure()
+drawnow(draw_fig)
+
+if RETRAIN:
 
     np.random.seed(0)
     state = get_starting_state()
 
-    for interaction in tqdm(range(total_interactions), smoothing=0.95):
+    for interaction in tqdm(range(TOTAL_INTERACTIONS), smoothing=1):
 
-        # interact with the environment
         # take random or best action
         action = None
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
-            q_values = q_approximator_fixed.predict([preprocess_state(state.reshape(1, *input_shape)),
-                                                     np.ones((1, num_actions))])
+            q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
+                                                     np.ones((1, NUM_ACTIONS))])
             action = q_values.argmax()
             if q_values.max() > highest_q_value:
                 highest_q_value = q_values.max()
 
         # anneal the epsilon
-        if exploration > final_exploration:
-            exploration -= exploration_step
+        if exploration > FINAL_EXPLORATION:
+            exploration -= EXPLORATION_STEP
 
-        # 0 is noop action,
-        # we allow only a limited amount of noop actions
-        # TODO: this is hardcoding for the breakout setup, remove action=1, sample at random
-        if action == 0:
-            noop_counter += 1
+        # we only allow a limited amount of repeated actions
+        if action == last_action:
+            repeat_action_counter += 1
 
-            if noop_counter > noop_max:
-                action = 1
-                noop_counter = 0
+            if repeat_action_counter > REPEAT_ACTION_MAX:
+                action = env.action_space.sample()
+        else:
+            last_action = action
+            repeat_action_counter = 0
 
-        # record environments reaction for the chosen action
-        new_state, reward, done = interact_multiple(state, action, repeat_action)
+        new_state, reward, done = interact(state, action)
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -229,12 +239,19 @@ if retrain:
             reward = - 1
 
         # this is given in the paper, they use only the sign
-        reward = np.sign(reward)
+        #reward = np.sign(reward)
 
-        if len(replay_memory) == replay_memory_size:
-            replay_memory.pop()
+        if(number_recorded_replays>=REPLAY_MEMORY_SIZE):
+            replay_index = np.random.randint(REPLAY_MEMORY_SIZE)
+        else:
+            replay_index = number_recorded_replays
+            number_recorded_replays+=1
 
-        replay_memory.append((state, action, reward, new_state, done))
+        from_state_memory[replay_index] = state
+        to_state_memory[replay_index] = new_state
+        action_memory[replay_index] = action
+        reward_memory[replay_index] = reward
+        terminal_memory[replay_index] = done
 
         total_reward += reward
         total_duration += 1
@@ -255,66 +272,57 @@ if retrain:
             total_duration = 0
             highest_q_value = -np.inf
 
-            #if len(total_durations) % plot_skips == 0:
+            # if len(total_durations) % plot_skips == 0:
             #    drawnow(draw_fig)
 
         # first fill the replay queue, then start training
-        if interaction < replay_start_size:
+        if interaction < REPLAY_START_SIZE:
             continue
 
         # don't train the network at every step
-        if interaction % train_skips != 0:
+        if interaction % TRAIN_SKIPS != 0:
             continue
 
+
         # train the q function approximator
-        batch = random.sample(replay_memory, batch_size)
+        training_indices = np.random.choice(number_recorded_replays, size=BATCH_SIZE, replace=False)
 
-        current_states = [replay[0] for replay in batch]
-        current_states = np.array(current_states)
-
-        # the target is
-        # r + gamma * max Q(s_next)
-        #
-        # we need to get the predictions for the next state
-        next_states = [replay[3] for replay in batch]
-        next_states = np.array(next_states)
+        current_states = from_state_memory[training_indices]
+        next_states = to_state_memory[training_indices]
+        rewards = reward_memory[training_indices]
+        actions = action_memory[training_indices]
+        terminal = terminal_memory[training_indices]
 
         q_predictions = q_approximator_fixed.predict(
-            [preprocess_state(next_states), np.ones((batch_size, num_actions))])
+            [next_states, np.ones((BATCH_SIZE, NUM_ACTIONS))])
         q_max = q_predictions.max(axis=1, keepdims=True)
-
-        rewards = [replay[2] for replay in batch]
-        rewards = np.array(rewards)
-        rewards = rewards.reshape((batch_size, 1))
-
-        dones = [replay[4] for replay in batch]
-        dones = np.array(dones, dtype=np.bool)
-        dones = dones.reshape((batch_size, 1))
 
         # the value is immediate reward and discounted expected future reward
         # by definition, in a terminal state, the future reward is 0
         immediate_rewards = rewards
-        future_rewards = gamma * q_max * (1 - dones)
+        future_rewards = GAMMA * q_max * (1 - dones)
 
         targets = immediate_rewards + future_rewards
 
         actions = [replay[1] for replay in batch]
         actions = np.array(actions)
-        mask = np.zeros((batch_size, num_actions))
-        mask[np.arange(batch_size), actions] = 1
+        mask = np.zeros((BATCH_SIZE, NUM_ACTIONS))
+        mask[np.arange(BATCH_SIZE), actions] = 1
 
         targets = targets * mask
 
-        network_updates += 1
-        res = q_approximator.train_on_batch([preprocess_state(current_states), mask], targets)
+        network_updates_counter += 1
+        res = q_approximator.train_on_batch([current_states, mask], targets)
 
-        if network_updates % target_network_update_freq == 0:
+        if network_updates_counter % TARGET_NETWORK_UPDATE_FREQ == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
-            network_updates = 0
+            network_updates_counter = 0
 
-    q_approximator.save_weights("q_approx.hdf5")
+            target_network_updates_counter += 1
+            if target_network_updates_counter % SAVE_NETWORK_FREQ == 0:
+                q_approximator.save_weights("checkpoints/Breakout" + str(target_network_updates_counter) + ".hdf5")
 else:
-    q_approximator.load_weights("weights/q_approx_checkpoint.hdf5")
+    q_approximator.load_weights("checkpoints/Breakout140.hdf5")
 
 env.reset()
 
@@ -325,20 +333,20 @@ max_episodes = 50
 total_reward = 0
 while True:
     env.render()
-    q_values = q_approximator.predict([preprocess_state(state.reshape((1, *input_shape))), np.ones((1, num_actions))])
+    q_values = q_approximator.predict([state.reshape((1, *INPUT_SHAPE)), np.ones((1, NUM_ACTIONS))])
     action = q_values.argmax()
-    #action = env.action_space.sample()
-    # 0 is noop action,
-    # we allow only a limited amount of noop actions
-    # if action ==0:
-    #    noop_counter += 1
 
-    #    if noop_counter > noop_max:
-    #        while action == 0:
-    #            action = env.action_space.sample()
-    #        noop_counter = 0
+    # we allow only a limited amount of repeated actions
+    if action == last_action:
+        repeat_action_counter += 1
 
-    state, reward, done = interact_multiple(state, action, repeat_action)
+        if repeat_action_counter > REPEAT_ACTION_MAX:
+            action = env.action_space.sample()
+    else:
+        last_action = action
+        repeat_action_counter = 0
+
+    state, reward, done = interact(state, action)
     total_reward += reward
 
     if done:
@@ -349,3 +357,4 @@ while True:
             break
 
 print(total_reward / episodes)
+env.close()
