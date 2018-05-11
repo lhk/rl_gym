@@ -44,7 +44,7 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 # this is all that's needed to set up the openai gym
-env = gym.make('SpaceInvaders-v4')
+env = gym.make('Breakout-v4')
 env.reset()
 
 # parameters for the training setup
@@ -72,31 +72,47 @@ EPSILON = 0.01
 TOTAL_INTERACTIONS = int(9e6)  # after this many interactions, the training stops
 TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
 
-TARGET_NETWORK_UPDATE_FREQ = 1.5e4  # update the target network every X training steps
+TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = TOTAL_INTERACTIONS // 2  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(1e6)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(3e5)
+REPLAY_MEMORY_SIZE = int(1e6)
 REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
 # they are used to keep track of various properties of the training setup
 exploration = INITIAL_EXPLORATION  # chance of sampling a random action
 
+number_recorded_replays = 0
+replay_index = 0 # index in the replay memory arrays
+
 network_updates_counter = 0  # number of times the network has been updated
 target_network_updates_counter = 0  # number of times the target has been updated
 last_action = None  # action chosen at the last step
 repeat_action_counter = 0  # number of times this action has been repeated
 
-replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)  # a buffer for past observations
+
+# replay memory as numpy arrays
+# this makes it possible to store the states on disk as memory mapped arrays
+from tempfile import mkstemp
+from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+
+# these other parts of the memory consume only very little memory and can be kept in ram
+action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.uint8)
+reward_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
+terminal_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
+#action_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+#reward_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.float32, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+#terminal_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.bool, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
 
 
 # helper methods
@@ -230,12 +246,18 @@ if RETRAIN:
             reward = - 1
 
         # this is given in the paper, they use only the sign
-        # reward = np.sign(reward)
+        #reward = np.sign(reward)
 
-        if len(replay_memory) == REPLAY_MEMORY_SIZE:
-            replay_memory.pop()
+        from_state_memory[replay_index] = state
+        to_state_memory[replay_index] = new_state
+        action_memory[replay_index] = action
+        reward_memory[replay_index] = reward
+        terminal_memory[replay_index] = done
 
-        replay_memory.append((state, action, reward, new_state, done))
+        replay_index += 1
+        replay_index %= REPLAY_MEMORY_SIZE
+
+        number_recorded_replays += 1
 
         total_reward += reward
         total_duration += 1
@@ -267,40 +289,28 @@ if RETRAIN:
         if interaction % TRAIN_SKIPS != 0:
             continue
 
+
         # train the q function approximator
-        batch = random.sample(replay_memory, BATCH_SIZE)
+        training_indices = np.random.choice(min(number_recorded_replays, REPLAY_MEMORY_SIZE),
+                                            size=BATCH_SIZE, replace=False)
 
-        current_states = [replay[0] for replay in batch]
-        current_states = np.array(current_states)
-
-        # the target is
-        # r + gamma * max Q(s_next)
-        #
-        # we need to get the predictions for the next state
-        next_states = [replay[3] for replay in batch]
-        next_states = np.array(next_states)
+        current_states = from_state_memory[training_indices]
+        next_states = to_state_memory[training_indices]
+        rewards = reward_memory[training_indices]
+        actions = action_memory[training_indices]
+        terminal = terminal_memory[training_indices]
 
         q_predictions = q_approximator_fixed.predict(
             [next_states, np.ones((BATCH_SIZE, NUM_ACTIONS))])
         q_max = q_predictions.max(axis=1, keepdims=True)
 
-        rewards = [replay[2] for replay in batch]
-        rewards = np.array(rewards)
-        rewards = rewards.reshape((BATCH_SIZE, 1))
-
-        dones = [replay[4] for replay in batch]
-        dones = np.array(dones, dtype=np.bool)
-        dones = dones.reshape((BATCH_SIZE, 1))
-
         # the value is immediate reward and discounted expected future reward
         # by definition, in a terminal state, the future reward is 0
         immediate_rewards = rewards
-        future_rewards = GAMMA * q_max * (1 - dones)
+        future_rewards = GAMMA * q_max * (1 - terminal)
 
         targets = immediate_rewards + future_rewards
 
-        actions = [replay[1] for replay in batch]
-        actions = np.array(actions)
         mask = np.zeros((BATCH_SIZE, NUM_ACTIONS))
         mask[np.arange(BATCH_SIZE), actions] = 1
 
@@ -315,9 +325,9 @@ if RETRAIN:
 
             target_network_updates_counter += 1
             if target_network_updates_counter % SAVE_NETWORK_FREQ == 0:
-                q_approximator.save_weights("checkpoints/SpaceInvaders" + str(target_network_updates_counter) + ".hdf5")
+                q_approximator.save_weights("checkpoints/Breakout" + str(target_network_updates_counter) + ".hdf5")
 else:
-    q_approximator.load_weights("checkpoints/weights225.hdf5")
+    q_approximator.load_weights("checkpoints/Breakout140.hdf5")
 
 env.reset()
 
