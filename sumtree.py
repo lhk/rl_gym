@@ -6,7 +6,8 @@ class SumTree:
     def __init__(self, size):
         self.size = size
 
-        assert np.log2(size) % 2 == 0, "expecting a power of 2 for the leaf count"
+
+        assert np.log2(size) - np.floor(np.log2(size)) == 0, "expecting a power of 2 for the leaf count"
 
         self._length = 2 * size - 1
         self._offset = size - 1
@@ -54,12 +55,43 @@ class SumTree:
 
         return np.array(samples)
 
-tree = SumTree(4)
-tree.push(0, 1)
-tree.push(1, 2)
-tree.push(2, 3)
-tree.push(3, 4)
 
-res = tree.sample(500)
+from unittest import TestCase
+
+class TestSumTree(TestCase):
+
+    def testInserting(self):
+
+        tree = SumTree(2)
+        tree.push(0, 1)
+        tree.push(1, 2)
+
+        self.assertEqual(tree._data[0], 3)
+
+    def testUpdating(self):
+
+        tree = SumTree(4)
+        tree.push(0, 1)
+        tree.push(1, 2)
+        tree.push(2, 3)
+        tree.push(3, 4)
+        tree.push(0, 5)
+
+        self.assertEqual(tree._data[0], 2+3+4+5)
+
+    def testSampling(self):
+
+        tree = SumTree(4)
+        tree.push(0, 1)
+        tree.push(1, 2)
+        tree.push(2, 3)
+        tree.push(3, 4)
+
+        num_samples = int(1e5)
+        res = tree.sample(num_samples)
+
+        self.assertTrue(np.abs(np.sum(res==3)/num_samples-0.4) < 0.1)
+        self.assertTrue(np.abs(np.sum(res==2)/num_samples-0.3) < 0.1)
+        self.assertTrue(np.abs(np.sum(res==1)/num_samples-0.2) < 0.1)
 
 print("stop mark")
