@@ -68,6 +68,15 @@ class TestSumTree(TestCase):
 
         self.assertEqual(tree._data[0], 3)
 
+    def testRemoving(self):
+
+        tree = SumTree(2)
+        tree.push(0, 1)
+        tree.push(1, 2)
+        tree.pop(0)
+
+        self.assertEqual(tree._data[0], 2)
+
     def testUpdating(self):
 
         tree = SumTree(4)
