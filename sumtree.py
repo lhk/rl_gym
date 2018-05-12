@@ -2,10 +2,10 @@
 
 import numpy as np
 
+
 class SumTree:
     def __init__(self, size):
         self.size = size
-
 
         assert np.log2(size) - np.floor(np.log2(size)) == 0, "expecting a power of 2 for the leaf count"
 
@@ -39,9 +39,9 @@ class SumTree:
             rand *= self._data[0]
 
             idx = 0
-            while(idx < self._offset):
-                left_idx = 2*idx + 1
-                right_idx = 2*idx + 2
+            while (idx < self._offset):
+                left_idx = 2 * idx + 1
+                right_idx = 2 * idx + 2
 
                 left_val = self._data[left_idx]
 
@@ -49,19 +49,19 @@ class SumTree:
                     idx = left_idx
                 else:
                     idx = right_idx
-                    rand-= left_val
+                    rand -= left_val
 
-            samples.append(idx-self._offset)
+            samples.append(idx - self._offset)
 
         return np.array(samples)
 
 
 from unittest import TestCase
 
+
 class TestSumTree(TestCase):
 
     def testInserting(self):
-
         tree = SumTree(2)
         tree.push(0, 1)
         tree.push(1, 2)
@@ -69,7 +69,6 @@ class TestSumTree(TestCase):
         self.assertEqual(tree._data[0], 3)
 
     def testRemoving(self):
-
         tree = SumTree(2)
         tree.push(0, 1)
         tree.push(1, 2)
@@ -78,7 +77,6 @@ class TestSumTree(TestCase):
         self.assertEqual(tree._data[0], 2)
 
     def testUpdating(self):
-
         tree = SumTree(4)
         tree.push(0, 1)
         tree.push(1, 2)
@@ -86,10 +84,9 @@ class TestSumTree(TestCase):
         tree.push(3, 4)
         tree.push(0, 5)
 
-        self.assertEqual(tree._data[0], 2+3+4+5)
+        self.assertEqual(tree._data[0], 2 + 3 + 4 + 5)
 
     def testSampling(self):
-
         tree = SumTree(4)
         tree.push(0, 1)
         tree.push(1, 2)
@@ -99,8 +96,9 @@ class TestSumTree(TestCase):
         num_samples = int(1e5)
         res = tree.sample(num_samples)
 
-        self.assertTrue(np.abs(np.sum(res==3)/num_samples-0.4) < 0.1)
-        self.assertTrue(np.abs(np.sum(res==2)/num_samples-0.3) < 0.1)
-        self.assertTrue(np.abs(np.sum(res==1)/num_samples-0.2) < 0.1)
+        self.assertTrue(np.abs(np.sum(res == 3) / num_samples - 0.4) < 0.1)
+        self.assertTrue(np.abs(np.sum(res == 2) / num_samples - 0.3) < 0.1)
+        self.assertTrue(np.abs(np.sum(res == 1) / num_samples - 0.2) < 0.1)
+
 
 print("stop mark")
