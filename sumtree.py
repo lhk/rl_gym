@@ -1,31 +1,36 @@
 import numpy as np
 
-items = 4  # 2^10 ~= 10^3
+class SumTree:
+    def __init__(self, size):
+        self.size = size
 
-_length = 2*items - 1
-_offset = items -1
+        assert np.log2(size) % 2 == 0, "expecting a power of 2 for the leaf count"
 
-# to store the errors
-data = np.zeros((_length, 1))
+        self._length = 2 * size - 1
+        self._offset = size - 1
 
+        self._data = np.zeros((self._length, 1))
 
-# update or insert a new element
-def update(idx, val):
-    arr_idx = _offset + idx
+    def pop(self, idx):
+        self.push(idx, 0)
 
-    delta = val - data[arr_idx]
-    data[arr_idx] = val
+    def push(self, idx, val):
+        arr_idx = self._offset + idx
 
-    parent_idx = (arr_idx - 1) // 2
-    arr_idx = parent_idx
-    data[arr_idx] -= delta
+        delta = val - self.data[arr_idx]
+        self.data[arr_idx] = val
 
-    while (parent_idx != 0):
         parent_idx = (arr_idx - 1) // 2
         arr_idx = parent_idx
-        data[arr_idx] += delta
+        self.data[arr_idx] += delta
 
-update(2, 1)
-update(1, 3)
-update(3, 1)
-update(4, 1)
+        while (parent_idx != 0):
+            parent_idx = (arr_idx - 1) // 2
+            arr_idx = parent_idx
+            self.data[arr_idx] += delta
+
+    def sample(self, n):
+        rand = np.random.rand(n)
+        rand*= self._data[0]
+
+        print("stop here")
