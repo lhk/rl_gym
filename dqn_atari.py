@@ -23,7 +23,7 @@ from tqdm import tqdm
 import os
 import shutil
 if os.path.exists(os.getcwd()+"/memory_maps/"):
-    shutil.rmtree("memory_maps/")
+    shutil.rmtree(os.getcwd()+"/memory_maps/")
 os.mkdir(os.getcwd()+"/memory_maps/")
 
 if not os.path.exists(os.getcwd()+"/checkpoints/"):
