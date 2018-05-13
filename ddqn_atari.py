@@ -22,12 +22,13 @@ from tqdm import tqdm
 # and create dirs for checkpoints (if not present)
 import os
 import shutil
-if os.path.exists(os.getcwd()+"/memory_maps/"):
-    shutil.rmtree(os.getcwd()+"/memory_maps/")
-os.mkdir(os.getcwd()+"/memory_maps/")
 
-if not os.path.exists(os.getcwd()+"/checkpoints/"):
-    os.mkdir(os.getcwd()+"/checkpoints/")
+if os.path.exists(os.getcwd() + "/memory_maps/"):
+    shutil.rmtree(os.getcwd() + "/memory_maps/")
+os.mkdir(os.getcwd() + "/memory_maps/")
+
+if not os.path.exists(os.getcwd() + "/checkpoints/"):
+    os.mkdir(os.getcwd() + "/checkpoints/")
 
 # force tensorflow to run on cpu
 # do this if you want to evaluate trained networks, without interrupting
@@ -37,7 +38,7 @@ if not os.path.exists(os.getcwd()+"/checkpoints/"):
 
 # use this to influence the tensorflow behaviour
 config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+# config.gpu_options.allow_growth = True
 # config.log_device_placement=True
 
 sess = tf.Session(config=config)
@@ -93,31 +94,32 @@ EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION
 REPEAT_ACTION_MAX = 20  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = 2**18 # about a million, 2^10 ~ 10^3
-REPLAY_START_SIZE = int(5e1)
+REPLAY_MEMORY_SIZE = 2 ** 20  # 2^10 ~ 10^3
+REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
 # they are used to keep track of various properties of the training setup
 exploration = INITIAL_EXPLORATION  # chance of sampling a random action
 
 number_recorded_replays = 0
-replay_index = 0 # index in the replay memory arrays
+replay_index = 0  # index in the replay memory arrays
 
 network_updates_counter = 0  # number of times the network has been updated
 target_network_updates_counter = 0  # number of times the target has been updated
 last_action = None  # action chosen at the last step
 repeat_action_counter = 0  # number of times this action has been repeated
 
-
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
-# from tempfile import mkstemp
+from tempfile import mkstemp
 
-#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                              shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                            shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 
-from_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
-to_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+# from_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+# to_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
 
 # these other parts of the memory consume only very little memory and can be kept in ram
 action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
@@ -125,6 +127,7 @@ reward_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
 terminal_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
 
 error_sumtree = SumTree(REPLAY_MEMORY_SIZE)
+
 
 # helper methods
 def preprocess_frame(frame):
@@ -167,11 +170,11 @@ def create_model():
     rescaled = Lambda(lambda x: x / 255.)(input_layer)
     conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+    # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
     conv_flattened = Flatten()(conv)
 
-    hidden = keras.layers.Dense(512, activation='relu')(conv_flattened)
+    hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
     output_layer = keras.layers.Dense(NUM_ACTIONS)(hidden)
 
     mask_layer = Input((NUM_ACTIONS,))
@@ -196,7 +199,6 @@ total_duration = 0
 highest_q_values = []
 highest_q_value = -np.inf
 
-
 if RETRAIN:
 
     np.random.seed(0)
@@ -205,7 +207,7 @@ if RETRAIN:
     for interaction in tqdm(range(TOTAL_INTERACTIONS), smoothing=1):
 
         q_values = q_approximator.predict([state.reshape(1, *INPUT_SHAPE),
-                                                 np.ones((1, NUM_ACTIONS))])
+                                           np.ones((1, NUM_ACTIONS))])
 
         # take random or best action
         action = None
@@ -250,7 +252,7 @@ if RETRAIN:
 
         new_q_value = new_q_values_fixed[0, new_q_values.argmax(axis=-1)]
 
-        target = reward + GAMMA*new_q_value * (1-done)
+        target = reward + GAMMA * new_q_value * (1 - done)
         predicted = q_values[0, action]
         error = np.abs(target - predicted)
 
@@ -299,7 +301,6 @@ if RETRAIN:
         # don't train the network at every step
         if interaction % TRAIN_SKIPS != 0:
             continue
-
 
         # train the q function approximator
         training_indices = error_sumtree.sample(BATCH_SIZE)
