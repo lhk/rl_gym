@@ -81,7 +81,7 @@ FINAL_EXPLORATION = 0.1  # final chance
 FINAL_EXPLORATION_FRAME = int(1e6)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
-REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
+REPEAT_ACTION_MAX = 20  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
 REPLAY_MEMORY_SIZE = 2**20 # about a million, 2^10 ~ 10^3
@@ -113,7 +113,7 @@ from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mod
 to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 
 # these other parts of the memory consume only very little memory and can be kept in ram
-action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.uint8)
+action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
 reward_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
 terminal_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
 
@@ -190,22 +190,6 @@ highest_q_values = []
 highest_q_value = -np.inf
 
 
-def draw_fig():
-    subplot(2, 1, 1)
-    title("rewards")
-    plot(total_rewards[-50::2])
-
-    subplot(2, 1, 2)
-    title("durations")
-    plot(total_durations[-50::2])
-
-
-from drawnow import drawnow, figure
-
-PLOT_SKIPS = 10
-figure()
-drawnow(draw_fig)
-
 if RETRAIN:
 
     np.random.seed(0)
@@ -241,10 +225,6 @@ if RETRAIN:
 
         new_state, reward, done = interact(state, action)
 
-        new_q_values = q_approximator_fixed.predict(
-            [new_state, np.ones((BATCH_SIZE, NUM_ACTIONS))])
-        new_q_value = new_q_values[0, action]
-
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
         # the rewards are clipped to [-1, 1] according to the paper
@@ -253,15 +233,22 @@ if RETRAIN:
         if done:
             reward = - 1
 
-        target = reward + new_q_value * (1-done)
-        predicted = q_values[action]
+        # this is given in the paper, they use only the sign
+        reward = np.sign(reward)
+
+        new_q_values_fixed = q_approximator_fixed.predict(
+            [new_state.reshape(1, *INPUT_SHAPE), np.ones((1, NUM_ACTIONS))])
+        new_q_values = q_approximator_fixed.predict(
+            [new_state.reshape(1, *INPUT_SHAPE), np.ones((1, NUM_ACTIONS))])
+
+        new_q_value = new_q_values_fixed[0, new_q_values.argmax(axis=-1)]
+
+        target = reward + GAMMA*new_q_value * (1-done)
+        predicted = q_values[0, action]
         error = np.abs(target - predicted)
 
         smoothing = 0.01
         weighted_error = np.sqrt(error + smoothing)
-
-        # this is given in the paper, they use only the sign
-        reward = np.sign(reward)
 
         from_state_memory[replay_index] = state
         to_state_memory[replay_index] = new_state
@@ -321,7 +308,9 @@ if RETRAIN:
             [next_states, np.ones((BATCH_SIZE, NUM_ACTIONS))])
         q_predictions = q_approximator.predict(
             [next_states, np.ones((BATCH_SIZE, NUM_ACTIONS))])
-        q_max = q_fixed_predictions[q_predictions.argmax(axis=1, keepdims=True)]
+        predicted_actions = q_predictions.argmax(axis=1)
+        q_max = q_fixed_predictions[np.arange(BATCH_SIZE), predicted_actions]
+        q_max = q_max.reshape((-1, 1))
 
         # the value is immediate reward and discounted expected future reward
         # by definition, in a terminal state, the future reward is 0
