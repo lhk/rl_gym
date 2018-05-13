@@ -23,7 +23,7 @@ from tqdm import tqdm
 import os
 import shutil
 if os.path.exists(os.getcwd()+"/memory_maps/"):
-    shutil.rmtree("memory_maps/")
+    shutil.rmtree(os.getcwd()+"/memory_maps/")
 os.mkdir(os.getcwd()+"/memory_maps/")
 
 if not os.path.exists(os.getcwd()+"/checkpoints/"):
@@ -79,7 +79,7 @@ EPSILON = 0.01
 
 # parameters for the training
 TOTAL_INTERACTIONS = int(9e6)  # after this many interactions, the training stops
-TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
+TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
 
 TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
@@ -93,7 +93,7 @@ EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION
 REPEAT_ACTION_MAX = 20  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = 2**20 # about a million, 2^10 ~ 10^3
+REPLAY_MEMORY_SIZE = 2**18 # about a million, 2^10 ~ 10^3
 REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
@@ -111,10 +111,13 @@ repeat_action_counter = 0  # number of times this action has been repeated
 
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
-from tempfile import mkstemp
+# from tempfile import mkstemp
 
-from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+
+from_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+to_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
 
 # these other parts of the memory consume only very little memory and can be kept in ram
 action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
@@ -164,11 +167,11 @@ def create_model():
     rescaled = Lambda(lambda x: x / 255.)(input_layer)
     conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+    conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
     conv_flattened = Flatten()(conv)
 
-    hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
+    hidden = keras.layers.Dense(512, activation='relu')(conv_flattened)
     output_layer = keras.layers.Dense(NUM_ACTIONS)(hidden)
 
     mask_layer = Input((NUM_ACTIONS,))
@@ -242,7 +245,7 @@ if RETRAIN:
 
         new_q_values_fixed = q_approximator_fixed.predict(
             [new_state.reshape(1, *INPUT_SHAPE), np.ones((1, NUM_ACTIONS))])
-        new_q_values = q_approximator_fixed.predict(
+        new_q_values = q_approximator.predict(
             [new_state.reshape(1, *INPUT_SHAPE), np.ones((1, NUM_ACTIONS))])
 
         new_q_value = new_q_values_fixed[0, new_q_values.argmax(axis=-1)]
