@@ -94,7 +94,7 @@ REPEAT_ACTION_MAX = 20  # maximum number of repeated actions before sampling ran
 
 # parameters for the memory
 REPLAY_MEMORY_SIZE = 2**18 # about a million, 2^10 ~ 10^3
-REPLAY_START_SIZE = int(5e4)
+REPLAY_START_SIZE = int(5e1)
 
 # variables, these are not meant to be edited by the user
 # they are used to keep track of various properties of the training setup
@@ -343,7 +343,7 @@ if RETRAIN:
         errors = np.abs(target - predicted)
 
         smoothing = 0.01
-        weighted_errors = np.sqrt(error + smoothing)
+        weighted_errors = np.sqrt(errors + smoothing)
 
         for i in range(BATCH_SIZE):
             error_sumtree.push(training_indices[i], weighted_errors[i])
