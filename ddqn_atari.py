@@ -17,8 +17,17 @@ from pylab import subplot, plot, title
 from sumtree import SumTree
 from tqdm import tqdm
 
-# a queue for past observations
-from collections import deque
+# directory management:
+# delete all previous memory maps
+# and create dirs for checkpoints (if not present)
+import os
+import shutil
+if os.path.exists(os.getcwd()+"/memory_maps/"):
+    shutil.rmtree("memory_maps/")
+os.mkdir(os.getcwd()+"/memory_maps/")
+
+if not os.path.exists(os.getcwd()+"/checkpoints/"):
+    os.mkdir(os.getcwd()+"/checkpoints/")
 
 # force tensorflow to run on cpu
 # do this if you want to evaluate trained networks, without interrupting
@@ -103,11 +112,6 @@ repeat_action_counter = 0  # number of times this action has been repeated
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
 from tempfile import mkstemp
-import os
-import shutil
-if os.path.exists(os.getcwd()+"/memory_maps/"):
-    shutil.rmtree("memory_maps/")
-os.mkdir(os.getcwd()+"/memory_maps/")
 
 from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
