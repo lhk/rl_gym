@@ -103,6 +103,12 @@ repeat_action_counter = 0  # number of times this action has been repeated
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
 from tempfile import mkstemp
+import os
+import shutil
+if os.path.exists(os.getcwd()+"/memory_maps/"):
+    shutil.rmtree("memory_maps/")
+os.mkdir(os.getcwd()+"/memory_maps/")
+
 from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 
@@ -170,7 +176,7 @@ def create_model():
 q_approximator = create_model()
 q_approximator_fixed = create_model()
 
-q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
+q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss="mse")
 
 state = get_starting_state()
 
@@ -255,7 +261,7 @@ if RETRAIN:
         weighted_error = np.sqrt(error + smoothing)
 
         # this is given in the paper, they use only the sign
-        #reward = np.sign(reward)
+        reward = np.sign(reward)
 
         from_state_memory[replay_index] = state
         to_state_memory[replay_index] = new_state
