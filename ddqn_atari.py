@@ -204,7 +204,7 @@ if RETRAIN:
 
     for interaction in tqdm(range(TOTAL_INTERACTIONS), smoothing=1):
 
-        q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
+        q_values = q_approximator.predict([state.reshape(1, *INPUT_SHAPE),
                                                  np.ones((1, NUM_ACTIONS))])
 
         # take random or best action
@@ -333,6 +333,20 @@ if RETRAIN:
 
         network_updates_counter += 1
         res = q_approximator.train_on_batch([current_states, mask], targets)
+
+        # now we forward the current state again,
+        # to update the error
+        updated_q_values = q_approximator.predict([current_states, mask])
+        predicted = updated_q_values[np.arange(BATCH_SIZE), actions]
+        target = targets[np.arange(BATCH_SIZE), actions]
+
+        errors = np.abs(target - predicted)
+
+        smoothing = 0.01
+        weighted_errors = np.sqrt(error + smoothing)
+
+        for i in range(BATCH_SIZE):
+            error_sumtree.push(training_indices[i], weighted_errors[i])
 
         if network_updates_counter % TARGET_NETWORK_UPDATE_FREQ == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
