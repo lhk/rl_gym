@@ -10,6 +10,8 @@ import keras.backend as K
 import lycon
 import numpy as np
 
+np.random.seed(0)
+
 import tensorflow as tf
 from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
@@ -17,21 +19,10 @@ from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
 
 from tqdm import tqdm
-
-# directory management:
-# delete all previous memory maps
-# and create dirs for checkpoints (if not present)
 import os
-import shutil
-if os.path.exists(os.getcwd()+"/memory_maps/"):
-    shutil.rmtree(os.getcwd()+"/memory_maps/")
-os.mkdir(os.getcwd()+"/memory_maps/")
 
 if not os.path.exists(os.getcwd()+"/checkpoints/"):
     os.mkdir(os.getcwd()+"/checkpoints/")
-
-# a queue for past observations
-from collections import deque
 
 # force tensorflow to run on cpu
 # do this if you want to evaluate trained networks, without interrupting
@@ -112,33 +103,7 @@ target_network_updates_counter = 0  # number of times the target has been update
 last_action = None  # action chosen at the last step
 repeat_action_counter = 0  # number of times this action has been repeated
 
-
-# replay memory as numpy arrays
-# this makes it possible to store the states on disk as memory mapped arrays
-from tempfile import mkstemp
-
-#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-
-from_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
-to_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
-
-# these other parts of the memory consume only very little memory and can be kept in ram
-action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
-reward_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
-terminal_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
-#action_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
-#reward_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.float32, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
-#terminal_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.bool, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
-
-
-# helper methods
-
-def preprocess_frame(frame):
-    downsampled = lycon.resize(frame, width=FRAME_SIZE[0], height=FRAME_SIZE[1],
-                               interpolation=lycon.Interpolation.NEAREST)
-    grayscale = downsampled.mean(axis=-1).astype(np.uint8)
-    return grayscale
+clas
 
 
 def interact(state, action):
@@ -166,31 +131,6 @@ def get_starting_state():
         state, _, _ = interact(state, action)
 
     return state
-
-
-def create_model():
-    input_layer = Input(INPUT_SHAPE)
-
-    rescaled = Lambda(lambda x: x / 255.)(input_layer)
-    conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
-    conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
-
-    conv_flattened = Flatten()(conv)
-
-    hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-    output_layer = keras.layers.Dense(NUM_ACTIONS)(hidden)
-
-    mask_layer = Input((NUM_ACTIONS,))
-
-    output_masked = Multiply()([output_layer, mask_layer])
-    return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
-
-
-q_approximator = create_model()
-q_approximator_fixed = create_model()
-
-q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
 
 state = get_starting_state()
 
