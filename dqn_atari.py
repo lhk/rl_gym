@@ -9,6 +9,9 @@ import keras
 import keras.backend as K
 import lycon
 import numpy as np
+
+np.random.seed(0)
+
 import tensorflow as tf
 from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
@@ -81,8 +84,8 @@ RHO = 0.95
 EPSILON = 0.01
 
 # parameters for the training
-TOTAL_INTERACTIONS = int(9e6)  # after this many interactions, the training stops
-TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
+TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops
+TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
 
 TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
@@ -90,14 +93,14 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(1e6)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS//2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(1e6)
-REPLAY_START_SIZE = int(5e4)
+REPLAY_MEMORY_SIZE = int(3e5)
+REPLAY_START_SIZE = int(1e3)
 
 # variables, these are not meant to be edited by the user
 # they are used to keep track of various properties of the training setup
@@ -116,8 +119,11 @@ repeat_action_counter = 0  # number of times this action has been repeated
 # this makes it possible to store the states on disk as memory mapped arrays
 from tempfile import mkstemp
 
-from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+
+from_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+to_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
 
 # these other parts of the memory consume only very little memory and can be kept in ram
 action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
@@ -219,6 +225,8 @@ drawnow(draw_fig)
 if RETRAIN:
 
     np.random.seed(0)
+    env.seed(0)
+
     state = get_starting_state()
 
     for interaction in tqdm(range(TOTAL_INTERACTIONS), smoothing=1):
