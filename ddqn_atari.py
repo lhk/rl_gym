@@ -54,7 +54,7 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 # this is all that's needed to set up the openai gym
-env = gym.make('Breakout-v4')
+env = gym.make('SpaceInvaders-v4')
 env.reset()
 
 # parameters for the training setup
@@ -94,7 +94,7 @@ EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION
 REPEAT_ACTION_MAX = 20  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = 2 ** 20  # 2^10 ~ 10^3
+REPLAY_MEMORY_SIZE = 2 ** 18  # 2^10 ~ 10^3
 REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
@@ -113,13 +113,13 @@ repeat_action_counter = 0  # number of times this action has been repeated
 # this makes it possible to store the states on disk as memory mapped arrays
 from tempfile import mkstemp
 
-from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                              shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                            shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+#                              shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+#                            shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 
-# from_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
-# to_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+from_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+to_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
 
 # these other parts of the memory consume only very little memory and can be kept in ram
 action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
@@ -209,14 +209,15 @@ if RETRAIN:
         q_values = q_approximator.predict([state.reshape(1, *INPUT_SHAPE),
                                            np.ones((1, NUM_ACTIONS))])
 
+        if q_values.max() > highest_q_value:
+            highest_q_value = q_values.max()
+
         # take random or best action
         action = None
         if random.random() < exploration:
             action = env.action_space.sample()
         else:
             action = q_values.argmax()
-            if q_values.max() > highest_q_value:
-                highest_q_value = q_values.max()
 
         # anneal the epsilon
         if exploration > FINAL_EXPLORATION:
@@ -258,14 +259,13 @@ if RETRAIN:
 
         smoothing = 0.01
         weighted_error = np.sqrt(error + smoothing)
+        error_sumtree.push(replay_index, weighted_error)
 
         from_state_memory[replay_index] = state
         to_state_memory[replay_index] = new_state
         action_memory[replay_index] = action
         reward_memory[replay_index] = reward
         terminal_memory[replay_index] = done
-
-        error_sumtree.push(replay_index, weighted_error)
 
         replay_index += 1
         replay_index %= REPLAY_MEMORY_SIZE
@@ -275,6 +275,8 @@ if RETRAIN:
         total_reward += reward
         total_duration += 1
 
+        # if an episode is done, we have to reset the environment
+        # in that case, we also print debug information
         if not done:
             state = new_state
         else:
@@ -302,7 +304,7 @@ if RETRAIN:
         if interaction % TRAIN_SKIPS != 0:
             continue
 
-        # train the q function approximator
+        # do a weighted sampling over the experience replay
         training_indices = error_sumtree.sample(BATCH_SIZE)
 
         current_states = from_state_memory[training_indices]
@@ -311,7 +313,7 @@ if RETRAIN:
         actions = action_memory[training_indices]
         terminal = terminal_memory[training_indices]
 
-        # use double q learning
+        # get the q values at the next state, according to double q learning
         q_fixed_predictions = q_approximator_fixed.predict(
             [next_states, np.ones((BATCH_SIZE, NUM_ACTIONS))])
         q_predictions = q_approximator.predict(
