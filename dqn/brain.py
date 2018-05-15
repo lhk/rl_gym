@@ -15,6 +15,14 @@ import dqn.params as params
 class Brain():
     def __init__(self, loss="mse"):
 
+        # use this to influence the tensorflow behaviour
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        # config.log_device_placement=True
+
+        sess = tf.Session(config=config)
+        K.set_session(sess)
+
         # set up two models
         self.model = self.__create_model()
         self.target_model = self.__create_model()
