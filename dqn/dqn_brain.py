@@ -1,4 +1,5 @@
 import numpy as np
+
 np.random.seed(0)
 
 import tensorflow as tf
@@ -9,6 +10,7 @@ from keras.optimizers import RMSprop
 import keras.backend as K
 
 import dqn.params as params
+
 
 class Brain():
     def __init__(self, loss="mse"):
@@ -66,7 +68,7 @@ class Brain():
         #
         # we need to get the predictions for the next state
         next_q = self.predict_q_target(to_states)
-        q_max = next_q.max(axis = 1, keepdims=True)
+        q_max = next_q.max(axis=1, keepdims=True)
 
         immediate_rewards = rewards
         future_rewards = params.GAMMA * q_max * (1 - terminals)
