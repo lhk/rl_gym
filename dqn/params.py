@@ -5,10 +5,14 @@
 
 RETRAIN = True
 
+# params for the gym
+ENV_NAME = "Breakout-v4"
+
 # parameters for the structure of the neural network
 NUM_ACTIONS = 4
 FRAME_SIZE = (84, 84)
-INPUT_SHAPE = (*FRAME_SIZE, 4)
+FRAME_STACK = 4 # number of consecutive frames to stack as input for the network
+INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
 BATCH_SIZE = 32
 
 # parameters for the reinforcement process
