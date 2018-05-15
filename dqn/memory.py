@@ -6,32 +6,29 @@ import numpy as np
 import os
 import shutil
 from tempfile import mkstemp
+import dqn.params as params
 
 
 class Memory():
 
-    def __init__(self, REPLAY_MEMORY_SIZE, INPUT_SHAPE, MEMORY_MAPPED = False):
+    def __init__(self):
 
         # creating a new memory, remove existing memory maps
         if os.path.exists(os.getcwd() + "/memory_maps/"):
             shutil.rmtree(os.getcwd() + "/memory_maps/")
         os.mkdir(os.getcwd() + "/memory_maps/")
 
-        self.REPLAY_MEMORY_SIZE = REPLAY_MEMORY_SIZE
-        self.INPUT_SHAPE = INPUT_SHAPE
-        self.MEMORY_MAPPED = MEMORY_MAPPED
-
-        if self.MEMORY_MAPPED:
-            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+        if params.MEMORY_MAPPED:
+            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
+            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
         else:
-            self.from_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
-            self.to_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
+            self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
+            self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
 
         # these other parts of the memory consume only very little memory and can be kept in ram
-        self.action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
-        self.reward_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
-        self.terminal_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
+        self.action_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE), dtype=np.uint8)
+        self.reward_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
+        self.terminal_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
 
         self.replay_index = 0
         self.number_writes = 0
@@ -47,7 +44,7 @@ class Memory():
 
         # this acts like a ringbuffer
         self.replay_index += 1
-        self.replay_index %= self.replay_index
+        self.replay_index %= params.REPLAY_MEMORY_SIZE
 
         self.number_writes += 1
 
@@ -66,7 +63,7 @@ class Memory():
         return from_states, to_states, actions, rewards, terminal
 
     def __len__(self):
-        return min(self.number_writes, self.REPLAY_MEMORY_SIZE)
+        return min(self.number_writes, params.REPLAY_MEMORY_SIZE)
 
     def __getitem__(self, index):
         assert type(index) in [int, np.array, list], "you are using an unsupported index type"
