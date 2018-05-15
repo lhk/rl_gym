@@ -13,9 +13,11 @@ import dqn.params as params
 class Brain():
     def __init__(self, loss="mse"):
 
+        # set up two models
         self.model = self.__create_model()
         self.target_model = self.__create_model()
 
+        # only one of them needs to be compiled for training
         self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
 
     def __create_model(self):
@@ -41,11 +43,38 @@ class Brain():
         # keras only works if there is a batch dimension
         if state.shape == params.INPUT_SHAPE:
             state = state.reshape((-1, *params.INPUT_SHAPE))
-        return self.model.predict(state)
+        return self.model.predict([state, np.ones((state.shape[0], params.NUM_ACTIONS))])
 
     def predict_q_target(self, state):
 
         # keras only works if there is a batch dimension
         if state.shape == params.INPUT_SHAPE:
             state = state.reshape((-1, *params.INPUT_SHAPE))
-        return self.model.predict(state)
+        return self.target_model.predict([state, np.ones((state.shape[0], params.NUM_ACTIONS))])
+
+    def update_target(self):
+        self.target_model.set_weights(self.model.get_weights())
+
+    def train_on_batch(self, batch):
+        from_states, to_states, actions, rewards, terminals = batch
+
+        assert from_states.shape[0] == params.BATCH_SIZE
+
+        # the target is
+        # r + gamma * max Q(s_next)
+        #
+        # we need to get the predictions for the next state
+        next_q = self.predict_q_target(to_states)
+        q_max = next_q.max(axis = 1, keepdims=True)
+
+        immediate_rewards = rewards
+        future_rewards = params.GAMMA * q_max * (1 - terminals)
+        targets = immediate_rewards + future_rewards
+
+        # create a one-hot mask for the actions
+        action_mask = np.zeros((params.BATCH_SIZE, params.NUM_ACTIONS))
+        action_mask[np.arange(params.BATCH_SIZE), actions] = 1
+
+        targets = targets * action_mask
+
+        self.model.train_on_batch([from_states, action_mask], targets)
