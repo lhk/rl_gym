@@ -54,7 +54,7 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 # this is all that's needed to set up the openai gym
-env = gym.make('SpaceInvaders-v4')
+env = gym.make('Breakout-v4')
 env.reset()
 
 # parameters for the training setup
@@ -68,7 +68,7 @@ RETRAIN = True
 NUM_ACTIONS = env.action_space.n
 FRAME_SIZE = (84, 84)
 INPUT_SHAPE = (*FRAME_SIZE, 4)
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 # parameters for the reinforcement process
 GAMMA = 0.99  # discount factor for future updates
@@ -80,7 +80,7 @@ EPSILON = 0.01
 
 # parameters for the training
 TOTAL_INTERACTIONS = int(9e6)  # after this many interactions, the training stops
-TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
+TRAIN_SKIPS = 4  # interact with the environment X times, update the network once
 
 TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
@@ -88,13 +88,13 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(1e6)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(3e6)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 20  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = 2 ** 18  # 2^10 ~ 10^3
+REPLAY_MEMORY_SIZE = 2 ** 20  # 2^10 ~ 10^3
 REPLAY_START_SIZE = int(5e4)
 
 # variables, these are not meant to be edited by the user
