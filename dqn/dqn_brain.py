@@ -58,7 +58,8 @@ class Brain():
     def train_on_batch(self, batch):
         from_states, to_states, actions, rewards, terminals = batch
 
-        assert from_states.shape[0] == params.BATCH_SIZE
+        assert from_states.shape[0] == params.BATCH_SIZE, "batchsize must be as defined in dqn.params.BATCH_SIZE"
+        assert from_states.dtype == np.uint8, "we work on uint8. are you mixing different types of preprocessing ?"
 
         # the target is
         # r + gamma * max Q(s_next)
