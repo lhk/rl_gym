@@ -1,36 +1,25 @@
-import random
-
-random.seed(0)
-
-import gym
-import keras
-import keras.backend as K
-import lycon
 import numpy as np
-
 np.random.seed(0)
 
 import tensorflow as tf
+import keras
 from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
 from keras.optimizers import RMSprop
-from pylab import subplot, plot, title
+import keras.backend as K
 
-from tqdm import tqdm
-import os
+import dqn.params as params
 
 class Brain():
-    def __init__(self, NUM_ACTIONS, LEARNING_RATE, RHO, EPSILON):
+    def __init__(self, loss="mse"):
 
-        self.num_actions = NUM_ACTIONS
+        self.model = self.__create_model()
+        self.target_model = self.__create_model()
 
-        model = self.__create_model()
-        target_model = self.__create_model()
-
-        model.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
+        self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
 
     def __create_model(self):
-        input_layer = Input(INPUT_SHAPE)
+        input_layer = Input(params.INPUT_SHAPE)
 
         rescaled = Lambda(lambda x: x / 255.)(input_layer)
         conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
@@ -40,9 +29,23 @@ class Brain():
         conv_flattened = Flatten()(conv)
 
         hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-        output_layer = keras.layers.Dense(NUM_ACTIONS)(hidden)
+        output_layer = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
 
-        mask_layer = Input((NUM_ACTIONS,))
+        mask_layer = Input((params.NUM_ACTIONS,))
 
         output_masked = Multiply()([output_layer, mask_layer])
         return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
+
+    def predict_q(self, state):
+
+        # keras only works if there is a batch dimension
+        if state.shape == params.INPUT_SHAPE:
+            state = state.reshape((-1, *params.INPUT_SHAPE))
+        return self.model.predict(state)
+
+    def predict_q_target(self, state):
+
+        # keras only works if there is a batch dimension
+        if state.shape == params.INPUT_SHAPE:
+            state = state.reshape((-1, *params.INPUT_SHAPE))
+        return self.model.predict(state)
