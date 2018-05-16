@@ -9,7 +9,7 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
 
-import dqn.params as params
+import ddqn.params as params
 
 
 class Brain():

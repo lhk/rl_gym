@@ -2,7 +2,7 @@ import gym
 import lycon
 import numpy as np
 
-import dqn.params as params
+import ddqn.params as params
 
 
 class Agent:
@@ -27,6 +27,7 @@ class Agent:
 
     def interact(self, action):
         observation, reward, done, _ = self.env.step(action)
+        self.env.render()
 
         new_frame = self.preprocess_frame(observation)
 

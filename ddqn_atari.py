@@ -13,8 +13,7 @@ import tensorflow as tf
 from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
 from keras.optimizers import RMSprop
-from pylab import subplot, plot, title
-from sumtree import SumTree
+from util.sumtree import SumTree
 from tqdm import tqdm
 
 # directory management:
@@ -43,8 +42,6 @@ config = tf.ConfigProto()
 
 sess = tf.Session(config=config)
 K.set_session(sess)
-
-from loss_functions import huber_loss
 
 # only a subset of matplotlib backends supports forwarding over X11
 # this Qt5Agg is compatible with remote debugging
@@ -111,7 +108,6 @@ repeat_action_counter = 0  # number of times this action has been repeated
 
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
-from tempfile import mkstemp
 
 #from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
 #                              shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
