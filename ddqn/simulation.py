@@ -1,6 +1,8 @@
 import numpy as np
-import tensorflow as tf # not needed here, but if tf is not imported first, it crashes :)
+import tensorflow as tf  # if tf is not imported first, it crashes :)
 from tqdm import tqdm
+
+print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of it
 
 import ddqn.params as params
 from ddqn.agent import Agent

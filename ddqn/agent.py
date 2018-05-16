@@ -27,7 +27,7 @@ class Agent:
 
     def interact(self, action):
         observation, reward, done, _ = self.env.step(action)
-        self.env.render()
+        # self.env.render()
 
         new_frame = self.preprocess_frame(observation)
 
