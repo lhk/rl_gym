@@ -69,17 +69,13 @@ class Brain():
 
         next_q_target = self.predict_q_target(to_states)
         next_q = self.predict_q(to_states)
-        q_chosen = next_q_target[next_q.argmax(axis=1, keepdims=True)]
+        q_chosen = next_q_target[np.arange(next_q.shape[0]), next_q.argmax(axis=1)]
 
-        immediate_rewards = rewards
-        future_rewards = params.GAMMA * q_chosen * (1 - terminals)
+        immediate_rewards = rewards.reshape((-1,))
+        future_rewards = params.GAMMA * q_chosen * (1 - terminals.reshape((-1,)))
         targets = immediate_rewards + future_rewards
 
-        # create a one-hot mask for the actions
-        action_mask = np.zeros((params.BATCH_SIZE, params.NUM_ACTIONS))
-        action_mask[np.arange(params.BATCH_SIZE), actions] = 1
-
-        return targets, action_mask
+        return targets
 
     def train_on_batch(self, batch):
         from_states, to_states, actions, rewards, terminals = batch
@@ -87,19 +83,22 @@ class Brain():
         assert from_states.shape[0] == params.BATCH_SIZE, "batchsize must be as defined in dqn.params.BATCH_SIZE"
         assert from_states.dtype == np.uint8, "we work on uint8. are you mixing different types of preprocessing ?"
 
-        targets, action_mask = self.__get_targets(from_states, to_states, actions, rewards, terminals)
+        targets = self.__get_targets(from_states, to_states, actions, rewards, terminals)
+
+        # create a one-hot mask for the actions
+        action_mask = np.zeros((actions.shape[0], params.NUM_ACTIONS))
+        action_mask[np.arange(actions.shape[0]), actions] = 1
 
         self.model.train_on_batch([from_states, action_mask], targets)
 
     def get_error(self, batch):
         from_states, to_states, actions, rewards, terminals = batch
 
-        assert from_states.shape[0] == params.BATCH_SIZE, "batchsize must be as defined in dqn.params.BATCH_SIZE"
         assert from_states.dtype == np.uint8, "we work on uint8. are you mixing different types of preprocessing ?"
 
-        targets, action_mask = self.__get_targets(from_states, to_states, actions, rewards, terminals)
+        targets = self.__get_targets(from_states, to_states, actions, rewards, terminals)
 
         predictions = self.predict_q(from_states)
-        predictions = predictions[action_mask]
+        predictions = predictions[np.arange(predictions.shape[0]), actions]
 
         return np.abs(targets - predictions)
