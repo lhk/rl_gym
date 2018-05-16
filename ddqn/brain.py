@@ -18,7 +18,7 @@ class Brain():
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
-        config.log_device_placement= params.TF_LOG_DEVICE_PLACEMENT
+        config.log_device_placement = params.TF_LOG_DEVICE_PLACEMENT
 
         sess = tf.Session(config=config)
         K.set_session(sess)

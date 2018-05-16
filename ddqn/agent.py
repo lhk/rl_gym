@@ -1,10 +1,13 @@
-import numpy as np
 import gym
-import dqn.params as params
 import lycon
+import numpy as np
+
+import dqn.params as params
+
+
 class Agent:
 
-    def __init__(self, exploration = params.INITIAL_EXPLORATION):
+    def __init__(self, exploration=params.INITIAL_EXPLORATION):
         self.env = gym.make(params.ENV_NAME)
         self.exploration = exploration
 
@@ -30,7 +33,6 @@ class Agent:
 
         return new_state, reward, done
 
-
     def get_starting_state(self):
         self.state = np.zeros(params.INPUT_SHAPE, dtype=np.uint8)
         frame = self.env.reset()
@@ -52,7 +54,7 @@ class Agent:
 
         # anneal exploration
         if self.exploration > params.FINAL_EXPLORATION:
-            self.exploration-=params.EXPLORATION_STEP
+            self.exploration -= params.EXPLORATION_STEP
 
         # we only allow a limited amount of repeated actions
         if action == self.last_action:

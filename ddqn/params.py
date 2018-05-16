@@ -11,7 +11,7 @@ ENV_NAME = "Breakout-v4"
 # parameters for the structure of the neural network
 NUM_ACTIONS = 4
 FRAME_SIZE = (84, 84)
-FRAME_STACK = 4 # number of consecutive frames to stack as input for the network
+FRAME_STACK = 4  # number of consecutive frames to stack as input for the network
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
 BATCH_SIZE = 32
 
@@ -33,13 +33,13 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS//2)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS // 2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(2**20)
+REPLAY_MEMORY_SIZE = int(2 ** 20)
 REPLAY_START_SIZE = int(5e1)
 MEMORY_MAPPED = True
 ERROR_BIAS = 0.01

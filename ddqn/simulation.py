@@ -1,12 +1,10 @@
 import numpy as np
-import tensorflow as tf
-
-from ddqn.agent import Agent
-from ddqn.memory import Memory
-from ddqn.brain import Brain
-import ddqn.params as params
-
 from tqdm import tqdm
+
+import ddqn.params as params
+from ddqn.agent import Agent
+from ddqn.brain import Brain
+from ddqn.memory import Memory
 
 agent = Agent()
 memory = Memory()
@@ -20,6 +18,8 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 
     # let the agent interact with the environment and memorize the result
     from_state, to_state, action, reward, done = agent.act(best_action)
+
+    # transform prediction error into priority and memorize observation
     error = brain.get_error((from_state, to_state, action, reward, done))
     priority = np.power(error + params.ERROR_BIAS, params.ERROR_POW)
     memory.push(from_state, to_state, action, reward, done, priority)

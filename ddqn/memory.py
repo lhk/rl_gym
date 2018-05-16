@@ -1,14 +1,15 @@
-import numpy as np
-
 # directory management:
 # delete all previous memory maps
 # and create dirs for checkpoints (if not present)
 import os
 import shutil
 from tempfile import mkstemp
-import dqn.params as params
 
+import numpy as np
+
+import dqn.params as params
 from util.sumtree import SumTree
+
 
 class Memory():
 
@@ -20,8 +21,10 @@ class Memory():
         os.mkdir(os.getcwd() + "/memory_maps/")
 
         if params.MEMORY_MAPPED:
-            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
-            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
+            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                                               shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
+            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                                             shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
         else:
             self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
             self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
@@ -59,7 +62,7 @@ class Memory():
 
         self.number_writes += 1
 
-    def sample(self, size=params.BATCH_SIZE, replace = False):
+    def sample(self, size=params.BATCH_SIZE, replace=False):
         if not replace:
             assert size <= len(self), "trying to sample more samples than available"
 
