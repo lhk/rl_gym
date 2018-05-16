@@ -42,6 +42,8 @@ REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling ran
 REPLAY_MEMORY_SIZE = int(2**20)
 REPLAY_START_SIZE = int(1e3)
 MEMORY_MAPPED = True
+ERROR_BIAS = 0.01
+ERROR_POW = 0.5
 
 # parameters for the behaviour of tensorflow
 TF_ALLOW_GROWTH = True
