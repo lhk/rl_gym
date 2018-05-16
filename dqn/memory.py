@@ -33,7 +33,12 @@ class Memory():
         self.replay_index = 0
         self.number_writes = 0
 
-    def push(self, from_state, to_state, action, reward, terminal):
+    def push(self,
+             from_state: np.array,
+             to_state: np.array,
+             action: np.uint8,
+             reward: np.float32,
+             terminal: np.bool):
 
         # write observation to memory
         self.from_state_memory[self.replay_index] = from_state
