@@ -16,6 +16,9 @@ class Agent:
 
         self.state = self.get_starting_state()
 
+        self.total_reward = 0
+        self.total_steps = 0
+
     def preprocess_frame(self, frame):
         downsampled = lycon.resize(frame, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
@@ -80,9 +83,18 @@ class Agent:
         from_state = self.state
         to_state = new_state
 
+        self.total_reward += reward
+        self.total_steps += 1
+
         if not done:
             self.state = new_state
         else:
+            print("episode ended")
+            print("total reward {}".format(self.total_reward))
+            print("total steps {}".format(self.total_steps))
+
+            self.total_reward = 0
+            self.total_steps = 0
             self.state = self.get_starting_state()
 
         return from_state, to_state, action, reward, done

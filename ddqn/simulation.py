@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf # not needed here, but if tf is not imported first, it crashes :)
 from tqdm import tqdm
 
 import ddqn.params as params
