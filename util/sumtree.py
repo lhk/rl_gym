@@ -32,7 +32,7 @@ class SumTree:
             arr_idx = parent_idx
             self._data[arr_idx] += delta
 
-    def sample(self, n, replace = True):
+    def sample(self, n, replace=True):
 
         samples = []
         for i in range(n):
@@ -57,7 +57,6 @@ class SumTree:
                     else:
                         idx = right_idx
                         rand -= left_val
-
 
                 new_sample = idx - self._offset
                 if replace or new_sample not in samples:
