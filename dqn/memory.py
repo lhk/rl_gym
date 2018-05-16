@@ -53,7 +53,7 @@ class Memory():
 
         self.number_writes += 1
 
-    def sample(self, size, replace = False):
+    def sample(self, size=params.BATCH_SIZE, replace = False):
         if not replace:
             assert size <= len(self), "trying to sample more samples than available"
 

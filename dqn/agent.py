@@ -75,9 +75,12 @@ class Agent:
         if done:
             reward = - 1
 
+        from_state = self.state
+        to_state = new_state
+
         if not done:
             self.state = new_state
         else:
             self.state = self.get_starting_state()
 
-        return new_state, reward, done
+        return from_state, to_state, action, reward, done
