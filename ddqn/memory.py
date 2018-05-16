@@ -28,8 +28,8 @@ class Memory():
 
         # these other parts of the memory consume only very little memory and can be kept in ram
         self.action_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE), dtype=np.uint8)
-        self.reward_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
-        self.terminal_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
+        self.reward_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE,), dtype=np.int16)
+        self.terminal_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE,), dtype=np.bool)
 
         self.replay_index = 0
         self.number_writes = 0
