@@ -12,6 +12,7 @@ class Agent:
         self.repeat_action_counter = 0
 
         self.state = self.get_starting_state()
+        self.total_reward = 0
 
     def preprocess_frame(self, frame):
         downsampled = lycon.resize(frame, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
@@ -66,6 +67,7 @@ class Agent:
             self.repeat_action_counter = 0
 
         new_state, reward, done = self.interact(action)
+        self.total_reward+=1
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -82,5 +84,7 @@ class Agent:
             self.state = new_state
         else:
             self.state = self.get_starting_state()
+            print(self.total_reward)
+            self.total_reward=0
 
         return from_state, to_state, action, reward, done
