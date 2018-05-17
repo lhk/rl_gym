@@ -38,3 +38,6 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
         continue
 
     brain.update_target()
+
+    if interaction % 100000 == 0:
+        brain.model.save_weights("checkpoints/weights" + str(interaction) + ".hdf5")
