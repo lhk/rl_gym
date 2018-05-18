@@ -33,11 +33,5 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
     batch = memory.sample()
     brain.train_on_batch(batch)
 
-    # update the target network every N steps
-    if interaction % params.TARGET_NETWORK_UPDATE_FREQ != 0:
-        continue
-
-    brain.update_target()
-
     if interaction % 100000 == 0:
         brain.model.save_weights("checkpoints/weights" + str(interaction) + ".hdf5")

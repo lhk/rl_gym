@@ -30,6 +30,8 @@ class Brain():
         # only one of them needs to be compiled for training
         self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
 
+        self.train_steps = 0
+
     def __create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
 
@@ -75,8 +77,11 @@ class Brain():
         # r + gamma * max Q(s_next)
         #
         # we need to get the predictions for the next state
-        next_q = self.predict_q_target(to_states)
-        q_max = next_q.max(axis=1, keepdims=True)
+        next_q_target = self.predict_q_target(to_states)
+        next_q = self.predict_q(to_states)
+        #q_max = next_q_target[np.arange(next_q.shape[0]), next_q.argmax(axis=1)]
+        #q_max = q_max.reshape((-1, 1))
+        q_max = next_q_target.max(axis=1, keepdims=True)
 
         immediate_rewards = rewards
         future_rewards = params.GAMMA * q_max * (1 - terminals)
@@ -89,3 +94,9 @@ class Brain():
         targets = targets * action_mask
 
         self.model.train_on_batch([from_states, action_mask], targets)
+
+        # update the target network every N steps
+        self.train_steps += 1
+        if self.train_steps % params.TARGET_NETWORK_UPDATE_FREQ == 0:
+            self.update_target()
+            self.train_steps = 0

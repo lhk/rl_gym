@@ -67,7 +67,6 @@ class Agent:
             self.repeat_action_counter = 0
 
         new_state, reward, done = self.interact(action)
-        self.total_reward+=1
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -76,6 +75,8 @@ class Agent:
         # to align to the other replays given in the game
         if done:
             reward = - 1
+
+        self.total_reward += reward
 
         from_state = self.state
         to_state = new_state
