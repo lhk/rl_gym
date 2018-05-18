@@ -88,7 +88,7 @@ noop_max = 30
 noop_counter = 0
 
 replay_memory_size = int(3e5)
-replay_start_size = int(4e5)
+replay_start_size = int(5e4)
 
 total_interactions = int(3e6)
 
@@ -105,7 +105,7 @@ exploration = initial_exploration
 
 gamma = 0.99
 
-retrain = False
+retrain = True
 
 q_approximator = create_model()
 q_approximator_fixed = create_model()
