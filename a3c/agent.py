@@ -21,7 +21,7 @@ class Agent(threading.Thread):
 
         # every agent has its own environment
         self.env = gym.make(params.ENV_NAME)
-        self.env.seed(0)
+        # self.env.seed(0) # for debugging
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
@@ -105,10 +105,13 @@ class Agent(threading.Thread):
     def move_to_memory(self, terminal):
         # removes one set of observations from local memory
         # and pushes it to shared memory
+
+        # read the length first, before popping anything
+        length = len(self.seen_actions)
         from_state = self.seen_states.pop(0)
         to_state = self.seen_states[-1]
         first_action = self.seen_actions.pop(0)
         first_reward = self.seen_rewards.pop(0)
 
-        self.memory.push(from_state, to_state, first_action, self.n_step_reward, terminal)
+        self.memory.push(from_state, to_state, first_action, self.n_step_reward, terminal, length)
         self.n_step_reward = (self.n_step_reward - first_reward)

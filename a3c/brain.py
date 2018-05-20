@@ -87,17 +87,18 @@ class Brain:
             return
 
         # get up to MAX_BATCH items from the training queue
-        from_states, to_states, actions, rewards, terminal = self.memory.pop(params.MAX_BATCH)
+        from_states, to_states, actions, rewards, terminal, length = self.memory.pop(params.MAX_BATCH)
         from_states = np.vstack(from_states)
         to_states = np.vstack(to_states)
         actions = np.vstack(actions)
         rewards = np.vstack(rewards)
         terminal = np.vstack(terminal)
+        length = np.vstack(length)
 
         # predict the final value
         # TODO: this is incorrect, if the local memory of the states unrols after an episode end. it might not be N steps into the future
         _, end_values = self.predict(to_states)
-        n_step_reward = rewards + params.GAMMA_N * end_values * (1 - terminal)  # set v to 0 where s_ is terminal state
+        n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)  # set v to 0 where s_ is terminal state
 
         self.session.run(self.minimize_step, feed_dict={
             self.input_state: from_states,
