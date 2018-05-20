@@ -50,11 +50,15 @@ class Agent:
 
         return state
 
-    def act(self, action):
+    def act(self, brain):
 
         # exploit or explore
         if np.random.rand() < self.exploration:
             action = self.env.action_space.sample()
+        else:
+            # use the brain to determine the best action for this state
+            q_values = brain.predict_q(self.state)
+            action = q_values.argmax(axis=1)
 
         # anneal exploration
         if self.exploration > params.FINAL_EXPLORATION:

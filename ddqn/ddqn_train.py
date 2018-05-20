@@ -9,18 +9,16 @@ from ddqn.agent import Agent
 from ddqn.brain import Brain
 from ddqn.memory import Memory
 
+from util.loss_functions import huber_loss
+
 agent = Agent()
 memory = Memory()
-brain = Brain()
+brain = Brain(loss=huber_loss)
 
 for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 
-    # use the brain to determine the best action for this state
-    q_values = brain.predict_q(agent.state)
-    best_action = q_values.argmax(axis=1)
-
     # let the agent interact with the environment and memorize the result
-    from_state, to_state, action, reward, done = agent.act(best_action)
+    from_state, to_state, action, reward, done = agent.act(brain)
 
     # transform prediction error into priority and memorize observation
     error = brain.get_error((from_state, to_state, action, reward, done))
@@ -35,14 +33,19 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
     if interaction % params.TRAIN_SKIPS != 0:
         continue
 
-    batch = memory.sample()
+
+    # sample batch with priority as weight, train on it
+    training_indices = memory.sample_indices()
+    batch = memory[training_indices]
     brain.train_on_batch(batch)
+
+    # calculate new priority and update memory
+    error = brain.get_error(batch)
+    priority = np.power(error + params.ERROR_BIAS, params.ERROR_POW)
+    memory.update_priority(training_indices, priority)
 
     # update the target network every N steps
     if interaction % params.TARGET_NETWORK_UPDATE_FREQ != 0:
         continue
 
     brain.update_target()
-
-    if interaction % 100000 == 0:
-        brain.model.save_weights("checkpoints/weights" + str(interaction) + ".hdf5")
