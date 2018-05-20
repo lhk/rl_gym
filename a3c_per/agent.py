@@ -117,5 +117,9 @@ class Agent(threading.Thread):
         error = self.brain.get_error(batch)
         priority = (error + params.ERROR_BIAS)**params.ERROR_POW
 
+        # the result of a prediction from the model has shape (N, 1)
+        # here we had priority in shape (1,1) but the memory expects a scalar as priority
+        priority = priority[0][0]
+
         self.memory.push(from_state, to_state, first_action, self.n_step_reward, terminal, length, priority)
         self.n_step_reward = (self.n_step_reward - first_reward)

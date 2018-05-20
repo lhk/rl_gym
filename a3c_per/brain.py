@@ -79,7 +79,15 @@ class Brain:
 
         return model, input_state, action_mask, n_step_reward, minimize_step
 
+    def __batchify(self, batch):
+        from_states, to_states, actions, rewards, terminal, length = batch
+        if type(actions) == list:
+            return batch
+        else:
+            return [[from_states], [to_states], [actions], [rewards], [terminal],[length]]
+
     def __get_targets(self, batch):
+
         from_states, to_states, actions, rewards, terminal, length = batch
         from_states = np.vstack(from_states)
         to_states = np.vstack(to_states)
@@ -97,12 +105,12 @@ class Brain:
     def optimize(self):
 
         # yield control if there is not enough training data in the memory
-        if len(self.memory) < params.MIN_BATCH:
+        if len(self.memory) < params.BATCH_SIZE:
             time.sleep(0)
             return
 
         # get up to MAX_BATCH items from the training queue
-        sample_indices = self.memory.sample_indices(params.MAX_BATCH)
+        sample_indices = self.memory.sample_indices(params.BATCH_SIZE)
         batch = self.memory[sample_indices]
 
         # train on batch
@@ -124,6 +132,8 @@ class Brain:
 
 
     def get_error(self, batch):
+        batch = self.__batchify(batch)
+
         observed_value = self.__get_targets(batch)
         from_states, _, _, _, _, _  = batch
         from_states = np.vstack(from_states)

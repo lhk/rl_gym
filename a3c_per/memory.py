@@ -6,7 +6,7 @@ from tempfile import mkstemp
 
 import numpy as np
 
-import ddqn.params as params
+import a3c_per.params as params
 from util.sumtree import SumTree
 
 class Memory:
@@ -29,7 +29,7 @@ class Memory:
             self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
 
         # these other parts of the memory consume only very little memory and can be kept in ram
-        self.action_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE), dtype=np.uint8)
+        self.action_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, params.NUM_ACTIONS), dtype=np.uint8)
         self.reward_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE,), dtype=np.int16)
         self.terminal_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE,), dtype=np.bool)
         self.length_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE,), dtype=np.uint8)
