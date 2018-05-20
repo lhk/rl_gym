@@ -8,10 +8,11 @@ from dqn.brain import Brain
 import dqn.params as params
 
 from tqdm import tqdm
+from util.loss_functions import huber_loss
 
 agent = Agent()
 memory = Memory()
-brain = Brain()
+brain = Brain(loss=huber_loss)
 
 for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 
