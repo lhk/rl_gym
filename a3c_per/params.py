@@ -1,8 +1,8 @@
 # parameters for the training setup
 ENV_NAME = 'CartPole-v0'
-RUN_TIME = 120
-AGENTS = 8
-OPTIMIZERS = 2
+RUN_TIME = 240**3
+AGENTS = 1
+OPTIMIZERS = 1
 WAIT_ON_ACTION = 0.001
 
 # parameters for the agent
@@ -23,7 +23,7 @@ NUM_ACTIONS = 2
 BATCH_SIZE = 32
 
 # parameters for the training
-LEARNING_RATE = 5e-3
+LEARNING_RATE = 5e-4
 DECAY = 0.99
 LOSS_VALUE = .5
 LOSS_ENTROPY = .01
@@ -33,8 +33,8 @@ TF_ALLOW_GROWTH = True
 TF_LOG_DEVICE_PLACEMENT = False
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(2 ** 18)
-REPLAY_START_SIZE = int(5e4)
+REPLAY_MEMORY_SIZE = int(2 ** 8)
+REPLAY_START_SIZE = int(BATCH_SIZE)
 MEMORY_MAPPED = False
 ERROR_BIAS = 0.01
 ERROR_POW = 0.7

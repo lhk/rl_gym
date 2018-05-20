@@ -105,11 +105,12 @@ class Brain:
     def optimize(self):
 
         # yield control if there is not enough training data in the memory
-        if len(self.memory) < params.BATCH_SIZE:
+        if len(self.memory) < params.REPLAY_START_SIZE:
+            print("memory size{}".format(len(self.memory)))
             time.sleep(0)
             return
 
-        # get up to MAX_BATCH items from the training queue
+        # sample a batch from the memory
         sample_indices = self.memory.sample_indices(params.BATCH_SIZE)
         batch = self.memory[sample_indices]
 
@@ -128,6 +129,10 @@ class Brain:
         # update priorities
         errors = self.get_error(batch)
         priorities = (errors + params.ERROR_BIAS)**params.ERROR_POW
+
+        # update priorities expects a list
+        priorities = priorities[0]
+
         self.memory.update_priority(sample_indices, priorities)
 
 

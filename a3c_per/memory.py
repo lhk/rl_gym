@@ -40,47 +40,50 @@ class Memory:
         self.priority_sumtree = SumTree(params.REPLAY_MEMORY_SIZE)
 
     def push(self, from_state, to_state, action, reward, terminal, length, priority):
+        with self.lock:
+            # write observation to memory
+            self.from_state_memory[self.replay_index] = from_state
+            self.to_state_memory[self.replay_index] = to_state
+            self.action_memory[self.replay_index] = action
+            self.reward_memory[self.replay_index] = reward
+            self.terminal_memory[self.replay_index] = terminal
+            self.length_memory[self.replay_index] = length
 
-        # write observation to memory
-        self.from_state_memory[self.replay_index] = from_state
-        self.to_state_memory[self.replay_index] = to_state
-        self.action_memory[self.replay_index] = action
-        self.reward_memory[self.replay_index] = reward
-        self.terminal_memory[self.replay_index] = terminal
-        self.length_memory[self.replay_index] = length
+            self.priority_sumtree.push(self.replay_index, priority)
 
-        self.priority_sumtree.push(self.replay_index, priority)
+            # this acts like a ringbuffer
+            self.replay_index += 1
+            self.replay_index %= params.REPLAY_MEMORY_SIZE
 
-        # this acts like a ringbuffer
-        self.replay_index += 1
-        self.replay_index %= params.REPLAY_MEMORY_SIZE
-
-        self.number_writes += 1
+            self.number_writes += 1
 
     def sample_indices(self, size=params.BATCH_SIZE, replace=False):
-        if not replace:
-            assert size <= len(self), "trying to sample more samples than available"
+        with self.lock:
+            if not replace:
+                assert size <= len(self), "trying to sample more samples than available"
 
-        selected_indices = self.priority_sumtree.sample(size, replace)
+            selected_indices = self.priority_sumtree.sample(size, replace)
 
-        return selected_indices
+            return selected_indices
 
     def update_priority(self, indices, priorities):
-        for idx, prio in zip(indices, priorities):
-            self.priority_sumtree.push(idx, prio)
+        with self.lock:
+            for idx, prio in zip(indices, priorities):
+                self.priority_sumtree.push(idx, prio)
 
     def __len__(self):
         return min(self.number_writes, params.REPLAY_MEMORY_SIZE)
 
     def __getitem__(self, index):
-        assert type(index) in [int, np.array, list], "you are using an unsupported index type"
-        assert max(index) < len(self), "index out of range"
+        with self.lock:
+            assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
+            assert max(index) < len(self), "index out of range"
 
-        from_states = self.from_state_memory[index]
-        to_states = self.to_state_memory[index]
-        actions = self.action_memory[index]
-        rewards = self.reward_memory[index]
-        terminal = self.terminal_memory[index]
-        length = self.length_memory[index]
+            from_states = self.from_state_memory[index]
+            to_states = self.to_state_memory[index]
+            actions = self.action_memory[index]
+            rewards = self.reward_memory[index]
+            terminal = self.terminal_memory[index]
+            length = self.length_memory[index]
 
-        return from_states, to_states, actions, rewards, terminal, length
+            return from_states, to_states, actions, rewards, terminal, length
