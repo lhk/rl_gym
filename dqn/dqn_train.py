@@ -1,4 +1,5 @@
 import numpy as np
+np.random.seed(0)
 import tensorflow as tf
 
 from dqn.agent import Agent
@@ -32,6 +33,3 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 
     batch = memory.sample()
     brain.train_on_batch(batch)
-
-    if interaction % 100000 == 0:
-        brain.model.save_weights("checkpoints/weights" + str(interaction) + ".hdf5")

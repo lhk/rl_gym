@@ -6,6 +6,8 @@ class Agent:
 
     def __init__(self, exploration = params.INITIAL_EXPLORATION):
         self.env = gym.make(params.ENV_NAME)
+        self.env.seed(0)
+
         self.exploration = exploration
 
         self.last_action = None
@@ -60,7 +62,8 @@ class Agent:
             self.repeat_action_counter += 1
 
             if self.repeat_action_counter > params.REPEAT_ACTION_MAX:
-                action = self.env.action_space.sample()
+                action = 1 # self.env.action_space.sample()
+                self.last_action = action
                 self.repeat_action_counter = 0
         else:
             self.last_action = action

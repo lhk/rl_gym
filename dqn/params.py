@@ -36,7 +36,7 @@ FINAL_EXPLORATION = 0.1  # final chance
 FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS//2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
-REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
+REPEAT_ACTION_MAX = 15  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
 REPLAY_MEMORY_SIZE = int(3e5)
@@ -45,4 +45,4 @@ MEMORY_MAPPED = False
 
 # parameters for the behaviour of tensorflow
 TF_ALLOW_GROWTH = True
-TF_LOG_DEVICE_PLACEMENT = False
+TF_LOG_DEVICE_PLACEMENT = True

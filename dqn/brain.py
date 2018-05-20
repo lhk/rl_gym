@@ -11,6 +11,8 @@ import keras.backend as K
 
 import dqn.params as params
 
+import os
+import shutil
 
 class Brain():
     def __init__(self, loss="mse"):
@@ -31,6 +33,12 @@ class Brain():
         self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
 
         self.train_steps = 0
+        self.target_updates = 0
+
+        # cleaning a directory for checkpoints
+        if os.path.exists(os.getcwd() + "/checkpoints/"):
+            shutil.rmtree(os.getcwd() + "/checkpoints/")
+        os.mkdir(os.getcwd() + "/checkpoints/")
 
     def __create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
@@ -78,9 +86,6 @@ class Brain():
         #
         # we need to get the predictions for the next state
         next_q_target = self.predict_q_target(to_states)
-        next_q = self.predict_q(to_states)
-        #q_max = next_q_target[np.arange(next_q.shape[0]), next_q.argmax(axis=1)]
-        #q_max = q_max.reshape((-1, 1))
         q_max = next_q_target.max(axis=1, keepdims=True)
 
         immediate_rewards = rewards
@@ -100,3 +105,9 @@ class Brain():
         if self.train_steps % params.TARGET_NETWORK_UPDATE_FREQ == 0:
             self.update_target()
             self.train_steps = 0
+
+        # save the target network every N steps
+        if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
+            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates))
+
+
