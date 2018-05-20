@@ -75,6 +75,12 @@ class Brain():
     def update_target(self):
         self.target_model.set_weights(self.model.get_weights())
 
+        self.target_updates+=1
+
+        # save the target network every N steps
+        if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
+            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates))
+
     def train_on_batch(self, batch):
         from_states, to_states, actions, rewards, terminals = batch
 
@@ -106,8 +112,5 @@ class Brain():
             self.update_target()
             self.train_steps = 0
 
-        # save the target network every N steps
-        if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
-            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates))
 
 
