@@ -102,7 +102,10 @@ class Brain:
             return
 
         # get up to MAX_BATCH items from the training queue
-        batch = self.memory.sample(params.MAX_BATCH)
+        sample_indices = self.memory.sample_indices(params.MAX_BATCH)
+        batch = self.memory[sample_indices]
+
+        # train on batch
         from_states, to_states, actions, _, _, _ = batch
         from_states = np.vstack(from_states)
         actions = np.vstack(actions)
@@ -113,6 +116,12 @@ class Brain:
             self.input_state: from_states,
             self.action_mask: actions,
             self.t_step_reward: n_step_reward})
+
+        # update priorities
+        errors = self.get_error(batch)
+        priorities = (errors + params.ERROR_BIAS)**params.ERROR_POW
+        self.memory.update_priority(sample_indices, priorities)
+
 
     def get_error(self, batch):
         observed_value = self.__get_targets(batch)
