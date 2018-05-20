@@ -20,13 +20,13 @@ class Memory:
         os.mkdir(os.getcwd() + "/memory_maps/")
 
         if params.MEMORY_MAPPED:
-            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.float32, mode="w+",
                                                shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
-            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.float32, mode="w+",
                                              shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
         else:
-            self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
-            self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
+            self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.float32)
+            self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.float32)
 
         # these other parts of the memory consume only very little memory and can be kept in ram
         self.action_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, params.NUM_ACTIONS), dtype=np.uint8)
