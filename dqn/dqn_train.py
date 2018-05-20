@@ -15,12 +15,8 @@ brain = Brain()
 
 for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 
-    # use the brain to determine the best action for this state
-    q_values = brain.predict_q(agent.state)
-    best_action = q_values.argmax(axis=1)
-
     # let the agent interact with the environment and memorize the result
-    from_state, to_state, action, reward, done = agent.act(best_action)
+    from_state, to_state, action, reward, done = agent.act(brain)
     memory.push(from_state, to_state, action, reward, done)
 
     # fill the memory before training
