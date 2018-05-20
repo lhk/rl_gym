@@ -98,7 +98,7 @@ class Brain:
         # predict the final value
         # TODO: this is incorrect, if the local memory of the states unrols after an episode end. it might not be N steps into the future
         _, end_values = self.predict(to_states)
-        n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)  # set v to 0 where s_ is terminal state
+        n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)
 
         self.session.run(self.minimize_step, feed_dict={
             self.input_state: from_states,

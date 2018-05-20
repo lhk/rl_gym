@@ -18,8 +18,6 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 from pylab import subplot, plot, title
 
-from visualization_helpers import *
-
 # check wether tensorflow really runs on gpu
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -28,11 +26,11 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 K.set_session(sess)
 
-from loss_functions import huber_loss
+from util.loss_functions import huber_loss
 
 # matplotlib.use('Qt5Agg')
 env = gym.make('Breakout-v4')
-env.reset()
+env.seed(0)
 
 # a network to predict q values for every action
 num_actions = env.action_space.n
