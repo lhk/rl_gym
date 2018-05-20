@@ -8,6 +8,8 @@ import a3c_per.params as params
 from a3c_per.brain import Brain
 from a3c_per.memory import Memory
 
+import warnings
+warnings.simplefilter("error", RuntimeWarning)
 
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
@@ -56,8 +58,11 @@ class Agent(threading.Thread):
             else:
                 actions, _ = self.brain.predict(state)
                 actions = actions[0]  # need to flatten for sampling
-                action = np.random.choice(params.NUM_ACTIONS, p=actions)
-
+                #print(actions)
+                try:
+                    action = np.random.choice(params.NUM_ACTIONS, p=actions)
+                except:
+                    print("warn")
             # anneal epsilon
             if self.exploration > params.FINAL_EXPLORATION:
                 self.exploration -= params.EXPLORATION_STEP

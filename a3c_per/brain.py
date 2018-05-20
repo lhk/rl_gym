@@ -86,7 +86,7 @@ class Brain:
         else:
             return [[from_states], [to_states], [actions], [rewards], [terminal],[length]]
 
-    def __get_targets(self, batch):
+    def _get_targets(self, batch):
 
         from_states, to_states, actions, rewards, terminal, length = batch
         from_states = np.vstack(from_states)
@@ -110,36 +110,42 @@ class Brain:
             time.sleep(0)
             return
 
-        # sample a batch from the memory
-        sample_indices = self.memory.sample_indices(params.BATCH_SIZE)
-        batch = self.memory[sample_indices]
+        # TODO: this blocks the memory during the training
+        # it means agents can't push new data to the memory while this happens
+        # which is bad
+        # but if the memory is not locked here, the update of priority at the very end
+        # could update the priority of wrong states
+        with self.memory.lock:
+            # sample a batch from the memory
+            sample_indices = self.memory.sample_indices(params.BATCH_SIZE)
+            batch = self.memory[sample_indices]
 
-        # train on batch
-        from_states, to_states, actions, _, _, _ = batch
-        from_states = np.vstack(from_states)
-        actions = np.vstack(actions)
+            # train on batch
+            from_states, to_states, actions, _, _, _ = batch
+            from_states = np.vstack(from_states)
+            actions = np.vstack(actions)
 
-        n_step_reward = self.__get_targets(batch)
+            n_step_reward = self._get_targets(batch)
 
-        self.session.run(self.minimize_step, feed_dict={
-            self.input_state: from_states,
-            self.action_mask: actions,
-            self.t_step_reward: n_step_reward})
+            self.session.run(self.minimize_step, feed_dict={
+                self.input_state: from_states,
+                self.action_mask: actions,
+                self.t_step_reward: n_step_reward})
 
-        # update priorities
-        errors = self.get_error(batch)
-        priorities = (errors + params.ERROR_BIAS)**params.ERROR_POW
+            # update priorities
+            errors = self.get_error(batch)
+            priorities = (errors + params.ERROR_BIAS)**params.ERROR_POW
 
-        # update priorities expects a list
-        priorities = priorities[0]
+            # update priorities expects a list
+            priorities = priorities[0]
 
-        self.memory.update_priority(sample_indices, priorities)
+            self.memory.update_priority(sample_indices, priorities)
 
 
     def get_error(self, batch):
         batch = self.__batchify(batch)
 
-        observed_value = self.__get_targets(batch)
+        observed_value = self._get_targets(batch)
         from_states, _, _, _, _, _  = batch
         from_states = np.vstack(from_states)
 

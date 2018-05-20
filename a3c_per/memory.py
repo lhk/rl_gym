@@ -58,32 +58,38 @@ class Memory:
             self.number_writes += 1
 
     def sample_indices(self, size=params.BATCH_SIZE, replace=False):
-        with self.lock:
-            if not replace:
-                assert size <= len(self), "trying to sample more samples than available"
 
-            selected_indices = self.priority_sumtree.sample(size, replace)
+        if not self.lock.locked():
+            print("error: lock must be acquired before this transaction")
 
-            return selected_indices
+        if not replace:
+            assert size <= len(self), "trying to sample more samples than available"
+
+        selected_indices = self.priority_sumtree.sample(size, replace)
+
+        return selected_indices
 
     def update_priority(self, indices, priorities):
-        with self.lock:
-            for idx, prio in zip(indices, priorities):
-                self.priority_sumtree.push(idx, prio)
+        if not self.lock.locked():
+            print("error: lock must be acquired before this transaction")
+
+        for idx, prio in zip(indices, priorities):
+            self.priority_sumtree.push(idx, prio)
 
     def __len__(self):
         return min(self.number_writes, params.REPLAY_MEMORY_SIZE)
 
     def __getitem__(self, index):
-        with self.lock:
-            assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
-            assert max(index) < len(self), "index out of range"
+        if not self.lock.locked():
+            print("error: lock must be acquired before this transaction")
+        assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
+        assert max(index) < len(self), "index out of range"
 
-            from_states = self.from_state_memory[index]
-            to_states = self.to_state_memory[index]
-            actions = self.action_memory[index]
-            rewards = self.reward_memory[index]
-            terminal = self.terminal_memory[index]
-            length = self.length_memory[index]
+        from_states = self.from_state_memory[index]
+        to_states = self.to_state_memory[index]
+        actions = self.action_memory[index]
+        rewards = self.reward_memory[index]
+        terminal = self.terminal_memory[index]
+        length = self.length_memory[index]
 
-            return from_states, to_states, actions, rewards, terminal, length
+        return from_states, to_states, actions, rewards, terminal, length
