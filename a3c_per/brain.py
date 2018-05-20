@@ -102,7 +102,7 @@ class Brain:
             return
 
         # get up to MAX_BATCH items from the training queue
-        batch = self.memory.pop(params.MAX_BATCH)
+        batch = self.memory.sample(params.MAX_BATCH)
         from_states, to_states, actions, _, _, _ = batch
         from_states = np.vstack(from_states)
         actions = np.vstack(actions)
