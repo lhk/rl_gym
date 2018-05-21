@@ -33,7 +33,6 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
     if interaction % params.TRAIN_SKIPS != 0:
         continue
 
-
     # sample batch with priority as weight, train on it
     training_indices = memory.sample_indices()
     batch = memory[training_indices]

@@ -84,7 +84,7 @@ class Brain:
         if type(actions) == list:
             return batch
         else:
-            return [[from_states], [to_states], [actions], [rewards], [terminal],[length]]
+            return [[from_states], [to_states], [actions], [rewards], [terminal], [length]]
 
     def _get_targets(self, batch):
 
@@ -134,19 +134,18 @@ class Brain:
 
             # update priorities
             errors = self.get_error(batch)
-            priorities = (errors + params.ERROR_BIAS)**params.ERROR_POW
+            priorities = (errors + params.ERROR_BIAS) ** params.ERROR_POW
 
             # update priorities expects a list
             priorities = priorities[0]
 
             self.memory.update_priority(sample_indices, priorities)
 
-
     def get_error(self, batch):
         batch = self.__batchify(batch)
 
         observed_value = self._get_targets(batch)
-        from_states, _, _, _, _, _  = batch
+        from_states, _, _, _, _, _ = batch
         from_states = np.vstack(from_states)
 
         _, predicted_value = self.predict(from_states)

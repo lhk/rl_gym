@@ -1,7 +1,7 @@
+from unittest import TestCase
+
 import numpy as np
 from sumtree import SumTree
-
-from unittest import TestCase
 
 
 class TestSumTree(TestCase):

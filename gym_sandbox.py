@@ -1,8 +1,6 @@
-import argparse
-import sys
-
 import gym
 from gym import wrappers, logger
+
 
 class RandomAgent():
 
@@ -11,6 +9,7 @@ class RandomAgent():
 
     def act(self, observation, reward, done):
         return self.action_space.sample()
+
 
 if __name__ == "__main__":
     logger.set_level(logger.INFO)

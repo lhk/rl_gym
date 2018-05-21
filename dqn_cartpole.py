@@ -1,22 +1,13 @@
 # coding: utf-8
 
-import numpy as np
-import tensorflow as tf
-
 import random
 
-import keras
-
-import keras.backend as K
-from keras.layers import Conv2D, Dense, Activation, Flatten, Input, Multiply
-from keras.optimizers import Adam
-from keras.models import Model
-
-from keras.regularizers import l2
-
-from keras.layers import TimeDistributed, BatchNormalization, MaxPool2D
-
 import gym
+import numpy as np
+from keras.layers import Dense, Input, Multiply
+from keras.models import Model
+from keras.optimizers import Adam
+from keras.regularizers import l2
 
 env = gym.make('CartPole-v0')
 env.reset()
@@ -61,7 +52,6 @@ state = env.reset()
 # parameters
 gamma = 0.99  # for discounting future rewards
 eps = 0.1  # for eps-greedy policy
-
 
 retrain = False
 
@@ -127,7 +117,7 @@ if retrain:
             res = q_approximator.train_on_batch([current_states, mask], targets)
             res_values.append(res)
 
-        if i%300 == 0:
+        if i % 300 == 0:
             q_approximator_fixed.set_weights(q_approximator.get_weights())
 
     q_approximator.save_weights("q_approx.hdf5")
@@ -147,11 +137,10 @@ state = env.reset()
 done = False
 while True:
     env.render()
-    q_values = q_approximator.predict([state.reshape((1,4)), np.ones((1, 2))])
+    q_values = q_approximator.predict([state.reshape((1, 4)), np.ones((1, 2))])
     action = q_values.argmax()
     state, _, done, _ = env.step(action)
 
     if done:
         state = env.reset()
         print("resetting")
-

@@ -1,7 +1,9 @@
+from unittest import TestCase
+
 import numpy as np
 
-from unittest import TestCase
 from dqn.memory import Memory
+
 
 class TestMemory(TestCase):
     def test_push(self):

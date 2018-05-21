@@ -14,6 +14,7 @@ import ddqn.params as params
 import os
 import shutil
 
+
 class Brain():
     def __init__(self, loss="mse"):
 
@@ -33,7 +34,6 @@ class Brain():
         self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
 
         self.target_updates = 0
-
 
         # cleaning a directory for checkpoints
         if os.path.exists(os.getcwd() + "/checkpoints/"):

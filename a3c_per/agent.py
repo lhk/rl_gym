@@ -9,7 +9,9 @@ from a3c_per.brain import Brain
 from a3c_per.memory import Memory
 
 import warnings
+
 warnings.simplefilter("error", RuntimeWarning)
+
 
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
@@ -58,7 +60,7 @@ class Agent(threading.Thread):
             else:
                 actions, _ = self.brain.predict(state)
                 actions = actions[0]  # need to flatten for sampling
-                #print(actions)
+                # print(actions)
                 try:
                     action = np.random.choice(params.NUM_ACTIONS, p=actions)
                 except:
@@ -118,9 +120,9 @@ class Agent(threading.Thread):
         first_action = self.seen_actions.pop(0)
         first_reward = self.seen_rewards.pop(0)
 
-        batch=[from_state, to_state, first_action, self.n_step_reward, terminal, length]
+        batch = [from_state, to_state, first_action, self.n_step_reward, terminal, length]
         error = self.brain.get_error(batch)
-        priority = (error + params.ERROR_BIAS)**params.ERROR_POW
+        priority = (error + params.ERROR_BIAS) ** params.ERROR_POW
 
         # the result of a prediction from the model has shape (N, 1)
         # here we had priority in shape (1,1) but the memory expects a scalar as priority

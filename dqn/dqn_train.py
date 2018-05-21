@@ -1,6 +1,6 @@
 import numpy as np
+
 np.random.seed(0)
-import tensorflow as tf
 
 from dqn.agent import Agent
 from dqn.memory import Memory

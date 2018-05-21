@@ -109,9 +109,9 @@ repeat_action_counter = 0  # number of times this action has been repeated
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
 
-#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+# from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
 #                              shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+# to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
 #                            shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 
 from_state_memory = np.empty((REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)

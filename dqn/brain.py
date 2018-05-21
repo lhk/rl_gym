@@ -14,13 +14,14 @@ import dqn.params as params
 import os
 import shutil
 
+
 class Brain():
     def __init__(self, loss="mse"):
 
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
-        config.log_device_placement= params.TF_LOG_DEVICE_PLACEMENT
+        config.log_device_placement = params.TF_LOG_DEVICE_PLACEMENT
 
         sess = tf.Session(config=config)
         K.set_session(sess)
@@ -75,7 +76,7 @@ class Brain():
     def update_target(self):
         self.target_model.set_weights(self.model.get_weights())
 
-        self.target_updates+=1
+        self.target_updates += 1
 
         # save the target network every N steps
         if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
@@ -111,6 +112,3 @@ class Brain():
         if self.train_steps % params.TARGET_NETWORK_UPDATE_FREQ == 0:
             self.update_target()
             self.train_steps = 0
-
-
-

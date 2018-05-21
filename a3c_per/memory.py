@@ -1,13 +1,13 @@
-import threading
-
 import os
 import shutil
+import threading
 from tempfile import mkstemp
 
 import numpy as np
 
 import a3c_per.params as params
 from util.sumtree import SumTree
+
 
 class Memory:
     def __init__(self):

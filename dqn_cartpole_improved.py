@@ -3,13 +3,13 @@
 import random
 
 import gym
-import keras
 import matplotlib
 import numpy as np
-from keras.layers import Conv2D, Flatten, Input, Multiply, Dense
+from keras.layers import Input, Multiply, Dense
 from keras.models import Model
 from keras.optimizers import RMSprop
 from keras.regularizers import l2
+
 from loss_functions import huber_loss
 
 matplotlib.use('Qt5Agg')
@@ -38,6 +38,7 @@ def create_model():
 
     output_masked = Multiply()([output_layer, mask_layer])
     return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
+
 
 # parameters, taken from the paper
 

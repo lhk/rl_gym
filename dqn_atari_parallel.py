@@ -149,8 +149,6 @@ from multiprocessing import Value, Lock
 
 def interaction_generator(q_approximator_fixed, replay_memory, exploration,
                           interaction_counter, interaction_lock):
-
-    import keras
     import keras.backend as K
     import tensorflow as tf
 
@@ -168,7 +166,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
     config.gpu_options.allow_growth = True
     config.log_device_placement = True
 
-    sess = tf.Session(config=config, graph= graph)
+    sess = tf.Session(config=config, graph=graph)
     K.set_session(sess)
 
     # the generator will never stop interacting with the environment
@@ -179,7 +177,7 @@ def interaction_generator(q_approximator_fixed, replay_memory, exploration,
             action = env.action_space.sample()
         else:
             q_values = q_approximator_fixed.predict([state.reshape(1, *INPUT_SHAPE),
-                                                         np.ones((1, NUM_ACTIONS))])
+                                                     np.ones((1, NUM_ACTIONS))])
             action = q_values.argmax()
             if q_values.max() > highest_q_value:
                 highest_q_value = q_values.max()
@@ -284,7 +282,7 @@ q_approximator._make_predict_function()
 q_approximator.compile(RMSprop(LEARNING_RATE, rho=RHO, epsilon=EPSILON), loss=huber_loss)
 
 graph = tf.get_default_graph()
-#graph = K.get_session().graph
+# graph = K.get_session().graph
 
 if RETRAIN:
 
@@ -301,4 +299,4 @@ if RETRAIN:
                                      use_multiprocessing=True,
                                      workers=1)
 
-        #q_approximator_fixed.set_weights(q_approximator.get_weights())
+        # q_approximator_fixed.set_weights(q_approximator.get_weights())

@@ -9,10 +9,7 @@ import numpy as np
 
 np.random.seed(0)
 
-import skimage.color
-import skimage.transform
 import tensorflow as tf
-from drawnow import drawnow, figure
 from keras.layers import Conv2D, Flatten, Input, Multiply
 from keras.models import Model
 from keras.optimizers import RMSprop
@@ -41,6 +38,7 @@ random.seed(0)
 
 import lycon
 
+
 def preprocess_frame(frame):
     downsampled = lycon.resize(frame, width=frame_size[0], height=frame_size[1],
                                interpolation=lycon.Interpolation.NEAREST)
@@ -57,7 +55,7 @@ def create_model():
 
     conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(input_layer)
     conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-    #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+    # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
     conv_flattened = Flatten()(conv)
 
@@ -92,7 +90,7 @@ total_interactions = int(3e6)
 
 initial_exploration = 1.0
 final_exploration = 0.1
-final_exploration_frame = int(total_interactions//2)
+final_exploration_frame = int(total_interactions // 2)
 
 repeat_action = 1
 
@@ -170,7 +168,9 @@ total_duration = 0
 
 highest_q_values = []
 highest_q_value = -np.inf
-#figure()
+
+
+# figure()
 
 
 def draw_fig():
@@ -183,7 +183,7 @@ def draw_fig():
     plot(total_durations[-50::2])
 
 
-#drawnow(draw_fig)
+# drawnow(draw_fig)
 
 if retrain:
 
@@ -218,7 +218,7 @@ if retrain:
             if noop_counter > noop_max:
                 action = 1
                 noop_counter = 0
-        else :
+        else:
             noop_counter = 0
 
         # record environments reaction for the chosen action
@@ -259,7 +259,7 @@ if retrain:
             total_duration = 0
             highest_q_value = -np.inf
 
-            #if len(total_durations) % plot_skips == 0:
+            # if len(total_durations) % plot_skips == 0:
             #    drawnow(draw_fig)
 
         # first fill the replay queue, then start training
@@ -272,7 +272,7 @@ if retrain:
 
         # train the q function approximator
         training_indices = np.random.choice(len(replay_memory), batch_size, replace=False)
-        #batch = replay_memory[training_indices]
+        # batch = replay_memory[training_indices]
         batch = [replay_memory[idx] for idx in training_indices]
 
         current_states = [replay[0] for replay in batch]
@@ -336,12 +336,12 @@ while True:
     # action = env.action_space.sample()
     # 0 is noop action,
     # we allow only a limited amount of noop actions
-    if action !=1 :
-       noop_counter += 1
+    if action != 1:
+        noop_counter += 1
 
-       if noop_counter > noop_max:
-           action=1
-           noop_counter = 0
+        if noop_counter > noop_max:
+            action = 1
+            noop_counter = 0
 
     state, reward, done = interact_multiple(state, action, repeat_action)
     total_reward += reward

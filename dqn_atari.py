@@ -23,15 +23,15 @@ from tqdm import tqdm
 # and create dirs for checkpoints (if not present)
 import os
 import shutil
-if os.path.exists(os.getcwd()+"/memory_maps/"):
-    shutil.rmtree(os.getcwd()+"/memory_maps/")
-os.mkdir(os.getcwd()+"/memory_maps/")
 
-if not os.path.exists(os.getcwd()+"/checkpoints/"):
-    os.mkdir(os.getcwd()+"/checkpoints/")
+if os.path.exists(os.getcwd() + "/memory_maps/"):
+    shutil.rmtree(os.getcwd() + "/memory_maps/")
+os.mkdir(os.getcwd() + "/memory_maps/")
+
+if not os.path.exists(os.getcwd() + "/checkpoints/"):
+    os.mkdir(os.getcwd() + "/checkpoints/")
 
 # a queue for past observations
-from collections import deque
 
 # force tensorflow to run on cpu
 # do this if you want to evaluate trained networks, without interrupting
@@ -91,7 +91,7 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
 FINAL_EXPLORATION = 0.1  # final chance
-FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS//2)  # frame at which final value is reached
+FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS // 2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
 REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
@@ -105,20 +105,18 @@ REPLAY_START_SIZE = int(1e3)
 exploration = INITIAL_EXPLORATION  # chance of sampling a random action
 
 number_recorded_replays = 0
-replay_index = 0 # index in the replay memory arrays
+replay_index = 0  # index in the replay memory arrays
 
 network_updates_counter = 0  # number of times the network has been updated
 target_network_updates_counter = 0  # number of times the target has been updated
 last_action = None  # action chosen at the last step
 repeat_action_counter = 0  # number of times this action has been repeated
 
-
 # replay memory as numpy arrays
 # this makes it possible to store the states on disk as memory mapped arrays
-from tempfile import mkstemp
 
-#from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
-#to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+# from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
+# to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE))
 
 from_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
 to_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.uint8)
@@ -127,9 +125,11 @@ to_state_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, *INPUT_SHAPE), dtype=np.ui
 action_memory = np.empty(shape=(REPLAY_MEMORY_SIZE), dtype=np.uint8)
 reward_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.int16)
 terminal_memory = np.empty(shape=(REPLAY_MEMORY_SIZE, 1), dtype=np.bool)
-#action_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
-#reward_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.float32, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
-#terminal_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.bool, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+
+
+# action_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+# reward_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.float32, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
+# terminal_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.bool, mode="w+", shape=(REPLAY_MEMORY_SIZE, 1))
 
 
 # helper methods
@@ -265,7 +265,7 @@ if RETRAIN:
             reward = - 1
 
         # this is given in the paper, they use only the sign
-        #reward = np.sign(reward)
+        # reward = np.sign(reward)
 
         from_state_memory[replay_index] = state
         to_state_memory[replay_index] = new_state
@@ -307,7 +307,6 @@ if RETRAIN:
         # don't train the network at every step
         if interaction % TRAIN_SKIPS != 0:
             continue
-
 
         # train the q function approximator
         training_indices = np.random.choice(min(number_recorded_replays, REPLAY_MEMORY_SIZE),
