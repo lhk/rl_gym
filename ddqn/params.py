@@ -36,12 +36,12 @@ FINAL_EXPLORATION = 0.1  # final chance
 FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS // 2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 
-REPEAT_ACTION_MAX = 30  # maximum number of repeated actions before sampling random action
+REPEAT_ACTION_MAX = 15  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(2 ** 18)
+REPLAY_MEMORY_SIZE = int(2 ** 20)
 REPLAY_START_SIZE = int(5e4)
-MEMORY_MAPPED = False
+MEMORY_MAPPED = True
 ERROR_BIAS = 0.01
 ERROR_POW = 0.7
 

@@ -2,22 +2,22 @@ import gym
 import lycon
 import numpy as np
 
-import ddqn.params as params
+import dqn.params as params
 
 
 class Agent:
 
     def __init__(self, exploration=params.INITIAL_EXPLORATION):
         self.env = gym.make(params.ENV_NAME)
+        self.env.seed(0)
+
         self.exploration = exploration
 
         self.last_action = None
         self.repeat_action_counter = 0
 
         self.state = self.get_starting_state()
-
         self.total_reward = 0
-        self.total_steps = 0
 
     def preprocess_frame(self, frame):
         downsampled = lycon.resize(frame, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
@@ -27,7 +27,6 @@ class Agent:
 
     def interact(self, action):
         observation, reward, done, _ = self.env.step(action)
-        # self.env.render()
 
         new_frame = self.preprocess_frame(observation)
 
@@ -69,7 +68,8 @@ class Agent:
             self.repeat_action_counter += 1
 
             if self.repeat_action_counter > params.REPEAT_ACTION_MAX:
-                action = self.env.action_space.sample()
+                action = 1  # self.env.action_space.sample()
+                self.last_action = action
                 self.repeat_action_counter = 0
         else:
             self.last_action = action
@@ -85,21 +85,16 @@ class Agent:
         if done:
             reward = - 1
 
+        self.total_reward += reward
+
         from_state = self.state
         to_state = new_state
-
-        self.total_reward += reward
-        self.total_steps += 1
 
         if not done:
             self.state = new_state
         else:
-            print("episode ended")
-            print("total reward {}".format(self.total_reward))
-            print("total steps {}".format(self.total_steps))
-
-            self.total_reward = 0
-            self.total_steps = 0
             self.state = self.get_starting_state()
+            print(self.total_reward)
+            self.total_reward = 0
 
         return from_state, to_state, action, reward, done
