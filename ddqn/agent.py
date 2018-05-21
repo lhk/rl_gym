@@ -2,7 +2,7 @@ import gym
 import lycon
 import numpy as np
 
-import dqn.params as params
+import ddqn.params as params
 
 
 class Agent:
