@@ -38,7 +38,10 @@ class Brain():
         # cleaning a directory for checkpoints
         if os.path.exists(os.getcwd() + "/checkpoints/"):
             shutil.rmtree(os.getcwd() + "/checkpoints/")
-        os.mkdir(os.getcwd() + "/checkpoints/")
+            #self.model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
+            #self.target_model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
+        else:
+            os.mkdir(os.getcwd() + "/checkpoints/")
 
     def __create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
@@ -46,7 +49,7 @@ class Brain():
         rescaled = Lambda(lambda x: x / 255.)(input_layer)
         conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-        # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
         conv_flattened = Flatten()(conv)
 
@@ -79,7 +82,7 @@ class Brain():
 
         # save the target network every N steps
         if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
-            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates))
+            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates+120))
 
     def __get_targets(self, from_states, to_states, actions, rewards, terminals):
 

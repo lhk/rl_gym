@@ -50,7 +50,6 @@ class Agent:
         return state
 
     def act(self, brain):
-
         # exploit or explore
         if np.random.rand() < self.exploration:
             action = self.env.action_space.sample()
