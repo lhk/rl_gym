@@ -48,7 +48,7 @@ class Agent(threading.Thread):
         game.set_living_reward(-1)
         game.set_mode(Mode.PLAYER)
         game.init()
-        self.actions = self.actions = np.eye(3, dtype=bool).tolist()
+        self.actions = np.eye(3, dtype=bool).tolist()
         # End Doom set-up
         self.env = game
 
@@ -68,13 +68,23 @@ class Agent(threading.Thread):
 
         self.stop = False
 
+    def preprocess_state(self, new_state):
+        # cropping and resizing as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
+        cropped = new_state[10:-10, 30:-30]
+        downsampled = lycon.resize(cropped, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
+                                   interpolation=lycon.Interpolation.NEAREST)
+        new_state = downsampled.reshape((params.INPUT_SHAPE))
+        return new_state
+
     def run_one_episode(self):
 
         # reset state of the agent
-        state = self.env.reset()
+        self.env.new_episode()
+        state = self.env.get_state().screen_buffer
+        state = self.preprocess_state(state)
         self.seen_states = [state]
 
-        memory = np.random.rand() * 0.1 - 0.05  # initialize the memory
+        memory = np.random.rand(1, 256) * 0.1 - 0.05  # initialize the memory
         self.seen_memories = [memory]
 
         total_reward = 0
@@ -85,36 +95,33 @@ class Agent(threading.Thread):
             time.sleep(params.WAIT_ON_ACTION)
 
             # show current state to network and get predicted policy
-            actions, _, memory = self.brain.predict([state, memory])
+            actions, _, memory = self.brain.predict(state, memory)
             actions = actions[0]  # need to flatten for sampling
 
             # get next action, explore with probability self.eps
             if np.random.rand() < self.exploration:
-                action = self.env.action_space.sample()
+                action_index = np.random.randint(params.NUM_ACTIONS)
             else:
-                action = np.random.choice(params.NUM_ACTIONS, p=actions)
+                action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
+
+            action = self.actions[action_index]
 
             # anneal epsilon
             if self.exploration > params.FINAL_EXPLORATION:
                 self.exploration -= params.EXPLORATION_STEP
 
-            new_state, reward, done, info = self.env.step(action)
-
-            # preprocess state
-            # TODO: don't do this in-place
-            # cropping and resizing as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
-            cropped = new_state[10:-10, 30:-30]
-            downsampled = lycon.resize(new_state, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
-                                       interpolation=lycon.Interpolation.NEAREST)
-            grayscale = downsampled.mean(axis=-1).astype(np.uint8)
-
-            new_state = grayscale
+            reward = self.env.make_action(action)
+            done = self.env.is_episode_finished()
 
             if done:
                 new_state[:] = 0
+            else:
+
+                new_state = self.env.get_state().screen_buffer
+                new_state = self.preprocess_state(new_state)
 
             actions_onehot = np.zeros(params.NUM_ACTIONS)
-            actions_onehot[action] = 1
+            actions_onehot[action_index] = 1
 
             # append observations to local memory
             self.seen_memories.append(memory)

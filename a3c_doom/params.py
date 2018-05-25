@@ -19,7 +19,7 @@ GAMMA_N = GAMMA ** NUM_STEPS
 # parameters for the neural network
 FRAME_SIZE = (84, 84)
 INPUT_SHAPE = (*FRAME_SIZE, 1)
-NUM_ACTIONS = 4
+NUM_ACTIONS = 3
 MIN_BATCH = 32
 MAX_BATCH = 5 * MIN_BATCH
 

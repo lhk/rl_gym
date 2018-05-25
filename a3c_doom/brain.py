@@ -62,8 +62,8 @@ class Brain:
         input_memory = Input(shape=(256,))
         gru_tensor, output_memory = gru_cell(dense, initial_state=input_memory)
 
-        pred_actions = Dense(params.NUM_ACTIONS, activation='relu')(gru_tensor)
-        pred_values = Dense(1, activation='relu')(gru_tensor)
+        pred_actions = Dense(params.NUM_ACTIONS, activation='softmax')(gru_tensor)
+        pred_values = Dense(1, activation='linear')(gru_tensor)
 
         model = Model(inputs=[input_state, input_memory], outputs=[pred_actions, pred_values, output_memory])
 
@@ -129,6 +129,12 @@ class Brain:
         # keras always needs a batch dimension
         if state.shape == params.INPUT_SHAPE:
             state = state.reshape((-1, *params.INPUT_SHAPE))
+
+        # the memory shape is given by the number of cells in the rnn layer
+        # I don't want to move that to a parameter, so right now, it is a "magic number"
+        # TODO: maybe a parameter after all ?
+        if memory.shape == (256):
+            memory = memory.reshape((-1, 256))
 
         with self.default_graph.as_default():
             return self.model.predict([state, memory])
