@@ -60,7 +60,7 @@ class Brain:
         # of the cell during training
         gru_cell = CuDNNGRU(256, return_state=True)
         input_memory = Input(shape=(256,))
-        gru_tensor, output_memory = gru_cell(dense, initial_state = input_memory)
+        gru_tensor, output_memory = gru_cell(dense, initial_state=input_memory)
 
         pred_actions = Dense(params.NUM_ACTIONS, activation='relu')(gru_tensor)
         pred_values = Dense(1, activation='relu')(gru_tensor)
@@ -103,7 +103,8 @@ class Brain:
             return
 
         # get up to MAX_BATCH items from the training queue
-        from_states, from_memories, to_states, to_memories, actions, rewards, terminal, length = self.memory.pop(params.MAX_BATCH)
+        from_states, from_memories, to_states, to_memories, actions, rewards, terminal, length = self.memory.pop(
+            params.MAX_BATCH)
         from_states = np.vstack(from_states)
         from_memories = np.vstack(from_memories)
         to_states = np.vstack(to_states)

@@ -12,6 +12,7 @@ import lycon
 
 from vizdoom import *
 
+
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
                  shared_memory: Memory,
@@ -73,8 +74,8 @@ class Agent(threading.Thread):
         state = self.env.reset()
         self.seen_states = [state]
 
-        memory = np.random.rand()*0.1 - 0.05 # initialize the memory
-        self.seen_memories= [memory]
+        memory = np.random.rand() * 0.1 - 0.05  # initialize the memory
+        self.seen_memories = [memory]
 
         total_reward = 0
         self.n_step_reward = 0
@@ -162,5 +163,6 @@ class Agent(threading.Thread):
         first_action = self.seen_actions.pop(0)
         first_reward = self.seen_rewards.pop(0)
 
-        self.shared_memory.push(from_state, from_memory, to_state, to_memory, first_action, self.n_step_reward, terminal, length)
+        self.shared_memory.push(from_state, from_memory, to_state, to_memory, first_action, self.n_step_reward,
+                                terminal, length)
         self.n_step_reward = (self.n_step_reward - first_reward)
