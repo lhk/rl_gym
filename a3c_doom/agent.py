@@ -216,7 +216,7 @@ class Agent(threading.Thread):
         weights = np.geomspace(1, discount_factor**len(deltas), len(deltas))
 
         weighted_series = deltas * weights
-        A_gae = weighted_series.sum()
+        advantage_gae = weighted_series.sum()
 
 
         from_state = self.seen_states.pop(0)
