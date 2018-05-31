@@ -54,10 +54,11 @@ class Agent(threading.Thread):
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
-        self.seen_states = []
-        self.seen_memories = []
-        self.seen_actions = []
-        self.seen_rewards = []
+        self.seen_states = []   # state of the environment
+        self.seen_values = []   # corresponding estimated values (given by network)
+        self.seen_memories = [] # internal states of the rnns
+        self.seen_actions = []  # actions taken
+        self.seen_rewards = []  # rewards given
         self.n_step_reward = 0  # reward for n consecutive steps
 
         # this is globally shared between agents
