@@ -170,6 +170,7 @@ class Agent(threading.Thread):
         print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
 
         if self.num_episodes>params.NUM_EPISODES:
+            self.stop = True
             print("stopping training for agent {}".format(threading.current_thread()))
 
 
