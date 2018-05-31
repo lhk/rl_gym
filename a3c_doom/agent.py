@@ -176,7 +176,7 @@ class Agent(threading.Thread):
         # compute gae advantage
         # the series of rewards seen in the memory
         # the last reward is replaced with the predicted value of the last state
-        rewards = np.array(self.seen_rewards + [self.seen_values[-1]])
+        rewards = np.array(self.seen_rewards)
 
         # delta functions are 1 step TD lambda
         values = np.array(self.seen_values[:])
@@ -196,6 +196,7 @@ class Agent(threading.Thread):
         to_memory = self.seen_memories[-1]
         first_action = self.seen_actions.pop(0)
         first_reward = self.seen_rewards.pop(0)
+        first_value = self.seen_values.pop(0)
 
         self.shared_memory.push(from_state, from_memory, to_state, to_memory, first_action, self.n_step_reward,
                                 advantage_gae, terminal, length)
