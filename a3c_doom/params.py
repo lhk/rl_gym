@@ -1,19 +1,19 @@
 # parameters for the training setup
 RUN_TIME = 120000
-AGENTS = 1
+AGENTS = 8
 OPTIMIZERS = 1
 WAIT_ON_ACTION = 0.0001
 
 # parameters for the agent
 INITIAL_EXPLORATION = 0.4
-FINAL_EXPLORATION = .15
+FINAL_EXPLORATION = .05
 FINAL_EXPLORATION_ACTION = 75000
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_ACTION
 
 # parameters for the discount
 NUM_STEPS = 30
 GAMMA = 0.99
-LAMBDA = 0.99
+LAMBDA = 0.75
 REWARD_SCALE = 1e-2
 
 # parameters for the neural network
@@ -24,11 +24,11 @@ MIN_BATCH = 32
 MAX_BATCH = 5 * MIN_BATCH
 
 # parameters for the training
-LEARNING_RATE = 5e-3
+LEARNING_RATE = 1e-4
 DECAY = 0.99
 LOSS_VALUE = .5
-LOSS_ENTROPY = .01
-GRADIENT_NORM_CLIP = 40.
+LOSS_ENTROPY = .02
+GRADIENT_NORM_CLIP = 25.
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True

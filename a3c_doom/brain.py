@@ -91,7 +91,7 @@ class Brain:
         eps = 1e-10
         entropy = params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
 
-        loss = loss_policy + loss_value + entropy
+        loss = tf.reduce_sum(loss_policy + loss_value + entropy)
 
         # we have to use tensorflow, this is not possible withing a custom keras loss function
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
@@ -135,7 +135,7 @@ class Brain:
             self.advantage : advantages,
             self.t_step_reward: n_step_reward})
 
-        print("step")
+        #print("step")
 
     def predict(self, state, memory):
         # keras always needs a batch dimension
