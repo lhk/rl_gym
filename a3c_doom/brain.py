@@ -75,6 +75,8 @@ class Brain:
 
         # placeholders
         action_mask = Input(shape=(params.NUM_ACTIONS,))
+
+        # TODO: rename n_step_reward, this also includes the target value at the end
         n_step_reward = Input(shape=(1,))
         advantage = Input(shape=(1,))
 
@@ -83,7 +85,7 @@ class Brain:
         log_prob = K.log(K.sum(chosen_action, axis=-1, keepdims=True))
 
         loss_policy = -log_prob * advantage
-        loss_value = params.LOSS_VALUE * advantage ** 2
+        loss_value = params.LOSS_VALUE * (n_step_reward - pred_values) ** 2
 
         eps = 1e-10
         entropy = params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
@@ -92,7 +94,7 @@ class Brain:
 
         # we have to use tensorflow, this is not possible withing a custom keras loss function
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
-        gradients = optimizer.compute_gradients(loss)
+        gradients = optimizer.compute_gradients(loss, tf.trainable_variables())
         gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
         minimize_step = optimizer.apply_gradients(gradients)
 
