@@ -1,5 +1,5 @@
 import threading
-
+import a3c_doom.params as params
 
 class Memory:
     def __init__(self):
@@ -21,6 +21,17 @@ class Memory:
 
     def push(self, from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length):
         with self.lock:
+
+            assert from_state.shape == (*params.FRAME_SIZE, 1)
+            assert from_memory.shape == (256,)
+            assert to_state.shape == (*params.FRAME_SIZE, 1)
+            assert to_memory.shape == (256,)
+            assert action.shape == (*params.NUM_ACTIONS,)
+            assert reward.shape == (1,)
+            assert advantage.shape == (1,)
+            assert terminal.shape == (1,)
+            assert length.shape == (1,)
+            
             self.train_queue[0].append(from_state)
             self.train_queue[1].append(from_memory)
             self.train_queue[2].append(to_state)

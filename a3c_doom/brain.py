@@ -82,7 +82,8 @@ class Brain:
 
         # loss formulation of a3c_doom
         chosen_action = pred_actions * action_mask
-        log_prob = K.log(K.sum(chosen_action, axis=-1, keepdims=True))
+        chosen_action = K.sum(chosen_action, axis=-1, keepdims=True)
+        log_prob = K.log(chosen_action)
 
         loss_policy = -log_prob * advantage
         loss_value = params.LOSS_VALUE * (n_step_reward - pred_values) ** 2
@@ -94,9 +95,11 @@ class Brain:
 
         # we have to use tensorflow, this is not possible withing a custom keras loss function
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
-        gradients = optimizer.compute_gradients(loss, tf.trainable_variables())
+        gradients_variables = optimizer.compute_gradients(loss)
+        gradients, variables = zip(*gradients_variables)
         gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
-        minimize_step = optimizer.apply_gradients(gradients)
+        gradients_variables = zip(gradients, variables)
+        minimize_step = optimizer.apply_gradients(gradients_variables)
 
         return model, input_state, input_memory, action_mask, n_step_reward, advantage, minimize_step
 
@@ -110,19 +113,19 @@ class Brain:
         # get up to MAX_BATCH items from the training queue
         from_states, from_memories, to_states, to_memories, actions, rewards, advantages, terminal, length = self.memory.pop(
             params.MAX_BATCH)
-        from_states = np.vstack(from_states)
-        from_memories = np.vstack(from_memories)
-        to_states = np.vstack(to_states)
-        to_memories = np.vstack(to_memories)
-        actions = np.vstack(actions)
-        rewards = np.vstack(rewards)
-        terminal = np.vstack(terminal)
-        advantages = np.vstack(advantages)
-        length = np.vstack(length)
+        from_states = np.array(from_states)
+        from_memories = np.array(from_memories)
+        to_states = np.array(to_states)
+        to_memories = np.array(to_memories)
+        actions = np.array(actions)
+        rewards = np.array(rewards)
+        terminal = np.array(terminal)
+        advantages = np.array(advantages)
+        length = np.array(length)
 
         # predict the final value
         # TODO: this is incorrect, if the local memory of the states unrols after an episode end. it might not be N steps into the future
-        _, end_values, _ = self.predict([to_states, to_memories])
+        _, end_values, _ = self.predict(to_states, to_memories)
         n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)
 
         self.session.run(self.minimize_step, feed_dict={
@@ -140,7 +143,7 @@ class Brain:
         # the memory shape is given by the number of cells in the rnn layer
         # I don't want to move that to a parameter, so right now, it is a "magic number"
         # TODO: maybe a parameter after all ?
-        if memory.shape == (256):
+        if memory.shape == (256,):
             memory = memory.reshape((-1, 256))
 
         with self.default_graph.as_default():

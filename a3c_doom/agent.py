@@ -94,7 +94,7 @@ class Agent(threading.Thread):
         # the values for the random noise have been read from the keras source code,
         # compare with TODO: link initializer source
         memory = np.random.rand(1, 256) * 0.1 - 0.05
-        self.seen_memories = [memory]
+        self.seen_memories = [memory[0]]
 
         total_reward = 0
         self.n_step_reward = 0
@@ -105,7 +105,11 @@ class Agent(threading.Thread):
 
             # show current state to network and get predicted policy
             actions, value, memory = self.brain.predict(state, memory)
-            actions = actions[0]  # need to flatten for sampling
+
+            # flatten the output
+            actions = actions[0]
+            memory = memory[0]
+            value = value[0, 0]
 
             # get next action, explore with probability self.eps
             if np.random.rand() < self.exploration:
@@ -133,7 +137,7 @@ class Agent(threading.Thread):
             actions_onehot[action_index] = 1
 
             # append observations to local memory
-            self.seen_values.append(value[0,0])
+            self.seen_values.append(value)
             self.seen_memories.append(memory)
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)

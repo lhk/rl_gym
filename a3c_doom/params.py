@@ -1,7 +1,7 @@
 # parameters for the training setup
 RUN_TIME = 120000
-AGENTS = 20
-OPTIMIZERS = 2
+AGENTS = 1
+OPTIMIZERS = 1
 WAIT_ON_ACTION = 0.0001
 
 # parameters for the agent
