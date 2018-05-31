@@ -172,49 +172,19 @@ class Agent(threading.Thread):
         # read the length first, before popping anything
         length = len(self.seen_actions)
 
+        # compute gae advantage
         # the series of rewards seen in the memory
         # the last reward is replaced with the predicted value of the last state
         rewards = self.seen_rewards + [self.seen_values[-1]]
 
-        # the discounting of rewards is done exactly as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/A3C-Doom.ipynb
-
-        # explaining it step by step:
-        # at every timestep t, the future reward is t + gamma * (t+1) + gamma^2 * (t+2)
-        # where (t+n) is the reward at time t + n
-        # using a scipy filter:
-        # https://docs.scipy.org/doc/scipy-1.0.0/reference/generated/scipy.signal.lfilter.html
-        # a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
-        #                       - a[1]*y[n-1] - ... - a[N]*y[n-N]
-
-        # this can be used to define a recursive formula:
-        # y[n] = x[n]
-        # y[n-1] = gamma*y[n] + x[n-1]
-        # y[n-2] = gamma*y[n-1] + x[n-2]
-        # ...
-        # b is [1, 0, 0, 0], scipy doesn't seem to broadcast b, but to fill it with zeros, so b=1
-        # a = [1, -gamma, 0, 0, 0, 0, 0], as above, no broadcasting occurs
-
-        # but this will produce
-        # y[n] = x[n] + gamma * y[n-1]
-        # so the values accumulate "towards the back"
-        # we need the inverse
-        # so we reorder the rewards before and after applying this filter
-
-        b = [1]
-        a = [1, -params.GAMMA]
-        discounted_rewards = scipy.signal.lfilter(b, a, rewards[::-1])[::-1]
-
-        # alternative formulation
-        # closely following the GAE paper
-
-        # compute the delta functions
+        # delta functions are 1 step TD lambda
         values = self.seen_values[:]
         deltas = rewards[:-1] + params.GAMMA*values[1:] - values[:-1]
 
-        # calculate weights, as in (16) in the GAE paper
+        # gae advantage uses a weighted sum of deltas,
+        # compare (16) in the gae paper
         discount_factor = params.GAMMA * params.LAMBDA
         weights = np.geomspace(1, discount_factor**len(deltas), len(deltas))
-
         weighted_series = deltas * weights
         advantage_gae = weighted_series.sum()
 
@@ -227,5 +197,6 @@ class Agent(threading.Thread):
         first_reward = self.seen_rewards.pop(0)
 
         self.shared_memory.push(from_state, from_memory, to_state, to_memory, first_action, self.n_step_reward,
-                                terminal, length)
+                                advantage_gae, terminal, length)
+
         self.n_step_reward = (self.n_step_reward - first_reward)

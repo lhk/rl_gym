@@ -22,12 +22,14 @@ class Brain:
 
         # set up a model for policy and values
         # set up placeholders for the inputs during training
-        model, input_state, input_memory, action_mask, t_step_reward, minimize_step = self.__setup_model()
+        model, input_state, input_memory, action_mask, t_step_reward, advantage, minimize_step = self.__setup_model()
+
         self.model = model
         self.input_state = input_state
         self.input_memory = input_memory
         self.action_mask = action_mask
         self.t_step_reward = t_step_reward
+        self.advantage = advantage
         self.minimize_step = minimize_step
 
         # running tensorflow in a multithreaded environment requires additional setup work
@@ -74,12 +76,11 @@ class Brain:
         # placeholders
         action_mask = Input(shape=(params.NUM_ACTIONS,))
         n_step_reward = Input(shape=(1,))
+        advantage = Input(shape=(1,))
 
         # loss formulation of a3c_doom
         chosen_action = pred_actions * action_mask
         log_prob = K.log(K.sum(chosen_action, axis=-1, keepdims=True))
-
-        advantage = n_step_reward - pred_values
 
         loss_policy = -log_prob * advantage
         loss_value = params.LOSS_VALUE * advantage ** 2
@@ -93,7 +94,7 @@ class Brain:
         rmsprop = tf.train.RMSPropOptimizer(learning_rate=params.LEARNING_RATE, decay=params.DECAY)
         minimize_step = rmsprop.minimize(loss)
 
-        return model, input_state, input_memory, action_mask, n_step_reward, minimize_step
+        return model, input_state, input_memory, action_mask, n_step_reward, advantage, minimize_step
 
     def optimize(self):
 
@@ -103,7 +104,7 @@ class Brain:
             return
 
         # get up to MAX_BATCH items from the training queue
-        from_states, from_memories, to_states, to_memories, actions, rewards, terminal, length = self.memory.pop(
+        from_states, from_memories, to_states, to_memories, actions, rewards, advantages, terminal, length = self.memory.pop(
             params.MAX_BATCH)
         from_states = np.vstack(from_states)
         from_memories = np.vstack(from_memories)
@@ -112,6 +113,7 @@ class Brain:
         actions = np.vstack(actions)
         rewards = np.vstack(rewards)
         terminal = np.vstack(terminal)
+        advantages = np.vstack(advantages)
         length = np.vstack(length)
 
         # predict the final value
@@ -123,6 +125,7 @@ class Brain:
             self.input_state: from_states,
             self.input_memory: from_memories,
             self.action_mask: actions,
+            self.advantage : advantages,
             self.t_step_reward: n_step_reward})
 
     def predict(self, state, memory):

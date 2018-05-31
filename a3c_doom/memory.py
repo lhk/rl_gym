@@ -3,10 +3,10 @@ import threading
 
 class Memory:
     def __init__(self):
-        # from_state, from_memory, to_state, to_memory, action, reward, terminal, length
+        # from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length
         # the length is the number of steps between from and to
         # this allows the agents to push observations of arbitrary length
-        self.train_queue = [[], [], [], [], [], [], [], []]
+        self.train_queue = [[], [], [], [], [], [], [], [], []]
         self.lock = threading.Lock()
 
     def __len__(self):
@@ -19,7 +19,7 @@ class Memory:
 
             return retval
 
-    def push(self, from_state, from_memory, to_state, to_memory, action, reward, terminal, length):
+    def push(self, from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length):
         with self.lock:
             self.train_queue[0].append(from_state)
             self.train_queue[1].append(from_memory)
@@ -27,5 +27,7 @@ class Memory:
             self.train_queue[3].append(to_memory)
             self.train_queue[4].append(action)
             self.train_queue[5].append(reward)
-            self.train_queue[6].append(terminal)
-            self.train_queue[7].append(length)
+            self.train_queue[6].append(advantage)
+            self.train_queue[7].append(terminal)
+            self.train_queue[8].append(length)
+
