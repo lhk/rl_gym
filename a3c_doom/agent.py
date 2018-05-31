@@ -69,7 +69,9 @@ class Agent(threading.Thread):
         self.brain = brain
         self.shared_memory = shared_memory
 
+        self.num_episodes = 0
         self.stop = False
+
 
     def preprocess_state(self, new_state):
         # cropping and resizing as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
@@ -163,10 +165,16 @@ class Agent(threading.Thread):
             if done or self.stop:
                 break
 
+        self.num_episodes+= 1
         # print debug information
-        print("total reward: {}".format(total_reward))
+        print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
+
+        if self.num_episodes>params.NUM_EPISODES:
+            print("stopping training for agent {}".format(threading.current_thread()))
+
 
     def run(self):
+        print("starting training for agent {}".format(threading.current_thread()))
         while not self.stop:
             self.run_one_episode()
 
