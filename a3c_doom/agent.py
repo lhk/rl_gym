@@ -204,6 +204,21 @@ class Agent(threading.Thread):
         a = [1, -params.GAMMA]
         discounted_rewards = scipy.signal.lfilter(b, a, rewards[::-1])[::-1]
 
+        # alternative formulation
+        # closely following the GAE paper
+
+        # compute the delta functions
+        values = self.seen_values[:]
+        deltas = rewards[:-1] + params.GAMMA*values[1:] - values[:-1]
+
+        # calculate weights, as in (16) in the GAE paper
+        discount_factor = params.GAMMA * params.LAMBDA
+        weights = np.geomspace(1, discount_factor**len(deltas), len(deltas))
+
+        weighted_series = deltas * weights
+        A_gae = weighted_series.sum()
+
+
         from_state = self.seen_states.pop(0)
         from_memory = self.seen_memories.pop(0)
         to_state = self.seen_states[-1]
