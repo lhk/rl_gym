@@ -8,6 +8,8 @@ import a3c_doom.params as params
 from a3c_doom.brain import Brain
 from a3c_doom.memory import Memory
 
+import scipy.signal
+
 import lycon
 
 from vizdoom import *
@@ -85,7 +87,13 @@ class Agent(threading.Thread):
         state = self.preprocess_state(state)
         self.seen_states = [state]
 
-        memory = np.random.rand(1, 256) * 0.1 - 0.05  # initialize the memory
+        # our network always needs to know the state of the internal rnn layers
+        # since the network is used by many agents at once, each agent needs to keep track
+        # of the memory on his own
+        # and at the beginning of a new episode, he needs to initialize this memory:
+        # the values for the random noise have been read from the keras source code,
+        # compare with TODO: link initializer source
+        memory = np.random.rand(1, 256) * 0.1 - 0.05
         self.seen_memories = [memory]
 
         total_reward = 0
@@ -96,7 +104,7 @@ class Agent(threading.Thread):
             time.sleep(params.WAIT_ON_ACTION)
 
             # show current state to network and get predicted policy
-            actions, _, memory = self.brain.predict(state, memory)
+            actions, value, memory = self.brain.predict(state, memory)
             actions = actions[0]  # need to flatten for sampling
 
             # get next action, explore with probability self.eps
@@ -115,9 +123,8 @@ class Agent(threading.Thread):
             done = self.env.is_episode_finished()
 
             if done:
-                new_state[:] = 0
+                new_state = np.zeros_like(state)
             else:
-
                 new_state = self.env.get_state().screen_buffer
                 new_state = self.preprocess_state(new_state)
 
@@ -125,6 +132,7 @@ class Agent(threading.Thread):
             actions_onehot[action_index] = 1
 
             # append observations to local memory
+            self.seen_values.append(value[0,0])
             self.seen_memories.append(memory)
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)
@@ -163,6 +171,38 @@ class Agent(threading.Thread):
 
         # read the length first, before popping anything
         length = len(self.seen_actions)
+
+        # the series of rewards seen in the memory
+        # the last reward is replaced with the predicted value of the last state
+        rewards = self.seen_rewards + [self.seen_values[-1]]
+
+        # the discounting of rewards is done exactly as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/A3C-Doom.ipynb
+
+        # explaining it step by step:
+        # at every timestep t, the future reward is t + gamma * (t+1) + gamma^2 * (t+2)
+        # where (t+n) is the reward at time t + n
+        # using a scipy filter:
+        # https://docs.scipy.org/doc/scipy-1.0.0/reference/generated/scipy.signal.lfilter.html
+        # a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
+        #                       - a[1]*y[n-1] - ... - a[N]*y[n-N]
+
+        # this can be used to define a recursive formula:
+        # y[n] = x[n]
+        # y[n-1] = gamma*y[n] + x[n-1]
+        # y[n-2] = gamma*y[n-1] + x[n-2]
+        # ...
+        # b is [1, 0, 0, 0], scipy doesn't seem to broadcast b, but to fill it with zeros, so b=1
+        # a = [1, -gamma, 0, 0, 0, 0, 0], as above, no broadcasting occurs
+
+        # but this will produce
+        # y[n] = x[n] + gamma * y[n-1]
+        # so the values accumulate "towards the back"
+        # we need the inverse
+        # so we reorder the rewards before and after applying this filter
+
+        b = [1]
+        a = [1, -params.GAMMA]
+        discounted_rewards = scipy.signal.lfilter(b, a, rewards[::-1])[::-1]
 
         from_state = self.seen_states.pop(0)
         from_memory = self.seen_memories.pop(0)

@@ -1,7 +1,6 @@
 # parameters for the training setup
-ENV_NAME = 'Breakout-v4'
-RUN_TIME = 120
-AGENTS = 80
+RUN_TIME = 120000
+AGENTS = 1
 OPTIMIZERS = 1
 WAIT_ON_ACTION = 0.0001
 
