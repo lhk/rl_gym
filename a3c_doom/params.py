@@ -28,6 +28,7 @@ LEARNING_RATE = 5e-3
 DECAY = 0.99
 LOSS_VALUE = .5
 LOSS_ENTROPY = .01
+GRADIENT_NORM_CLIP = 40.
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True

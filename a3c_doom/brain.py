@@ -91,8 +91,10 @@ class Brain:
         loss = loss_policy + loss_value + entropy
 
         # we have to use tensorflow, this is not possible withing a custom keras loss function
-        rmsprop = tf.train.RMSPropOptimizer(learning_rate=params.LEARNING_RATE, decay=params.DECAY)
-        minimize_step = rmsprop.minimize(loss)
+        optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
+        gradients = optimizer.compute_gradients(loss)
+        gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
+        minimize_step = optimizer.apply_gradients(gradients)
 
         return model, input_state, input_memory, action_mask, n_step_reward, advantage, minimize_step
 
