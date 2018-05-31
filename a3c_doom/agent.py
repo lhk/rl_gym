@@ -120,6 +120,7 @@ class Agent(threading.Thread):
                 self.exploration -= params.EXPLORATION_STEP
 
             reward = self.env.make_action(action)
+            reward *= params.REWARD_SCALE
             done = self.env.is_episode_finished()
 
             if done:
@@ -137,7 +138,7 @@ class Agent(threading.Thread):
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)
             self.seen_states.append(new_state)
-            self.n_step_reward = (self.n_step_reward + reward * params.GAMMA_N) / params.GAMMA
+            self.n_step_reward = (self.n_step_reward + reward * params.GAMMA ** params.NUM_STEPS) / params.GAMMA
 
             assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
                                                                "local memory must be moved to shared memory"
@@ -175,10 +176,10 @@ class Agent(threading.Thread):
         # compute gae advantage
         # the series of rewards seen in the memory
         # the last reward is replaced with the predicted value of the last state
-        rewards = self.seen_rewards + [self.seen_values[-1]]
+        rewards = np.array(self.seen_rewards + [self.seen_values[-1]])
 
         # delta functions are 1 step TD lambda
-        values = self.seen_values[:]
+        values = np.array(self.seen_values[:])
         deltas = rewards[:-1] + params.GAMMA*values[1:] - values[:-1]
 
         # gae advantage uses a weighted sum of deltas,
