@@ -12,8 +12,8 @@ EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION
 
 # parameters for the discount
 GAMMA = 0.99
+LAMBDA = 0.99
 NUM_STEPS = 8
-GAMMA_N = GAMMA ** NUM_STEPS
 
 # parameters for the neural network
 FRAME_SIZE = (84, 84)
