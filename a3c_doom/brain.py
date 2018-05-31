@@ -117,11 +117,11 @@ class Brain:
         from_memories = np.array(from_memories)
         to_states = np.array(to_states)
         to_memories = np.array(to_memories)
-        actions = np.array(actions)
-        rewards = np.array(rewards)
-        terminal = np.array(terminal)
-        advantages = np.array(advantages)
-        length = np.array(length)
+        actions = np.vstack(actions)
+        rewards = np.vstack(rewards)
+        terminal = np.vstack(terminal)
+        advantages = np.vstack(advantages)
+        length = np.vstack(length)
 
         # predict the final value
         # TODO: this is incorrect, if the local memory of the states unrols after an episode end. it might not be N steps into the future
@@ -134,6 +134,8 @@ class Brain:
             self.action_mask: actions,
             self.advantage : advantages,
             self.t_step_reward: n_step_reward})
+
+        print("step")
 
     def predict(self, state, memory):
         # keras always needs a batch dimension

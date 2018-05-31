@@ -1,3 +1,4 @@
+import numpy as np
 import threading
 import a3c_doom.params as params
 
@@ -26,12 +27,12 @@ class Memory:
             assert from_memory.shape == (256,)
             assert to_state.shape == (*params.FRAME_SIZE, 1)
             assert to_memory.shape == (256,)
-            assert action.shape == (*params.NUM_ACTIONS,)
-            assert reward.shape == (1,)
-            assert advantage.shape == (1,)
-            assert terminal.shape == (1,)
-            assert length.shape == (1,)
-            
+            assert action.shape == (params.NUM_ACTIONS,)
+            assert type(reward) in [np.float, np.float64]
+            assert type(advantage) in [np.float, np.float64]
+            assert type(terminal) == bool
+            assert type(length) == int
+
             self.train_queue[0].append(from_state)
             self.train_queue[1].append(from_memory)
             self.train_queue[2].append(to_state)
