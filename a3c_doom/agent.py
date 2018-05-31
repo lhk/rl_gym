@@ -8,8 +8,6 @@ import a3c_doom.params as params
 from a3c_doom.brain import Brain
 from a3c_doom.memory import Memory
 
-import scipy.signal
-
 import lycon
 
 from vizdoom import *
@@ -56,9 +54,9 @@ class Agent(threading.Thread):
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
-        self.seen_states = []   # state of the environment
-        self.seen_values = []   # corresponding estimated values (given by network)
-        self.seen_memories = [] # internal states of the rnns
+        self.seen_states = []  # state of the environment
+        self.seen_values = []  # corresponding estimated values (given by network)
+        self.seen_memories = []  # internal states of the rnns
         self.seen_actions = []  # actions taken
         self.seen_rewards = []  # rewards given
         self.n_step_reward = 0  # reward for n consecutive steps
@@ -71,7 +69,6 @@ class Agent(threading.Thread):
 
         self.num_episodes = 0
         self.stop = False
-
 
     def preprocess_state(self, new_state):
         # cropping and resizing as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
@@ -165,14 +162,13 @@ class Agent(threading.Thread):
             if done or self.stop:
                 break
 
-        self.num_episodes+= 1
+        self.num_episodes += 1
         # print debug information
         print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
 
-        if self.num_episodes>params.NUM_EPISODES:
+        if self.num_episodes > params.NUM_EPISODES:
             self.stop = True
             print("stopping training for agent {}".format(threading.current_thread()))
-
 
     def run(self):
         print("starting training for agent {}".format(threading.current_thread()))
@@ -193,15 +189,14 @@ class Agent(threading.Thread):
 
         # delta functions are 1 step TD lambda
         values = np.array(self.seen_values[:])
-        deltas = rewards[:-1] + params.GAMMA*values[1:] - values[:-1]
+        deltas = rewards[:-1] + params.GAMMA * values[1:] - values[:-1]
 
         # gae advantage uses a weighted sum of deltas,
         # compare (16) in the gae paper
         discount_factor = params.GAMMA * params.LAMBDA
-        weights = np.geomspace(1, discount_factor**len(deltas), len(deltas))
+        weights = np.geomspace(1, discount_factor ** len(deltas), len(deltas))
         weighted_series = deltas * weights
         advantage_gae = weighted_series.sum()
-
 
         from_state = self.seen_states.pop(0)
         from_memory = self.seen_memories.pop(0)

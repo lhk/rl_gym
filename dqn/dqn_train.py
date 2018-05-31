@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+
 print(tf.__version__)
 
 np.random.seed(0)

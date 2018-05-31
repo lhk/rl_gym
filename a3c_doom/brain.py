@@ -132,10 +132,10 @@ class Brain:
             self.input_state: from_states,
             self.input_memory: from_memories,
             self.action_mask: actions,
-            self.advantage : advantages,
+            self.advantage: advantages,
             self.t_step_reward: n_step_reward})
 
-        #print("step")
+        # print("step")
 
     def predict(self, state, memory):
         # keras always needs a batch dimension

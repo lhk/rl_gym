@@ -38,8 +38,8 @@ class Brain():
         # cleaning a directory for checkpoints
         if os.path.exists(os.getcwd() + "/checkpoints/"):
             shutil.rmtree(os.getcwd() + "/checkpoints/")
-            #self.model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
-            #self.target_model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
+            # self.model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
+            # self.target_model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
         else:
             os.mkdir(os.getcwd() + "/checkpoints/")
 
@@ -82,7 +82,7 @@ class Brain():
 
         # save the target network every N steps
         if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
-            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates+120))
+            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates + 120))
 
     def __get_targets(self, from_states, to_states, actions, rewards, terminals):
 
