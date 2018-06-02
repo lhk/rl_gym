@@ -1,8 +1,8 @@
 # parameters for setup of environment
-screen_size = (300, 300)
+screen_size = (256, 256)
 car_size = (10, 20)
 obstacle_size = (15, 15)
-goal_size = (30, 30)
+goal_size = (40, 40)
 num_obstacles = 7
 
 # parameters for mrp
@@ -15,3 +15,4 @@ timeout = 500
 dT = 0.8
 min_speed = -8
 max_speed = 10
+stop_on_border_collision= True

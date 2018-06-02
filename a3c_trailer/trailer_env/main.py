@@ -42,7 +42,7 @@ while True:
     reward, done = env.make_action((acceleration, steering_angle))
     print(reward)
     if done:
-        env.new_episode()
+        print("collision")
 
     pygame.display.update()
 

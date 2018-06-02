@@ -1,7 +1,7 @@
 # parameters for the training setup
 RUN_TIME = 120000
 NUM_EPISODES = 800
-AGENTS = 8
+AGENTS = 16
 OPTIMIZERS = 1
 WAIT_ON_ACTION = 0.0001
 
@@ -19,7 +19,7 @@ REWARD_SCALE = 1e-2
 
 # parameters for the neural network
 FRAME_SIZE = (128, 128)
-INPUT_SHAPE = (*FRAME_SIZE, 1)
+INPUT_SHAPE = (*FRAME_SIZE, 3)
 NUM_ACTIONS = 9
 MIN_BATCH = 32
 MAX_BATCH = 5 * MIN_BATCH

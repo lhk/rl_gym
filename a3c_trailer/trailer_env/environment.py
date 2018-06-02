@@ -28,14 +28,17 @@ class Environment():
         self.steps = 0
 
         # set up car, obstacle and goal positions
-        self.car_position = np.random.rand(2) * params.screen_size
+        self.car_position = np.array([0,0])
+        self.car_position[0] = np.random.uniform(params.car_size[0], params.screen_size[0]-params.car_size[0])
         self.car_position[1] = params.screen_size[1] - params.car_size[1]
-        self.goal_position = np.random.rand(2) * params.screen_size
+
+        self.goal_position = np.array([0,0])
+        self.goal_position[0] = np.random.uniform(params.goal_size[0], params.screen_size[0]-params.goal_size[0])
         self.goal_position[1] = 0 + params.goal_size[1]
 
-        self.car_dim = np.linalg.norm(params.car_size)
-        self.goal_dim = np.linalg.norm(params.goal_size)
-        self.obs_dim = np.linalg.norm(params.obstacle_size)
+        self.car_dim = np.linalg.norm(params.car_size, np.inf)
+        self.goal_dim = np.linalg.norm(params.goal_size, np.inf)
+        self.obs_dim = np.linalg.norm(params.obstacle_size, np.inf)
 
         min_dist = (self.car_dim + self.obs_dim + self.goal_dim)
 
@@ -67,31 +70,40 @@ class Environment():
         new_x = x - np.sin(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
         new_y = y - np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
 
+        border_collision = False
         if new_x > params.screen_size[0]:
-            self.car_speed = 0
+            border_collision = True
             new_x = params.screen_size[0]
         elif new_x < 0:
-            self.car_speed = 0
+            border_collision = True
             new_x = 0
 
         if new_y > params.screen_size[1]:
-            self.car_speed = 0
+            border_collision = True
             new_y = params.screen_size[1]
         elif new_y < 0:
-            self.car_speed = 0
+            border_collision = True
             new_y = 0
 
-        self.car_position = (new_x, new_y)
+        if border_collision:
+            if params.stop_on_border_collision:
+                return params.reward_collision, True
+            else:
+                self.car_speed = 0
+
+        self.car_position[:] = (new_x, new_y)
 
         self.car_rotation -= self.car_speed * steering_angle * params.dT
 
         for obstacle in self.obstacle_positions:
-            dist_obs = np.linalg.norm(obstacle - self.car_position)
+            obstacle = obstacle + np.array(params.obstacle_size)/2
+            dist_obs = np.linalg.norm(obstacle - self.car_position, np.inf)
             if dist_obs < 0.5 * (self.car_dim + self.obs_dim):
                 # collision with obstacle
                 return params.reward_collision, True
 
-        dist_goal = np.linalg.norm(self.goal_position - self.car_position)
+        goal_pos = self.goal_position + np.array(params.goal_size)/2
+        dist_goal = np.linalg.norm(self.goal_position - self.car_position, np.inf)
         if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
             return params.reward_goal, True
 

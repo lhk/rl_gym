@@ -25,9 +25,9 @@ class Memory:
 
     def push(self, from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length):
         with self.lock:
-            assert from_state.shape == (*params.FRAME_SIZE, 1)
+            assert from_state.shape == params.INPUT_SHAPE
             assert from_memory.shape == (256,)
-            assert to_state.shape == (*params.FRAME_SIZE, 1)
+            assert to_state.shape == params.INPUT_SHAPE
             assert to_memory.shape == (256,)
             assert action.shape == (params.NUM_ACTIONS,)
             assert type(reward) in [np.float, np.float64]
