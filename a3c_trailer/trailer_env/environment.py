@@ -1,9 +1,10 @@
+import numpy as np
 import pygame
+
 import a3c_trailer.trailer_env.colors as colors
 import a3c_trailer.trailer_env.params as params
 import a3c_trailer.trailer_env.utils as utils
 
-import numpy as np
 
 class Environment():
     def __init__(self):
@@ -13,7 +14,7 @@ class Environment():
         self.view = pygame.Surface(params.screen_size)
 
         # loading assets
-        self.car = pygame.image.load("assets/car.png")
+        self.car = pygame.image.load("trailer_env/assets/car.png")
         self.car = pygame.transform.smoothscale(self.car, params.car_size)
 
         self.black = pygame.Surface(params.obstacle_size)
@@ -24,15 +25,19 @@ class Environment():
 
     def new_episode(self):
 
+        self.steps = 0
+
         # set up car, obstacle and goal positions
         self.car_position = np.random.rand(2) * params.screen_size
+        self.car_position[1] = params.screen_size[1] - params.car_size[1]
         self.goal_position = np.random.rand(2) * params.screen_size
+        self.goal_position[1] = 0 + params.goal_size[1]
 
         self.car_dim = np.linalg.norm(params.car_size)
         self.goal_dim = np.linalg.norm(params.goal_size)
         self.obs_dim = np.linalg.norm(params.obstacle_size)
 
-        min_dist = 2 * (self.car_dim + self.obs_dim + self.goal_dim)
+        min_dist = (self.car_dim + self.obs_dim + self.goal_dim)
 
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
@@ -59,8 +64,8 @@ class Environment():
         self.car_speed += acceleration * params.dT
         self.car_speed = np.clip(self.car_speed, params.min_speed, params.max_speed)
         x, y = self.car_position
-        new_x = x - np.sin(self.car_rotation / 180 * np.pi)*self.car_speed*params.dT
-        new_y = y - np.cos(self.car_rotation / 180 * np.pi)*self.car_speed*params.dT
+        new_x = x - np.sin(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
+        new_y = y - np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
 
         if new_x > params.screen_size[0]:
             self.car_speed = 0
@@ -76,26 +81,27 @@ class Environment():
             self.car_speed = 0
             new_y = 0
 
-        self.car_position=(new_x, new_y)
-
-
+        self.car_position = (new_x, new_y)
 
         self.car_rotation -= self.car_speed * steering_angle * params.dT
 
         for obstacle in self.obstacle_positions:
             dist_obs = np.linalg.norm(obstacle - self.car_position)
-            if dist_obs < 0.5*(self.car_dim + self.obs_dim):
+            if dist_obs < 0.5 * (self.car_dim + self.obs_dim):
                 # collision with obstacle
                 return params.reward_collision, True
 
         dist_goal = np.linalg.norm(self.goal_position - self.car_position)
-        if dist_goal < 0.5*(self.car_dim + self.goal_dim):
+        if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
             return params.reward_goal, True
+
+        self.steps += 1
+        if self.steps > params.timeout:
+            return params.reward_timestep, True
 
         return params.reward_timestep, False
 
-
-    def render(self, return_numpy = True):
+    def render(self, return_numpy=True):
         self.view.fill(colors.white)
 
         # plot all the obstacles
