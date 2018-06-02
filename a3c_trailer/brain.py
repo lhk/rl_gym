@@ -48,8 +48,10 @@ class Brain:
         input_state = Input(shape=(*params.INPUT_SHAPE,))
 
         rescaled = Lambda(lambda x: x / 255.)(input_state)
-        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
+        conv = Conv2D(8, (8, 8), strides=(2, 2), activation='relu')(rescaled)
+        conv = Conv2D(16, (4, 4), strides=(2, 2), activation='relu')(conv)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
+        conv = Conv2D(64, (4, 4), strides=(1, 1), activation='relu')(conv)
 
         conv_flattened = Flatten()(conv)
         dense = Dense(256, activation="relu")(conv_flattened)
