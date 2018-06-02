@@ -28,7 +28,7 @@ class Environment():
         self.steps = 0
 
         # set up car, obstacle and goal positions
-        self.car_position = np.array([0,0])
+        self.car_position = np.array([0,0], dtype=np.float64)
         self.car_position[0] = np.random.uniform(params.car_size[0], params.screen_size[0]-params.car_size[0])
         self.car_position[1] = params.screen_size[1] - params.car_size[1]
 
@@ -67,8 +67,10 @@ class Environment():
         self.car_speed += acceleration * params.dT
         self.car_speed = np.clip(self.car_speed, params.min_speed, params.max_speed)
         x, y = self.car_position
-        new_x = x - np.sin(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
-        new_y = y - np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
+        dx = -np.sin(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
+        new_x = x + dx
+        dy = -np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
+        new_y = y + dy
 
         border_collision = False
         if new_x > params.screen_size[0]:
