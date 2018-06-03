@@ -1,9 +1,9 @@
 import numpy as np
 import pygame
 
-import a3c_trailer.trailer_env.colors as colors
-import a3c_trailer.trailer_env.params as params
-import a3c_trailer.trailer_env.utils as utils
+import environments.trailer_env.colors as colors
+import environments.trailer_env.params as params
+import environments.trailer_env.utils as utils
 
 
 class Environment():
@@ -29,11 +29,11 @@ class Environment():
 
         # set up car, obstacle and goal positions
         self.car_position = np.array([0,0], dtype=np.float64)
-        self.car_position[0] = np.random.uniform(params.car_size[0], params.screen_size[0]-params.car_size[0])
+        self.car_position[0] = np.random.uniform(params.car_size[0], params.screen_size[0] - params.car_size[0])
         self.car_position[1] = params.screen_size[1] - params.car_size[1]
 
         self.goal_position = np.array([0,0])
-        self.goal_position[0] = np.random.uniform(params.goal_size[0], params.screen_size[0]-params.goal_size[0])
+        self.goal_position[0] = np.random.uniform(params.goal_size[0], params.screen_size[0] - params.goal_size[0])
         self.goal_position[1] = 0 + params.goal_size[1]
 
         self.car_dim = np.linalg.norm(params.car_size, np.inf)
@@ -98,13 +98,13 @@ class Environment():
         self.car_rotation -= self.car_speed * steering_angle * params.dT
 
         for obstacle in self.obstacle_positions:
-            obstacle = obstacle + np.array(params.obstacle_size)/2
+            obstacle = obstacle + np.array(params.obstacle_size) / 2
             dist_obs = np.linalg.norm(obstacle - self.car_position, np.inf)
             if dist_obs < 0.5 * (self.car_dim + self.obs_dim):
                 # collision with obstacle
                 return params.reward_collision, True
 
-        goal_pos = self.goal_position + np.array(params.goal_size)/2
+        goal_pos = self.goal_position + np.array(params.goal_size) / 2
         dist_goal = np.linalg.norm(self.goal_position - self.car_position, np.inf)
         if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
             return params.reward_goal, True

@@ -3,8 +3,8 @@ import sys
 import pygame
 from pygame.locals import *
 
-import a3c_trailer.trailer_env.params as params
-from a3c_trailer.trailer_env.environment import Environment
+import environments.trailer_env.params as params
+from environments.trailer_env.environment import Environment
 
 pygame.init()
 clock = pygame.time.Clock()
