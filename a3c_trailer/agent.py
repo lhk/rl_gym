@@ -125,6 +125,7 @@ class Agent(threading.Thread):
                 while len(self.seen_rewards) > 0:
                     self.move_to_memory(done)
                     self.n_step_reward /= params.GAMMA
+                    time.sleep(params.WAIT_ON_ACTION)
 
             elif len(self.seen_actions) == params.NUM_STEPS:
                 self.move_to_memory(done)
