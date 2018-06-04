@@ -7,8 +7,7 @@ import time, threading
 import a3c_trailer.params as params
 from a3c_trailer.brain import Brain
 from a3c_trailer.memory import Memory
-from a3c_trailer.trailer_env.environment import Environment
-from a3c_trailer.trailer_env import params as env_params
+from environments.trailer_env.environment import Environment
 
 import lycon
 

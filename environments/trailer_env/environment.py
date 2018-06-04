@@ -14,7 +14,7 @@ class Environment():
         self.view = pygame.Surface(params.screen_size)
 
         # loading assets
-        self.car = pygame.image.load("trailer_env/assets/car.png")
+        self.car = pygame.image.load("environments/trailer_env/assets/car.png")
         self.car = pygame.transform.smoothscale(self.car, params.car_size)
 
         self.black = pygame.Surface(params.obstacle_size)
