@@ -140,7 +140,7 @@ class Agent(threading.Thread):
         self.num_episodes += 1
         # print debug information
         print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
-
+        print("with exploration: {}".format(self.exploration))
         if self.num_episodes > params.NUM_EPISODES:
             self.stop = True
             print("stopping training for agent {}".format(threading.current_thread()))
