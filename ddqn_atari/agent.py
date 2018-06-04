@@ -2,7 +2,7 @@ import gym
 import lycon
 import numpy as np
 
-import ddqn.params as params
+import ddqn_atari.params as params
 
 
 class Agent:

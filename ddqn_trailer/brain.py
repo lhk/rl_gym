@@ -9,7 +9,7 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
 
-import ddqn.params as params
+import ddqn_trailer.params as params
 
 import os
 import shutil

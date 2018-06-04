@@ -4,10 +4,10 @@ from tqdm import tqdm
 
 print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of it
 
-import ddqn.params as params
-from ddqn.agent import Agent
-from ddqn.brain import Brain
-from ddqn.memory import Memory
+import ddqn_atari.params as params
+from ddqn_atari.agent import Agent
+from ddqn_atari.brain import Brain
+from ddqn_atari.memory import Memory
 
 from util.loss_functions import huber_loss
 
