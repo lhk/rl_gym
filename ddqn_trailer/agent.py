@@ -119,7 +119,7 @@ class Agent:
             render_surf = pygame.surfarray.make_surface(self.state[:, :, -1])
             self.window.blit(render_surf, (0, 0))
 
-            self.clock.tick(60)
+            self.clock.tick(10)
             pygame.display.update()
 
         return from_state, to_state, action, reward, done
