@@ -33,7 +33,7 @@ class Environment():
         self.car_position[1] = params.screen_size[1] - params.car_size[1]/2
 
         self.goal_position = np.array([0,0])
-        self.goal_position[0] = np.random.uniform(params.goal_size[0], params.screen_size[0]-params.goal_size[0])
+        self.goal_position[0] = np.random.uniform(0, params.screen_size[0]-params.goal_size[0])
         self.goal_position[1] = 0 + params.goal_size[1]/2
 
         self.car_dim = np.linalg.norm(params.car_size, np.inf)
@@ -105,7 +105,7 @@ class Environment():
                 return params.reward_collision, True
 
         goal_pos = self.goal_position + np.array(params.goal_size) / 2
-        dist_goal = np.linalg.norm(self.goal_position - self.car_position, np.inf)
+        dist_goal = np.linalg.norm(goal_pos - self.car_position, np.inf)
         if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
             return params.reward_goal, True
 

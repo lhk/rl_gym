@@ -12,7 +12,7 @@ reward_timestep = -0.1
 timeout = 600
 
 # parameters for simulation
-dT = 1
+dT = 2
 min_speed = -8
 max_speed = 10
 stop_on_border_collision= True

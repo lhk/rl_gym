@@ -25,8 +25,8 @@ class Agent(threading.Thread):
         # every agent has its own environment
         self.env = Environment()
         self.actions=[[1, -1], [1, 0], [1, 1],
-                      [0, -1], [0, 0], [0, 1],
-                      [-1, -1], [-1, 0], [-1, 1]]
+                      [0, -1], [0, 0], [0, 1]]
+                      #[-1, -1], [-1, 0], [-1, 1]]
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
