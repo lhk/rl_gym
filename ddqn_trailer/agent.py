@@ -15,8 +15,8 @@ class Agent:
     def __init__(self, exploration=params.INITIAL_EXPLORATION, vis=False):
         self.env = Environment()
         self.actions=[[1, -1], [1, 0], [1, 1],
-                      [0, -1], [0, 0], [0, 1],
-                      [-1, -1], [-1, 0], [-1, 1]]
+                      [0, -1], [0, 0], [0, 1]]
+                      #[-1, -1], [-1, 0], [-1, 1]]
 
         self.exploration = exploration
 

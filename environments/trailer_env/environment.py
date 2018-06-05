@@ -29,12 +29,12 @@ class Environment():
 
         # set up car, obstacle and goal positions
         self.car_position = np.array([0,0], dtype=np.float64)
-        self.car_position[0] = np.random.uniform(params.car_size[0], params.screen_size[0]-params.car_size[0])
+        self.car_position[0] = np.random.uniform(params.car_size[0]/2, params.screen_size[0]-params.car_size[0])
         self.car_position[1] = params.screen_size[1] - params.car_size[1]/2
 
         self.goal_position = np.array([0,0])
         self.goal_position[0] = np.random.uniform(0, params.screen_size[0]-params.goal_size[0])
-        self.goal_position[1] = 0 + params.goal_size[1]/2
+        self.goal_position[1] = 0# + params.goal_size[1]/2
 
         self.car_dim = np.linalg.norm(params.car_size, np.inf)
         self.goal_dim = np.linalg.norm(params.goal_size, np.inf)
