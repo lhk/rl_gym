@@ -5,11 +5,8 @@
 
 RETRAIN = True
 
-# params for the gym
-ENV_NAME = "Breakout-v4"
-
 # parameters for the structure of the neural network
-NUM_ACTIONS = 9  # 4 for breakout, 6 for spaceinvaders
+NUM_ACTIONS = 6  # 4 for breakout, 6 for spaceinvaders
 FRAME_SIZE = (84, 84)
 FRAME_STACK = 3  # number of consecutive frames to stack as input for the network
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
@@ -17,6 +14,7 @@ BATCH_SIZE = 32
 
 # parameters for the reinforcement process
 GAMMA = 0.99  # discount factor for future updates
+REWARD_SCALE = 1e-2
 
 # parameters for the optimizer
 LEARNING_RATE = 0.00025

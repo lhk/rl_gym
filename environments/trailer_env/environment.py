@@ -29,18 +29,18 @@ class Environment():
 
         # set up car, obstacle and goal positions
         self.car_position = np.array([0,0], dtype=np.float64)
-        self.car_position[0] = np.random.uniform(params.car_size[0], params.screen_size[0] - params.car_size[0])
-        self.car_position[1] = params.screen_size[1] - params.car_size[1]
+        self.car_position[0] = np.random.uniform(params.car_size[0]/2, params.screen_size[0]-params.car_size[0]/2)
+        self.car_position[1] = params.screen_size[1] - params.car_size[1]/2
 
         self.goal_position = np.array([0,0])
-        self.goal_position[0] = np.random.uniform(params.goal_size[0], params.screen_size[0] - params.goal_size[0])
-        self.goal_position[1] = 0 + params.goal_size[1]
+        self.goal_position[0] = np.random.uniform(0, params.screen_size[0]-params.goal_size[0])
+        self.goal_position[1] = 0# + params.goal_size[1]/2
 
         self.car_dim = np.linalg.norm(params.car_size, np.inf)
         self.goal_dim = np.linalg.norm(params.goal_size, np.inf)
         self.obs_dim = np.linalg.norm(params.obstacle_size, np.inf)
 
-        min_dist = (self.car_dim + self.obs_dim + self.goal_dim)
+        min_dist = (self.car_dim + self.goal_dim)
 
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
@@ -95,7 +95,7 @@ class Environment():
 
         self.car_position[:] = (new_x, new_y)
 
-        self.car_rotation -= self.car_speed * steering_angle * params.dT
+        self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
 
         for obstacle in self.obstacle_positions:
             obstacle = obstacle + np.array(params.obstacle_size) / 2
@@ -105,7 +105,7 @@ class Environment():
                 return params.reward_collision, True
 
         goal_pos = self.goal_position + np.array(params.goal_size) / 2
-        dist_goal = np.linalg.norm(self.goal_position - self.car_position, np.inf)
+        dist_goal = np.linalg.norm(goal_pos - self.car_position, np.inf)
         if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
             return params.reward_goal, True
 

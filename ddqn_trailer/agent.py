@@ -4,14 +4,19 @@ import numpy as np
 
 import ddqn_trailer.params as params
 
+import sys
+
+import pygame
+from pygame.locals import *
+
 
 class Agent:
 
-    def __init__(self, exploration=params.INITIAL_EXPLORATION):
+    def __init__(self, exploration=params.INITIAL_EXPLORATION, vis=False):
         self.env = Environment()
         self.actions=[[1, -1], [1, 0], [1, 1],
-                      [0, -1], [0, 0], [0, 1],
-                      [-1, -1], [-1, 0], [-1, 1]]
+                      [0, -1], [0, 0], [0, 1]]
+                      #[-1, -1], [-1, 0], [-1, 1]]
 
         self.exploration = exploration
 
@@ -21,6 +26,13 @@ class Agent:
         self.state = self.get_starting_state()
         self.total_reward = 0
 
+        self.vis = vis
+        if self.vis:
+            pygame.init()
+            self.clock = pygame.time.Clock()
+            self.window = pygame.display.set_mode(params.FRAME_SIZE)
+            pygame.display.set_caption("Pygame cheat sheet")
+
     def preprocess_frame(self, frame):
         downsampled = lycon.resize(frame, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
@@ -29,7 +41,7 @@ class Agent:
 
     def interact(self, action):
         action = self.actions[action]
-        reward, done, _ = self.env.make_action(action)
+        reward, done = self.env.make_action(action)
         observation = self.env.render()
 
         new_frame = self.preprocess_frame(observation)
@@ -62,6 +74,7 @@ class Agent:
             # use the brain to determine the best action for this state
             q_values = brain.predict_q(self.state)
             action = q_values.argmax(axis=1)
+            action = action[0]
 
         # anneal exploration
         if self.exploration > params.FINAL_EXPLORATION:
@@ -80,6 +93,7 @@ class Agent:
             self.repeat_action_counter = 0
 
         new_state, reward, done = self.interact(action)
+        reward *= params.REWARD_SCALE
 
         # done means the environment had to restart, this is bad
         # please note: the restart reward is chosen as -1
@@ -100,5 +114,12 @@ class Agent:
             self.state = self.get_starting_state()
             print(self.total_reward)
             self.total_reward = 0
+
+        if self.vis:
+            render_surf = pygame.surfarray.make_surface(self.state[:, :, -1])
+            self.window.blit(render_surf, (0, 0))
+
+            self.clock.tick(10)
+            pygame.display.update()
 
         return from_state, to_state, action, reward, done

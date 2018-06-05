@@ -7,8 +7,7 @@ import time, threading
 import a3c_trailer.params as params
 from a3c_trailer.brain import Brain
 from a3c_trailer.memory import Memory
-from a3c_trailer.trailer_env.environment import Environment
-from a3c_trailer.trailer_env import params as env_params
+from environments.trailer_env.environment import Environment
 
 import lycon
 
@@ -26,8 +25,8 @@ class Agent(threading.Thread):
         # every agent has its own environment
         self.env = Environment()
         self.actions=[[1, -1], [1, 0], [1, 1],
-                      [0, -1], [0, 0], [0, 1],
-                      [-1, -1], [-1, 0], [-1, 1]]
+                      [0, -1], [0, 0], [0, 1]]
+                      #[-1, -1], [-1, 0], [-1, 1]]
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
@@ -140,7 +139,7 @@ class Agent(threading.Thread):
         self.num_episodes += 1
         # print debug information
         print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
-
+        print("with exploration: {}".format(self.exploration))
         if self.num_episodes > params.NUM_EPISODES:
             self.stop = True
             print("stopping training for agent {}".format(threading.current_thread()))
