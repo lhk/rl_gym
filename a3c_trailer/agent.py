@@ -11,11 +11,14 @@ from environments.trailer_env.environment import Environment
 
 import lycon
 
+import pygame
+from pygame.locals import *
+
 
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
                  shared_memory: Memory,
-                 render=False):
+                 vis=False):
 
         threading.Thread.__init__(self)
 
@@ -46,11 +49,19 @@ class Agent(threading.Thread):
         self.num_episodes = 0
         self.stop = False
 
+        self.vis = vis
+        if self.vis:
+            pygame.init()
+            self.clock = pygame.time.Clock()
+            self.window = pygame.display.set_mode(params.FRAME_SIZE)
+            pygame.display.set_caption("Pygame cheat sheet")
+
     def preprocess_state(self, new_state):
         downsampled = lycon.resize(new_state, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
-        new_state = downsampled.reshape((params.INPUT_SHAPE))
-        return new_state
+        grayscale = downsampled.mean(axis=-1).astype(np.uint8)
+        grayscale = grayscale.reshape(params.INPUT_SHAPE)
+        return grayscale
 
     def run_one_episode(self):
 
@@ -132,6 +143,13 @@ class Agent(threading.Thread):
             # update state of agent
             state = new_state
             total_reward += reward
+
+            if self.vis:
+                render_surf = pygame.surfarray.make_surface(state[:, :, 0])
+                self.window.blit(render_surf, (0, 0))
+
+                self.clock.tick(10)
+                pygame.display.update()
 
             if done or self.stop:
                 break

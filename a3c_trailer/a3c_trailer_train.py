@@ -28,6 +28,7 @@ memory = Memory()
 brain = Brain(memory)
 
 agents = [Agent(brain, memory) for i in range(params.AGENTS)]
+#agents.append(Agent(brain, memory, vis=True)) # one for plotting
 opts = [Optimizer(brain) for i in range(params.OPTIMIZERS)]
 
 for o in opts:

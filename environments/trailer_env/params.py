@@ -1,6 +1,6 @@
 # parameters for setup of environment
 screen_size = (160, 160)
-car_size = (15, 30)
+car_size = (20, 40)
 obstacle_size = (15, 15)
 goal_size = (40, 40)
 num_obstacles = 0
