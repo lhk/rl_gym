@@ -14,9 +14,10 @@ class Agent:
 
     def __init__(self, exploration=params.INITIAL_EXPLORATION, vis=False):
         self.env = Environment()
-        self.actions=[[1, -1], [1, 0], [1, 1],
-                      [0, -1], [0, 0], [0, 1]]
-                      #[-1, -1], [-1, 0], [-1, 1]]
+        self.actions = [[1, 0], [0, 0], [0, -1], [0, 1]]
+        # [[1, -1], [1, 0], [1, 1],
+        # [0, -1], [0, 0], [0, 1]]
+        # [-1, -1], [-1, 0], [-1, 1]]
 
         self.exploration = exploration
 
@@ -116,7 +117,7 @@ class Agent:
             self.total_reward = 0
 
         if self.vis:
-            render_surf = pygame.surfarray.make_surface(self.state[:, :, -1])
+            render_surf = pygame.surfarray.make_surface(to_state[:, :, -1])
             self.window.blit(render_surf, (0, 0))
 
             self.clock.tick(10)
