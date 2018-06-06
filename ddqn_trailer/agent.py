@@ -96,14 +96,6 @@ class Agent:
         new_state, reward, done = self.interact(action)
         reward *= params.REWARD_SCALE
 
-        # done means the environment had to restart, this is bad
-        # please note: the restart reward is chosen as -1
-        # the rewards are clipped to [-1, 1] according to the paper
-        # if that would not be done, we would have to scale this reward
-        # to align to the other replays given in the game
-        if done:
-            reward = - 1
-
         self.total_reward += reward
 
         from_state = self.state

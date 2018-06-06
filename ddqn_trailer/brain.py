@@ -40,8 +40,7 @@ class Brain():
             shutil.rmtree(os.getcwd() + "/checkpoints/")
             # self.model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
             # self.target_model.load_weights(os.getcwd() +"/cps/dqn_model240.hd5")
-        else:
-            os.mkdir(os.getcwd() + "/checkpoints/")
+        os.mkdir(os.getcwd() + "/checkpoints/")
 
     def __create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
