@@ -12,11 +12,13 @@ import lycon
 
 from vizdoom import *
 
+import pygame
+from pygame.locals import *
 
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
                  shared_memory: Memory,
-                 render=False):
+                 vis=False):
 
         threading.Thread.__init__(self)
 
@@ -69,6 +71,13 @@ class Agent(threading.Thread):
 
         self.num_episodes = 0
         self.stop = False
+
+        self.vis = vis
+        if self.vis:
+            pygame.init()
+            self.clock = pygame.time.Clock()
+            self.window = pygame.display.set_mode(params.FRAME_SIZE)
+            pygame.display.set_caption("Pygame cheat sheet")
 
     def preprocess_state(self, new_state):
         # cropping and resizing as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
@@ -159,6 +168,13 @@ class Agent(threading.Thread):
             # update state of agent
             state = new_state
             total_reward += reward
+
+            if self.vis:
+                render_surf = pygame.surfarray.make_surface(state[:, :, 0])
+                self.window.blit(render_surf, (0, 0))
+
+                self.clock.tick(10)
+                pygame.display.update()
 
             if done or self.stop:
                 break

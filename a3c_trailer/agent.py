@@ -27,9 +27,11 @@ class Agent(threading.Thread):
 
         # every agent has its own environment
         self.env = Environment()
-        self.actions=[[1, -1], [1, 0], [1, 1],
-                      [0, -1], [0, 0], [0, 1]]
-                      #[-1, -1], [-1, 0], [-1, 1]]
+        self.actions= [[1, 0], [0, 0], [0, -1], [0, 1]]
+
+        #[[1, -1], [1, 0], [1, 1],
+                     # [0, -1], [0, 0], [0, 1]]
+                     # [-1, -1], [-1, 0], [-1, 1]]
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
@@ -77,7 +79,7 @@ class Agent(threading.Thread):
         # and at the beginning of a new episode, he needs to initialize this memory:
         # the values for the random noise have been read from the keras source code,
         # compare with TODO: link initializer source
-        memory = np.random.rand(1, 256) * 0.1 - 0.05
+        memory = np.random.rand(1, params.MEM_SIZE) * 0.1 - 0.05
         self.seen_memories = [memory[0]]
 
         total_reward = 0

@@ -6,8 +6,8 @@ goal_size = (40, 40)
 num_obstacles = 0
 
 # parameters for mrp
-reward_goal = 100
-reward_collision = -10
+reward_goal = 2
+reward_collision = -1
 reward_timestep = -0.1
 timeout = 600
 

@@ -48,8 +48,9 @@ class Brain:
         input_state = Input(shape=(*params.INPUT_SHAPE,))
 
         rescaled = Lambda(lambda x: x / 255.)(input_state)
-        conv = Conv2D(16, (8, 8), strides=(2, 2), activation='relu')(rescaled)
+        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
+        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
         conv_flattened = Flatten()(conv)
         dense = Dense(256, activation="relu")(conv_flattened)
@@ -57,13 +58,11 @@ class Brain:
         # shape = [batch_size, time_steps, input_dim]
         dense = Reshape((1, 256))(dense)
 
-
-
         # apply an rnn
         # expose the state of the cell, so that we can recreate the setup
         # of the cell during training
-        gru_cell = CuDNNGRU(256, return_state=True)
-        input_memory = Input(shape=(256,))
+        gru_cell = CuDNNGRU(params.MEM_SIZE, return_state=True)
+        input_memory = Input(shape=(params.MEM_SIZE,))
         gru_tensor, output_memory = gru_cell(dense, initial_state=input_memory)
 
         pred_actions = Dense(params.NUM_ACTIONS, activation='softmax')(gru_tensor)
@@ -147,8 +146,8 @@ class Brain:
         # the memory shape is given by the number of cells in the rnn layer
         # I don't want to move that to a parameter, so right now, it is a "magic number"
         # TODO: maybe a parameter after all ?
-        if memory.shape == (256,):
-            memory = memory.reshape((-1, 256))
+        if memory.shape == (params.MEM_SIZE,):
+            memory = memory.reshape((-1, params.MEM_SIZE))
 
         with self.default_graph.as_default():
             return self.model.predict([state, memory])
