@@ -14,7 +14,7 @@ BATCH_SIZE = 32
 
 # parameters for the reinforcement process
 GAMMA = 0.99  # discount factor for future updates
-REWARD_SCALE = 1e-2
+REWARD_SCALE = 1
 
 # parameters for the optimizer
 LEARNING_RATE = 0.00025
