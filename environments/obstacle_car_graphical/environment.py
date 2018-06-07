@@ -1,9 +1,9 @@
 import numpy as np
 import pygame
 
-import environments.trailer_env.colors as colors
-import environments.trailer_env.params as params
-import environments.trailer_env.utils as utils
+import environments.obstacle_car_graphical.colors as colors
+import environments.obstacle_car_graphical.params as params
+import environments.obstacle_car_graphical.utils as utils
 
 
 class Environment():
@@ -14,7 +14,7 @@ class Environment():
         self.view = pygame.Surface(params.screen_size)
 
         # loading assets
-        self.car = pygame.image.load("environments/trailer_env/assets/car.png")
+        self.car = pygame.image.load("environments/obstacle_car_graphical/assets/car.png")
         self.car = pygame.transform.smoothscale(self.car, params.car_size)
 
         self.black = pygame.Surface(params.obstacle_size)
@@ -23,7 +23,7 @@ class Environment():
         self.green = pygame.Surface(params.goal_size)
         self.green.fill(colors.green)
 
-    def new_episode(self):
+    def reset(self):
 
         self.steps = 0
 
@@ -58,7 +58,33 @@ class Environment():
         self.car_rotation = 0
         self.car_speed = 0
 
-    def make_action(self, action):
+    def render(self, return_numpy=True):
+        self.view.fill(colors.white)
+
+        # plot all the obstacles
+        self.view.fill(colors.white)
+        for obstacle_position in self.obstacle_positions:
+            self.view.blit(self.black, obstacle_position)
+
+        # plot the goal
+        self.view.blit(self.green, self.goal_position)
+
+        car_rect = self.car.get_rect()
+        car_rect.center = self.car_position
+
+        rotated_surface, rotated_rect = utils.rotate(self.car, car_rect, self.car_rotation)
+        self.view.blit(rotated_surface, rotated_rect)
+
+        if return_numpy:
+            # get numpy surface
+            np_arr = pygame.surfarray.array3d(self.view)
+
+            return np_arr
+
+        else:
+            return self.view
+
+    def step(self, action):
         acceleration, steering_angle = action
         acceleration = np.clip(acceleration, -1, 1)
         steering_angle = np.clip(steering_angle, -1, 1)
@@ -113,30 +139,6 @@ class Environment():
         if self.steps > params.timeout:
             return params.reward_timestep, True
 
-        return params.reward_timestep, False
+        observation = self.render()
 
-    def render(self, return_numpy=True):
-        self.view.fill(colors.white)
-
-        # plot all the obstacles
-        self.view.fill(colors.white)
-        for obstacle_position in self.obstacle_positions:
-            self.view.blit(self.black, obstacle_position)
-
-        # plot the goal
-        self.view.blit(self.green, self.goal_position)
-
-        car_rect = self.car.get_rect()
-        car_rect.center = self.car_position
-
-        rotated_surface, rotated_rect = utils.rotate(self.car, car_rect, self.car_rotation)
-        self.view.blit(rotated_surface, rotated_rect)
-
-        if return_numpy:
-            # get numpy surface
-            np_arr = pygame.surfarray.array3d(self.view)
-
-            return np_arr
-
-        else:
-            return self.view
+        return observation, params.reward_timestep, False

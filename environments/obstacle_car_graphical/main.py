@@ -3,8 +3,8 @@ import sys
 import pygame
 from pygame.locals import *
 
-import environments.trailer_env.params as params
-from environments.trailer_env.environment import Environment
+import environments.obstacle_car_graphical.params as params
+from environments.obstacle_car_graphical.environment import Environment
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -14,7 +14,7 @@ pygame.display.set_caption("Pygame cheat sheet")
 mouse_x, mouse_y = 0, 0
 
 env = Environment()
-env.new_episode()
+env.reset()
 
 while True:
 
@@ -31,7 +31,7 @@ while True:
 
         if event.type == KEYDOWN:
             if event.key == K_SPACE:
-                env.new_episode()
+                env.reset()
 
     keys = pygame.key.get_pressed()
     if keys[K_UP]:
@@ -43,7 +43,7 @@ while True:
     elif keys[K_RIGHT]:
         steering_angle = 1
 
-    reward, done = env.make_action((acceleration, steering_angle))
+    reward, done = env.step((acceleration, steering_angle))
     print(reward)
     if done:
         print("collision")
