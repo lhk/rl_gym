@@ -91,6 +91,8 @@ class Environment():
             return self.view
 
     def step(self, action):
+        # internally the action is not a number, but a combination of acceleration and steering
+        action = self.actions[action]
         acceleration, steering_angle = action
         acceleration = np.clip(acceleration, -1, 1)
         steering_angle = np.clip(steering_angle, -1, 1)
@@ -151,5 +153,4 @@ class Environment():
 
     def sample_action(self):
         # for atari, the actions are simply numbers
-        idx = np.random.choice(self.num_actions)
-        return self.actions[idx]
+        return np.random.choice(self.num_actions)

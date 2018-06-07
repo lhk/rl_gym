@@ -41,6 +41,8 @@ class Environment():
         self.env.get_state().screen_buffer
 
     def step(self, action):
+        # internally, the action is not just a number, vizdoom expects a list
+        action = self.actions[action]
         reward = self.env.step(action)
         done = self.env.is_episode_finished()
         observation = self.render()
@@ -51,5 +53,4 @@ class Environment():
         # random.choice could work directly on the list
         # but I want np.seed(0) to make this globally deterministic
         # well, as far as possible
-        idx = np.random.choice(self.num_actions)
-        return self.actions[idx]
+        return np.random.choice(self.num_actions)
