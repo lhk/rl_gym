@@ -4,7 +4,7 @@ np.random.seed(0)
 
 import tensorflow as tf
 import keras
-from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda, Subtract
+from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda, Subtract, Add
 from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
@@ -146,11 +146,13 @@ class Dueling_Brain(Brain):
 
         hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
         advantage = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
+        advantage_mean = keras.layers.Lambda(lambda x: K.mean(x, axis=-1))(advantage)
 
         hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
         value = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
 
-        q_values = Subtract()([advantage, value])
+        advantage_white = Subtract()([advantage, advantage_mean])
+        q_values = Add()([advantage_white, value])
 
         mask_layer = Input((params.NUM_ACTIONS,))
 
