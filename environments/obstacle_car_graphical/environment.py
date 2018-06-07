@@ -23,18 +23,24 @@ class Environment():
         self.green = pygame.Surface(params.goal_size)
         self.green.fill(colors.green)
 
+        self.actions = [[1, -1], [1, 0], [1, 1],
+                        [0, -1], [0, 0], [0, 1],
+                        [-1, -1], [-1, 0], [-1, 1]]
+
+        self.num_actions = len(self.actions)
+
     def reset(self):
 
         self.steps = 0
 
         # set up car, obstacle and goal positions
-        self.car_position = np.array([0,0], dtype=np.float64)
-        self.car_position[0] = np.random.uniform(params.car_size[0]/2, params.screen_size[0]-params.car_size[0]/2)
-        self.car_position[1] = params.screen_size[1] - params.car_size[1]/2
+        self.car_position = np.array([0, 0], dtype=np.float64)
+        self.car_position[0] = np.random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
+        self.car_position[1] = params.screen_size[1] - params.car_size[1] / 2
 
-        self.goal_position = np.array([0,0])
-        self.goal_position[0] = np.random.uniform(0, params.screen_size[0]-params.goal_size[0])
-        self.goal_position[1] = 0# + params.goal_size[1]/2
+        self.goal_position = np.array([0, 0])
+        self.goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
+        self.goal_position[1] = 0  # + params.goal_size[1]/2
 
         self.car_dim = np.linalg.norm(params.car_size, np.inf)
         self.goal_dim = np.linalg.norm(params.goal_size, np.inf)
@@ -142,3 +148,8 @@ class Environment():
         observation = self.render()
 
         return observation, params.reward_timestep, False
+
+    def sample_action(self):
+        # for atari, the actions are simply numbers
+        idx = np.random.choice(self.num_actions)
+        return self.actions[idx]

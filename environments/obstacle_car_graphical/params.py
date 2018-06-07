@@ -15,7 +15,7 @@ timeout = 600
 dT = 2
 min_speed = -8
 max_speed = 10
-stop_on_border_collision= True
+stop_on_border_collision = True
 
 # parameters for car
 steering_factor = 1.5
