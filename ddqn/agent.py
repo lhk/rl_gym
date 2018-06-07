@@ -55,7 +55,7 @@ class Agent:
         :return:
         """
         # use the brain to determine the best action for this state
-        current_q = self.brain.predict_a(self.state)[0]
+        current_q = self.brain.predict_q(self.state)[0]
         action = current_q.argmax()
 
         # let agent choose to explore instead

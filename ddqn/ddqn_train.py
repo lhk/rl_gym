@@ -5,14 +5,14 @@ print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of
 
 import ddqn.params as params
 from ddqn.agent import Agent
-from ddqn.brain import Brain
+from ddqn.brain import Dueling_Brain
 from ddqn.memory import Memory
 from environments.obstacle_car_graphical.environment import Environment
 
 from util.loss_functions import huber_loss
 
 memory = Memory()
-brain = Brain(memory, loss=huber_loss)
+brain = Dueling_Brain(memory, loss=huber_loss)
 env = Environment()
 agent = Agent(memory, brain, env)
 

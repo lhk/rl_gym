@@ -4,7 +4,7 @@ np.random.seed(0)
 
 import tensorflow as tf
 import keras
-from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
+from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda, Subtract
 from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
@@ -13,7 +13,6 @@ import ddqn.params as params
 from ddqn.memory import Memory
 import os
 import shutil
-
 
 class Brain:
     def __init__(self, memory: Memory, loss="mse"):
@@ -28,8 +27,8 @@ class Brain:
         K.set_session(sess)
 
         # dqn works on two models
-        self.model = self.__create_model()
-        self.target_model = self.__create_model()
+        self.model = self.create_model()
+        self.target_model = self.create_model()
 
         # only one of them needs to be compiled for training
         self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
@@ -39,27 +38,10 @@ class Brain:
         # cleaning a directory for checkpoints
         if os.path.exists(os.getcwd() + "/checkpoints/"):
             shutil.rmtree(os.getcwd() + "/checkpoints/")
-            #self.model.load_weights(os.getcwd() + "/checkpoints_bkup/dqn_model345.hd5")
-            #self.target_model.load_weights(os.getcwd() + "/checkpoints_bkup/dqn_model345.hd5")
         os.mkdir(os.getcwd() + "/checkpoints/")
 
-    def __create_model(self):
-        input_layer = Input(params.INPUT_SHAPE)
-
-        rescaled = Lambda(lambda x: x / 255.)(input_layer)
-        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
-        conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
-
-        conv_flattened = Flatten()(conv)
-
-        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-        output_layer = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
-
-        mask_layer = Input((params.NUM_ACTIONS,))
-
-        output_masked = Multiply()([output_layer, mask_layer])
-        return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
+    def create_model(self):
+        assert False, "use one of the subclasses instead"
 
     def predict_q(self, state):
 
@@ -121,3 +103,46 @@ class Brain:
         priorities = np.power(errors + params.ERROR_BIAS, params.ERROR_POW)
 
         self.memory.update_priority(training_indices, priorities)
+
+class DDQN_Brain(Brain):
+    def create_model(self):
+        input_layer = Input(params.INPUT_SHAPE)
+
+        rescaled = Lambda(lambda x: x / 255.)(input_layer)
+        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
+        conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
+        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+
+        conv_flattened = Flatten()(conv)
+
+        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
+        output_layer = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
+
+        mask_layer = Input((params.NUM_ACTIONS,))
+
+        output_masked = Multiply()([output_layer, mask_layer])
+        return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
+
+class Dueling_Brain(Brain):
+    def create_model(self):
+        input_layer = Input(params.INPUT_SHAPE)
+
+        rescaled = Lambda(lambda x: x / 255.)(input_layer)
+        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
+        conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
+        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+
+        conv_flattened = Flatten()(conv)
+
+        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
+        advantage = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
+
+        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
+        value = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
+
+        q_values = Subtract()([advantage, value])
+
+        mask_layer = Input((params.NUM_ACTIONS,))
+
+        q_values_masked = Multiply()([q_values, mask_layer])
+        return Model(inputs=(input_layer, mask_layer), outputs=q_values_masked)
