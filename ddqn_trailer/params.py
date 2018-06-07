@@ -12,6 +12,10 @@ FRAME_STACK = 3  # number of consecutive frames to stack as input for the networ
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
 BATCH_SIZE = 32
 
+# parameters for the rendering
+FPS = 15
+OUTPUT_DIR = "/videos"
+
 # parameters for the reinforcement process
 GAMMA = 0.99  # discount factor for future updates
 REWARD_SCALE = 1
@@ -29,8 +33,8 @@ TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training s
 SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 
 # parameters for interacting with the environment
-INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
-FINAL_EXPLORATION = 0.1  # final chance
+INITIAL_EXPLORATION = 0.0  # initial chance of sampling a random action
+FINAL_EXPLORATION = 0.0  # final chance
 FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS // 2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 

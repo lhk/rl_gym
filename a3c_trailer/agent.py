@@ -147,7 +147,7 @@ class Agent(threading.Thread):
             total_reward += reward
 
             if self.vis:
-                render_surf = pygame.surfarray.make_surface(state[:, :, 0])
+                render_surf = pygame.surfarray.make_surface(new_state[:, :, 0])
                 self.window.blit(render_surf, (0, 0))
 
                 self.clock.tick(10)
