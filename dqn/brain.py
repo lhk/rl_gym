@@ -9,8 +9,8 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
 
-import ddqn.params as params
-from ddqn.memory import Memory
+import dqn.params as params
+from dqn.memory import Memory
 import os
 import shutil
 
@@ -104,7 +104,7 @@ class Brain:
 
         self.memory.update_priority(training_indices, priorities)
 
-class DDQN_Brain(Brain):
+class DQN_Brain(Brain):
     def create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
 

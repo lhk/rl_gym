@@ -3,10 +3,10 @@ from tqdm import tqdm
 
 print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of it
 
-import ddqn.params as params
-from ddqn.agent import Agent
-from ddqn.brain import Dueling_Brain
-from ddqn.memory import Memory
+import dqn.params as params
+from dqn.agent import Agent
+from dqn.brain import Dueling_Brain
+from dqn.memory import Memory
 from environments.obstacle_car_graphical.environment import Environment
 
 from util.loss_functions import huber_loss
