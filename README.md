@@ -3,7 +3,7 @@
 This repository collects implementations for common reinforcement learning algorithms.
 So far I've implemented the following algorithms:
  - DQN
- - DDQN
+ - DDQN, Dueling Q-Learning, prioritized experience replay
  - A3C
  
 Currently I'm working on refactoring, there is a lot of duplicated code.
