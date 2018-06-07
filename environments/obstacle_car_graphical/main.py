@@ -43,7 +43,7 @@ while True:
     elif keys[K_RIGHT]:
         steering_angle = 1
 
-    reward, done = env.step((acceleration, steering_angle))
+    observation, reward, done = env.make_action((acceleration, steering_angle))
     print(reward)
     if done:
         print("collision")

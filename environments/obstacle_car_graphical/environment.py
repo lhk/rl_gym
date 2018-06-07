@@ -93,6 +93,9 @@ class Environment():
     def step(self, action):
         # internally the action is not a number, but a combination of acceleration and steering
         action = self.actions[action]
+        return self.make_action(action)
+
+    def make_action(self, action):
         acceleration, steering_angle = action
         acceleration = np.clip(acceleration, -1, 1)
         steering_angle = np.clip(steering_angle, -1, 1)
@@ -105,11 +108,6 @@ class Environment():
         new_x = x + dx
         dy = -np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
         new_y = y + dy
-
-        # move the car, get the new rendering
-        self.car_position[:] = (new_x, new_y)
-        self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
-        observation = self.render()
 
         border_collision = False
         if new_x > params.screen_size[0]:
@@ -127,10 +125,15 @@ class Environment():
             new_y = 0
 
         if border_collision:
-            if params.stop_on_border_collision:
-                return observation, params.reward_collision, True
-            else:
-                self.car_speed = 0
+            self.car_speed = 0
+
+        # move the car, get the new rendering
+        self.car_position[:] = (new_x, new_y)
+        self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
+        observation = self.render()
+
+        if border_collision and params.stop_on_border_collision:
+            return observation, params.reward_collision, True
 
         for obstacle in self.obstacle_positions:
             obstacle = obstacle + np.array(params.obstacle_size) / 2
