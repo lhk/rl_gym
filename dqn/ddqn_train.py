@@ -4,17 +4,17 @@ from tqdm import tqdm
 print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of it
 
 import dqn.params as params
-from dqn.agent import Agent
+from dqn.agent import ER_Agent
 from dqn.brain import Dueling_Brain
-from dqn.memory import Memory
+from dqn.memory import Equal_Memory
 from environments.obstacle_car_graphical.environment import Environment
 
 from util.loss_functions import huber_loss
 
-memory = Memory()
+memory = Equal_Memory()
 brain = Dueling_Brain(memory, loss=huber_loss)
 env = Environment()
-agent = Agent(memory, brain, env)
+agent = ER_Agent(memory, brain, env)
 
 for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 

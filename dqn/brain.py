@@ -14,6 +14,7 @@ from dqn.memory import Memory
 import os
 import shutil
 
+
 class Brain:
     def __init__(self, memory: Memory, loss="mse"):
 
@@ -95,16 +96,21 @@ class Brain:
 
         self.model.train_on_batch([from_states, action_mask], q_targets)
 
-        q_predicted = self.predict_q(from_states)
-        q_predicted *= action_mask
+        if (self.memory.priority_based_sampling):
+            q_predicted = self.predict_q(from_states)
+            q_predicted *= action_mask
 
-        errors = np.abs(q_targets - q_predicted)
-        errors = errors.sum(axis=-1)
-        priorities = np.power(errors + params.ERROR_BIAS, params.ERROR_POW)
+            errors = np.abs(q_targets - q_predicted)
+            errors = errors.sum(axis=-1)
+            priorities = np.power(errors + params.ERROR_BIAS, params.ERROR_POW)
 
-        self.memory.update_priority(training_indices, priorities)
+            self.memory.update_priority(training_indices, priorities)
+
 
 class DQN_Brain(Brain):
+    def __init__(self, memory: Memory, loss="mse"):
+        Brain.__init__(self, memory, loss)
+
     def create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
 
@@ -123,7 +129,11 @@ class DQN_Brain(Brain):
         output_masked = Multiply()([output_layer, mask_layer])
         return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
 
+
 class Dueling_Brain(Brain):
+    def __init__(self, memory: Memory, loss="mse"):
+        Brain.__init__(self, memory, loss)
+
     def create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
 

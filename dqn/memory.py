@@ -37,7 +37,68 @@ class Memory():
         self.replay_index = 0
         self.number_writes = 0
 
+    def __len__(self):
+        return min(self.number_writes, params.REPLAY_MEMORY_SIZE)
+
+    def __getitem__(self, index):
+        assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
+        assert max(index) < len(self), "index out of range"
+
+        from_states = self.from_state_memory[index]
+        to_states = self.to_state_memory[index]
+        actions = self.action_memory[index]
+        rewards = self.reward_memory[index]
+        terminal = self.terminal_memory[index]
+
+        return from_states, to_states, actions, rewards, terminal
+
+
+class Equal_Memory(Memory):
+    priority_based_sampling = False
+
+    def sample_indices(self, size=params.BATCH_SIZE, replace=False):
+        if not replace:
+            assert size <= len(self), "trying to sample more samples than available"
+
+        selected_indices = np.random.choice(len(self), size, replace=replace)
+
+        return selected_indices
+
+    def push(self,
+             from_state: np.array,
+             to_state: np.array,
+             action: np.uint8,
+             reward: np.float32,
+             terminal: np.bool):
+        # write observation to memory
+        self.from_state_memory[self.replay_index] = from_state
+        self.to_state_memory[self.replay_index] = to_state
+        self.action_memory[self.replay_index] = action
+        self.reward_memory[self.replay_index] = reward
+        self.terminal_memory[self.replay_index] = terminal
+
+        # this acts like a ringbuffer
+        self.replay_index += 1
+        self.replay_index %= params.REPLAY_MEMORY_SIZE
+
+        self.number_writes += 1
+
+
+class Priority_Memory(Memory):
+    priority_based_sampling = True
+
+    def __init__(self):
+        Memory.__init__(self)
+
         self.priority_sumtree = SumTree(params.REPLAY_MEMORY_SIZE)
+
+    def sample_indices(self, size=params.BATCH_SIZE, replace=False):
+        if not replace:
+            assert size <= len(self), "trying to sample more samples than available"
+
+        selected_indices = self.priority_sumtree.sample(size, replace)
+
+        return selected_indices
 
     def push(self,
              from_state: np.array,
@@ -62,29 +123,6 @@ class Memory():
 
         self.number_writes += 1
 
-    def sample_indices(self, size=params.BATCH_SIZE, replace=False):
-        if not replace:
-            assert size <= len(self), "trying to sample more samples than available"
-
-        selected_indices = self.priority_sumtree.sample(size, replace)
-
-        return selected_indices
-
     def update_priority(self, indices, priorities):
         for idx, prio in zip(indices, priorities):
             self.priority_sumtree.push(idx, prio)
-
-    def __len__(self):
-        return min(self.number_writes, params.REPLAY_MEMORY_SIZE)
-
-    def __getitem__(self, index):
-        assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
-        assert max(index) < len(self), "index out of range"
-
-        from_states = self.from_state_memory[index]
-        to_states = self.to_state_memory[index]
-        actions = self.action_memory[index]
-        rewards = self.reward_memory[index]
-        terminal = self.terminal_memory[index]
-
-        return from_states, to_states, actions, rewards, terminal
