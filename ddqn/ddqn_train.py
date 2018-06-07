@@ -12,7 +12,7 @@ from environments.trailer_env.environment import Environment
 from util.loss_functions import huber_loss
 
 memory = Memory()
-brain = Brain(loss=huber_loss)
+brain = Brain(memory, loss=huber_loss)
 env = Environment()
 agent = Agent(memory, brain, env)
 

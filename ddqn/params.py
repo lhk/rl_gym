@@ -42,7 +42,7 @@ REPEAT_ACTION_MAX = 15  # maximum number of repeated actions before sampling ran
 
 # parameters for the memory
 REPLAY_MEMORY_SIZE = int(2 ** 20)
-REPLAY_START_SIZE = int(5e4)
+REPLAY_START_SIZE = int(5e2)
 MEMORY_MAPPED = True
 ERROR_BIAS = 0.01
 ERROR_POW = 0.1

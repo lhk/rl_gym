@@ -1,6 +1,7 @@
 import numpy as np
 
 import ddqn.params as params
+from ddqn.preprocessing import preprocess_frame
 
 
 class Agent:
@@ -14,6 +15,9 @@ class Agent:
         self.memory = memory
         self.brain = brain
         self.env = environment
+
+        # TODO: move this to the environmnent
+        self.actions = [[1, 0], [0, 0], [0, -1], [0, 1]]
 
         # the internal state of the agent:
         # current probability of random action
@@ -43,7 +47,7 @@ class Agent:
         reward, done = self.env.make_action(action)
         observation = self.env.render()
 
-        new_frame = self.preprocess_frame(observation)
+        new_frame = preprocess_frame(observation)
 
         new_state = np.empty_like(self.state)
         new_state[:, :, :-1] = self.state[:, :, 1:]
@@ -58,9 +62,8 @@ class Agent:
         :return:
         """
         # use the brain to determine the best action for this state
-        current_q = self.brain.predict_q(self.state)
-        action = current_q.argmax(axis=1)
-        action = action[0]
+        current_q = self.brain.predict_q(self.state)[0]
+        action = current_q.argmax()
 
         # let agent choose to explore instead
         if np.random.rand() < self.exploration:
@@ -121,7 +124,7 @@ class Agent:
         self.state = np.zeros(params.INPUT_SHAPE, dtype=np.uint8)
         self.env.new_episode()
         frame = self.env.render()
-        self.state[:, :, -1] = self.preprocess_frame(frame)
+        self.state[:, :, -1] = preprocess_frame(frame)
 
         action = 0
 

@@ -76,8 +76,8 @@ class Brain:
         return self.target_model.predict([state, np.ones((state.shape[0], params.NUM_ACTIONS))])
 
     def get_targets(self, to_states, rewards, done):
-        next_q_target = self.brain.predict_q_target(to_states)
-        next_q = self.brain.predict_q(to_states)
+        next_q_target = self.predict_q_target(to_states)
+        next_q = self.predict_q(to_states)
         chosen_q = next_q_target[np.arange(next_q.shape[0]), next_q.argmax(axis=-1)]
 
         # this is the value that should be predicted by the network
@@ -117,6 +117,7 @@ class Brain:
         q_predicted *= action_mask
 
         errors = np.abs(q_targets - q_predicted)
+        errors = errors.sum(axis=-1)
         priorities = np.power(errors + params.ERROR_BIAS, params.ERROR_POW)
 
         self.memory.update_priority(training_indices, priorities)
