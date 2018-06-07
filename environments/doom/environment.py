@@ -6,7 +6,7 @@ class Environment():
     def __init__(self):
         # setting up doom as specified here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
         game = DoomGame()
-        game.set_doom_scenario_path("basic.wad")  # This corresponds to the simple task we will pose our agent
+        game.set_doom_scenario_path("environments/doom/basic.wad")  # This corresponds to the simple task we will pose our agent
         game.set_doom_map("map01")
         game.set_screen_resolution(ScreenResolution.RES_160X120)
         game.set_screen_format(ScreenFormat.GRAY8)
@@ -35,18 +35,23 @@ class Environment():
         self.num_actions = len(self.actions)
 
     def reset(self):
-        self.env.reset()
+        self.env.new_episode()
 
     def render(self):
-        self.env.get_state().screen_buffer
+        return self.env.get_state().screen_buffer
 
     def step(self, action):
         # internally, the action is not just a number, vizdoom expects a list
         action = self.actions[action]
-        reward = self.env.step(action)
+        reward = self.env.make_action(action)
         done = self.env.is_episode_finished()
-        observation = self.render()
 
+        if not done:
+            observation = self.render()
+        else:
+            # this is the shape of doom screen capture
+            # TODO: remove this magic number
+            observation = np.zeros((120, 160))
         return observation, reward, done
 
     def sample_action(self):
