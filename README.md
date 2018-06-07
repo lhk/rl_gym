@@ -2,8 +2,7 @@
 
 This repository collects implementations for common reinforcement learning algorithms.
 So far I've implemented the following algorithms:
- - DQN
- - DDQN, Dueling Q-Learning, prioritized experience replay
+ - DQN with many varieties: DDQN, Dueling-Q-Learning, prioritized experience replay
  - A3C
  
 Currently I'm working on refactoring, there is a lot of duplicated code.
@@ -11,6 +10,8 @@ Initially, I wanted every algorithm to be self-contained:
 For example, the ddqn implementation should be one block of code, without external dependencies.
 But most pieces of the code are very similar. And it would be nice to have a more modular setup,
 to try dqn with a different targets (TD-lambda etc).
+So far, I have merged all the different dqn versions into one package called dqn.
+But I'm undecided if it will stay like this.
 
 Next to the refactoring, I've started to look at homebrew environments for reinforcement learning.
 Such as a car which should navigate to an obstacle. The motivation is to learn about complexity of tasks.
