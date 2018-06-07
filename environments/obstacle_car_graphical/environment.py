@@ -23,9 +23,11 @@ class Environment():
         self.green = pygame.Surface(params.goal_size)
         self.green.fill(colors.green)
 
-        self.actions = [[1, -1], [1, 0], [1, 1],
-                        [0, -1], [0, 0], [0, 1],
-                        [-1, -1], [-1, 0], [-1, 1]]
+        # self.actions = [[1, -1], [1, 0], [1, 1],
+        #                [0, -1], [0, 0], [0, 1],
+        #                [-1, -1], [-1, 0], [-1, 1]]
+
+        self.actions = [[0, 0], [0, -1], [0, 1], [1, 0]]
 
         self.num_actions = len(self.actions)
 
