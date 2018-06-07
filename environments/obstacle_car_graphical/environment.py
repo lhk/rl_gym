@@ -106,6 +106,11 @@ class Environment():
         dy = -np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
         new_y = y + dy
 
+        # move the car, get the new rendering
+        self.car_position[:] = (new_x, new_y)
+        self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
+        observation = self.render()
+
         border_collision = False
         if new_x > params.screen_size[0]:
             border_collision = True
@@ -123,14 +128,9 @@ class Environment():
 
         if border_collision:
             if params.stop_on_border_collision:
-                return params.reward_collision, True
+                return observation, params.reward_collision, True
             else:
                 self.car_speed = 0
-
-        # move the car, get the new rendering
-        self.car_position[:] = (new_x, new_y)
-        self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
-        observation = self.render()
 
         for obstacle in self.obstacle_positions:
             obstacle = obstacle + np.array(params.obstacle_size) / 2
@@ -147,7 +147,7 @@ class Environment():
 
         self.steps += 1
         if self.steps > params.timeout:
-            return params.reward_timestep, True
+            return observation, params.reward_timestep, True
 
         return observation, params.reward_timestep, False
 

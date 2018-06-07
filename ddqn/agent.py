@@ -16,9 +16,6 @@ class Agent:
         self.brain = brain
         self.env = environment
 
-        # TODO: move this to the environmnent
-        self.actions = [[1, 0], [0, 0], [0, -1], [0, 1]]
-
         # the internal state of the agent:
         # current probability of random action
         self.exploration = params.INITIAL_EXPLORATION
@@ -41,11 +38,7 @@ class Agent:
         :param action: action to apply
         :return: new_state, reward, done
         """
-
-        # TODO: move actions to environment
-        action = self.actions[action]
-        reward, done = self.env.make_action(action)
-        observation = self.env.render()
+        observation, reward, done = self.env.step(action)
 
         new_frame = preprocess_frame(observation)
 
@@ -78,7 +71,7 @@ class Agent:
             self.repeat_action_counter += 1
 
             if self.repeat_action_counter > params.REPEAT_ACTION_MAX:
-                action = np.random.choice(params.NUM_ACTIONS)
+                action = self.env.sample_action()
                 self.last_action = action
                 self.repeat_action_counter = 0
         else:
@@ -122,7 +115,7 @@ class Agent:
 
     def get_starting_state(self):
         self.state = np.zeros(params.INPUT_SHAPE, dtype=np.uint8)
-        self.env.new_episode()
+        self.env.reset()
         frame = self.env.render()
         self.state[:, :, -1] = preprocess_frame(frame)
 

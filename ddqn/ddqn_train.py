@@ -7,7 +7,7 @@ import ddqn.params as params
 from ddqn.agent import Agent
 from ddqn.brain import Brain
 from ddqn.memory import Memory
-from environments.trailer_env.environment import Environment
+from environments.obstacle_car_graphical.environment import Environment
 
 from util.loss_functions import huber_loss
 
