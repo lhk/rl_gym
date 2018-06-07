@@ -6,7 +6,7 @@
 RETRAIN = True
 
 # parameters for the structure of the neural network
-NUM_ACTIONS = 4  # 4 for breakout, 6 for spaceinvaders
+NUM_ACTIONS = 9  # 4 for breakout, 6 for spaceinvaders, 9 for the trailer
 FRAME_SIZE = (84, 84)
 FRAME_STACK = 3  # number of consecutive frames to stack as input for the network
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
