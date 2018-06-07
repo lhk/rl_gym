@@ -127,27 +127,27 @@ class Environment():
             else:
                 self.car_speed = 0
 
+        # move the car, get the new rendering
         self.car_position[:] = (new_x, new_y)
-
         self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
+        observation = self.render()
 
         for obstacle in self.obstacle_positions:
             obstacle = obstacle + np.array(params.obstacle_size) / 2
             dist_obs = np.linalg.norm(obstacle - self.car_position, np.inf)
             if dist_obs < 0.5 * (self.car_dim + self.obs_dim):
                 # collision with obstacle
-                return params.reward_collision, True
+                return observation, params.reward_collision, True
 
         goal_pos = self.goal_position + np.array(params.goal_size) / 2
         dist_goal = np.linalg.norm(goal_pos - self.car_position, np.inf)
         if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
-            return params.reward_goal, True
+            # collision with goal, yay
+            return observation, params.reward_goal, True
 
         self.steps += 1
         if self.steps > params.timeout:
             return params.reward_timestep, True
-
-        observation = self.render()
 
         return observation, params.reward_timestep, False
 
