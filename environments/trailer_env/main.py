@@ -29,6 +29,10 @@ while True:
             pygame.quit()
             sys.exit()
 
+        if event.type == KEYDOWN:
+            if event.key == K_SPACE:
+                env.new_episode()
+
     keys = pygame.key.get_pressed()
     if keys[K_UP]:
         acceleration = 1
@@ -38,8 +42,6 @@ while True:
         steering_angle = -1
     elif keys[K_RIGHT]:
         steering_angle = 1
-    elif keys[K_SPACE]:
-        env.new_episode()
 
     reward, done = env.make_action((acceleration, steering_angle))
     print(reward)

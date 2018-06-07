@@ -11,7 +11,7 @@ from ddqn_trailer.memory import Memory
 
 from util.loss_functions import huber_loss
 
-agent = Agent(vis=True)
+agent = Agent(vis=False)
 memory = Memory()
 brain = Brain(loss=huber_loss)
 

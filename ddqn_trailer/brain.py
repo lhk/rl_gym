@@ -37,10 +37,10 @@ class Brain():
 
         # cleaning a directory for checkpoints
         if os.path.exists(os.getcwd() + "/checkpoints/"):
-            # shutil.rmtree(os.getcwd() + "/checkpoints/")
-            self.model.load_weights(os.getcwd() +"/checkpoints_bkup/dqn_model275.hd5")
-            self.target_model.load_weights(os.getcwd() +"/checkpoints_bkup/dqn_model275.hd5")
-        #os.mkdir(os.getcwd() + "/checkpoints/")
+            shutil.rmtree(os.getcwd() + "/checkpoints/")
+            #self.model.load_weights(os.getcwd() +"/checkpoints_bkup/dqn_model275.hd5")
+            #self.target_model.load_weights(os.getcwd() +"/checkpoints_bkup/dqn_model275.hd5")
+        os.mkdir(os.getcwd() + "/checkpoints/")
 
     def __create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
