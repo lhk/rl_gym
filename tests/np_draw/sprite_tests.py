@@ -1,8 +1,9 @@
+from unittest import TestCase
+
 import numpy as np
-import matplotlib.pyplot as plt
 
 from np_draw.sprite import Sprite
-from unittest import TestCase
+
 
 class Sprite_Test(TestCase):
     def test_rendering(self):
