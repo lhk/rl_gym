@@ -86,7 +86,7 @@ class Agent(threading.Thread):
 
         # runs until episode is over, or self.stop == True
         while True:
-            time.sleep(params.WAIT_ON_ACTION)
+            time.sleep(params.WAITING_TIME)
 
             # show current state to network and get predicted policy
             actions, value, memory = self.brain.predict(state, memory)
@@ -134,7 +134,7 @@ class Agent(threading.Thread):
                 while len(self.seen_rewards) > 0:
                     self.move_to_memory(done)
                     self.n_step_reward /= params.GAMMA
-                    time.sleep(params.WAIT_ON_ACTION)
+                    time.sleep(params.WAITING_TIME)
 
             elif len(self.seen_actions) == params.NUM_STEPS:
                 self.move_to_memory(done)
