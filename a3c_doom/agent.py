@@ -98,13 +98,12 @@ class Agent(threading.Thread):
             else:
                 action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
 
-            action = self.env.actions[action_index]
 
             # anneal epsilon
             if self.exploration > params.FINAL_EXPLORATION:
                 self.exploration -= params.EXPLORATION_STEP
 
-            new_state, reward, done = self.env.step(action)
+            new_state, reward, done = self.env.step(action_index)
             reward *= params.REWARD_SCALE
 
             if done:
