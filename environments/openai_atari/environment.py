@@ -8,15 +8,21 @@ class Environment():
     def __init__(self):
         self.env = gym.make(params.ENV_NAME)
         self.num_actions = self.env.action_space.n
+        self.last_observation = None
 
     def reset(self):
-        self.env.reset()
+        observation = self.env.reset()
+        self.last_observation = observation
+        return observation
 
     def render(self):
-        self.env.render()
+        assert type(self.last_observation) == np.ndarray, "please interact at least once before rendering"
+        return self.last_observation
 
     def step(self, action):
-        return self.env.step(action)
+        observation, reward, done, _ = self.env.step(action)
+        self.last_observation = observation
+        return observation, reward, done
 
     def sample_action(self):
         # for atari, the actions are simply numbers
