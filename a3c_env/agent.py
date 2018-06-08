@@ -57,7 +57,11 @@ class Agent(threading.Thread):
         cropped = new_state[10:-10, 30:-30]
         downsampled = lycon.resize(cropped, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
-        new_state = downsampled.reshape((params.INPUT_SHAPE))
+        if len(downsampled.shape)==2:
+            new_state = np.expand_dims(downsampled, axis=-1)
+        else:
+            grayscale = downsampled.mean(axis=-1)
+            new_state = grayscale.reshape((params.INPUT_SHAPE))
         return new_state
 
     def run_one_episode(self):
