@@ -13,6 +13,8 @@ to try dqn with a different targets (TD-lambda etc).
 So far, I have merged all the different dqn versions into one package called dqn.
 But I'm undecided if it will stay like this.
 
+(Also note: Before the refactoring, I've trained the various algorithms against doom and atari. I'll do that again to check if something has been broken. TODO: remove this text after the tests have been successful :) )
+
 Next to the refactoring, I've started to look at homebrew environments for reinforcement learning.
 Such as a car which should navigate to an obstacle. The motivation is to learn about complexity of tasks.
 For example: Many atari games give pretty immediate rewards (paddle missed the ball : -1).
