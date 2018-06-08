@@ -1,6 +1,6 @@
+import numpy as np
 import tensorflow as tf  # if tf is not imported first, it crashes :)
 from tqdm import tqdm
-import numpy as np
 
 print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of it
 
@@ -13,11 +13,9 @@ from environments.openai_atari.environment import Environment
 
 from util.loss_functions import huber_loss
 
-
 vis = True
 if vis:
     import pygame
-    from pygame.locals import *
 
     pygame.init()
     clock = pygame.time.Clock()
@@ -36,7 +34,7 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
 
     if vis:
         frame = agent.env.render()
-        surf = pygame.surfarray.make_surface(np.transpose(frame, axes=[1,0,2]))
+        surf = pygame.surfarray.make_surface(np.transpose(frame, axes=[1, 0, 2]))
         window.blit(surf, (0, 0))
 
         pygame.display.update()
@@ -57,6 +55,3 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
         continue
 
     brain.update_target_model()
-
-
-
