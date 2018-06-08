@@ -6,10 +6,10 @@ np.random.seed(0)
 
 import time, threading
 
-from a3c_doom.agent import Agent
-from a3c_doom.brain import Brain
-from a3c_doom.memory import Memory
-import a3c_doom.params as params
+from a3c_env.agent import Agent
+from a3c_env.brain import Brain
+from a3c_env.memory import Memory
+import a3c_env.params as params
 
 
 class Optimizer(threading.Thread):
