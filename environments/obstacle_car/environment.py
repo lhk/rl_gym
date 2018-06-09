@@ -94,7 +94,7 @@ class Environment_Graphical():
         # plot the car
         self.car_sprite.render(self.canvas)
 
-        return self.canvas
+        return (self.canvas*255).astype(np.uint8)
 
     def step(self, action):
         # internally the action is not a number, but a combination of acceleration and steering
