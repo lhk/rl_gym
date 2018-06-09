@@ -103,7 +103,14 @@ class Environment_Graphical():
 
     def make_action(self, action):
         acceleration, steering_angle = action
+
+        old_dist = np.linalg.norm(self.car.pos - self.goal_sprite.pos)
         self.car.update(acceleration, steering_angle)
+        new_dist = np.linalg.norm(self.car.pos - self.goal_sprite.pos)
+
+        # if params.reward_distance != 0,
+        # then the environment rewards you for moving closer to the goal
+        dist_reward = (old_dist - new_dist)*params.reward_distance
 
         x, y = self.car.pos
 
@@ -144,9 +151,9 @@ class Environment_Graphical():
 
         self.steps += 1
         if self.steps > params.timeout:
-            return observation, params.reward_timestep, True
+            return observation, params.reward_timestep + dist_reward, True
 
-        return observation, params.reward_timestep, False
+        return observation, params.reward_timestep + dist_reward, False
 
     def sample_action(self):
         # for atari, the actions are simply numbers
