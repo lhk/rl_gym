@@ -1,9 +1,9 @@
 import numpy as np
 import pygame
 
-import environments.obstacle_car_graphical.colors as colors
-import environments.obstacle_car_graphical.params as params
-import environments.obstacle_car_graphical.utils as utils
+import environments.obstacle_car.colors as colors
+import environments.obstacle_car.params as params
+import environments.obstacle_car.utils as utils
 
 
 class Environment():
@@ -14,7 +14,7 @@ class Environment():
         self.view = pygame.Surface(params.screen_size)
 
         # loading assets
-        self.car = pygame.image.load("environments/obstacle_car_graphical/assets/car.png")
+        self.car = pygame.image.load("environments/obstacle_car/assets/car.png")
         self.car = pygame.transform.smoothscale(self.car, params.car_size)
 
         self.black = pygame.Surface(params.obstacle_size)

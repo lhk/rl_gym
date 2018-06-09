@@ -3,13 +3,13 @@ import sys
 import pygame
 from pygame.locals import *
 
-import environments.obstacle_car_graphical.params as params
-from environments.obstacle_car_graphical.environment import Environment
+import environments.obstacle_car.params as params
+from environments.obstacle_car.environment import Environment
 
 pygame.init()
 clock = pygame.time.Clock()
 window = pygame.display.set_mode(params.screen_size)
-pygame.display.set_caption("Pygame cheat sheet")
+pygame.display.set_caption("env")
 
 mouse_x, mouse_y = 0, 0
 
