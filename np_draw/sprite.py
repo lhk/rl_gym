@@ -2,6 +2,7 @@ import numpy as np
 from skimage.transform import rotate
 import matplotlib.pyplot as plt
 
+
 def render(img, mask, upperleft, canvas):
     assert np.all(upperleft >= 0), "image must be withing canvas"
     assert np.all(upperleft + img.shape[:2] <= canvas.shape[:2]), "image must be within canvas"
@@ -20,9 +21,9 @@ class Sprite():
         self.img = img.copy()
         self.mask = mask.copy()
 
-        if len(img.shape)>2:
+        if len(img.shape) > 2:
             colors = img.shape[2]
-            self.mask = np.stack([self.mask]*colors, axis=-1)
+            self.mask = np.stack([self.mask] * colors, axis=-1)
 
         self.pos = pos
         self.dim = np.linalg.norm(self.img.shape[:2])
@@ -43,7 +44,7 @@ class Sprite():
 
     def set_position(self, new_pos):
         self.pos = new_pos
-        self.upperleft = self.pos - self.size/2
+        self.upperleft = self.pos - self.size / 2
         self.upperleft_int = self.upperleft.astype(np.int)
 
     def render(self, canvas):
@@ -60,7 +61,7 @@ class Sprite():
         img_visible = self.img_rotated[cutoff[0]:, cutoff[1]:]
         mask_visible = self.mask_rotated[cutoff[0]:, cutoff[1]:]
 
-        if img_visible.shape[0]==0 or img_visible.shape[1]==0:
+        if img_visible.shape[0] == 0 or img_visible.shape[1] == 0:
             return
 
         # the image can also move out of canvas on the other side
