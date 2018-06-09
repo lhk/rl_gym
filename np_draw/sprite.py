@@ -21,9 +21,9 @@ class Sprite():
         self.img = img.copy()
         self.mask = mask.copy()
 
-        if len(img.shape) > 2:
-            colors = img.shape[2]
-            self.mask = np.stack([self.mask] * colors, axis=-1)
+        #if len(img.shape) > 2:
+        #    colors = img.shape[2]
+        #    self.mask = np.stack([self.mask] * colors, axis=-1)
 
         self.pos = pos
         self.dim = np.linalg.norm(self.img.shape[:2])
@@ -92,8 +92,8 @@ class Sprite():
         max_x = max(own_pos[0] + self.size[0], other_pos[0] + other.size[0])
         max_y = max(own_pos[1] + self.size[1], other_pos[1] + other.size[1])
 
-        own_canvas = np.zeros((max_x, max_y, self.img_rotated.shape[2]))
-        other_canvas = np.zeros((max_x, max_y, other.img_rotated.shape[2]))
+        own_canvas = np.zeros((max_x, max_y))
+        other_canvas = np.zeros((max_x, max_y))
 
         render(self.mask_rotated, self.mask_rotated, own_pos, own_canvas)
         render(other.mask_rotated, other.mask_rotated, other_pos, other_canvas)
