@@ -6,15 +6,11 @@
 RETRAIN = True
 
 # parameters for the structure of the neural network
-NUM_ACTIONS = 4  # 4 for breakout, 6 for spaceinvaders, 9 for the trailer
+NUM_ACTIONS = 4  # 4 for breakout, 6 for spaceinvaders
 FRAME_SIZE = (84, 84)
 FRAME_STACK = 3  # number of consecutive frames to stack as input for the network
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
 BATCH_SIZE = 32
-
-# parameters for the rendering
-FPS = 15
-OUTPUT_DIR = "/videos"
 
 # parameters for the reinforcement process
 GAMMA = 0.99  # discount factor for future updates
@@ -45,7 +41,7 @@ REPLAY_MEMORY_SIZE = int(2 ** 20)
 REPLAY_START_SIZE = int(5e4)
 MEMORY_MAPPED = True
 ERROR_BIAS = 0.01
-ERROR_POW = 0.7
+ERROR_POW = 0.1
 
 # parameters for the behaviour of tensorflow
 TF_ALLOW_GROWTH = True
