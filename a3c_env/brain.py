@@ -4,8 +4,8 @@ import tensorflow as tf
 from keras.layers import *
 from keras.models import *
 
-import a3c_doom.params as params
-from a3c_doom.memory import Memory
+import a3c_env.params as params
+from a3c_env.memory import Memory
 
 
 class Brain:
@@ -80,7 +80,7 @@ class Brain:
         n_step_reward = Input(shape=(1,))
         advantage = Input(shape=(1,))
 
-        # loss formulation of a3c_doom
+        # loss formulation of a3c_env
         chosen_action = pred_actions * action_mask
         chosen_action = K.sum(chosen_action, axis=-1, keepdims=True)
         log_prob = K.log(chosen_action)

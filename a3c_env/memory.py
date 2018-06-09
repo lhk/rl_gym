@@ -2,7 +2,7 @@ import threading
 
 import numpy as np
 
-import a3c_doom.params as params
+import a3c_env.params as params
 
 
 class Memory:

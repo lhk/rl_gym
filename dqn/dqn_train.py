@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf  # if tf is not imported first, it crashes :)
 from tqdm import tqdm
 
@@ -13,7 +14,7 @@ from environments.obstacle_car_graphical.environment import Environment
 from util.loss_functions import huber_loss
 
 
-vis = True
+vis = False
 if vis:
     import pygame
     from pygame.locals import *
@@ -34,8 +35,9 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
     agent.act()
 
     if vis:
-        frame = agent.env.render(return_numpy=False)
-        window.blit(frame, (0, 0))
+        frame = agent.env.render()
+        surf = pygame.surfarray.make_surface(np.transpose(frame, axes=[1, 0, 2]))
+        window.blit(surf, (0, 0))
 
         pygame.display.update()
         clock.tick(10)
