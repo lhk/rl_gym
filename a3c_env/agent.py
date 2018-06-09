@@ -10,7 +10,7 @@ from a3c_env.memory import Memory
 
 import lycon
 
-from environments.obstacle_car_graphical.environment import Environment
+from environments.openai_atari.environment import Environment
 
 import pygame
 from pygame.locals import *
@@ -53,9 +53,7 @@ class Agent(threading.Thread):
             pygame.display.set_caption("Pygame cheat sheet")
 
     def preprocess_state(self, new_state):
-        # cropping and resizing as here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
-        cropped = new_state[10:-10, 30:-30]
-        downsampled = lycon.resize(cropped, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
+        downsampled = lycon.resize(new_state, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
         if len(downsampled.shape)==2:
             new_state = np.expand_dims(downsampled, axis=-1)
