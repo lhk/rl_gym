@@ -54,7 +54,7 @@ class Environment_Vector():
                 obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
-                goal_dist = np.linalg.norm(obstacle_position - self.goal_sprite.pos)
+                goal_dist = np.linalg.norm(obstacle_position - self.goal_pos)
 
                 if car_dist > min_dist and goal_dist > min_dist:
                     self.obstacle_positions.append(obstacle_position)
@@ -78,9 +78,11 @@ class Environment_Vector():
         targets = targets - self.car.pos
 
         # rotate to face car
-        targets = mat@targets
+        targets = (mat@targets.T).T
 
-        return targets
+        observation_vector = np.stack([self.car.speed, *targets.flatten()])
+
+        return observation_vector
 
     def step(self, action):
         # internally the action is not a number, but a combination of acceleration and steering
@@ -118,25 +120,26 @@ class Environment_Vector():
         if border_collision:
             self.car.speed = 0
 
-        observation = self.render()
+        observation_vector = self.render()
+        targets = observation_vector[1:].reshape((-1,2))
 
-        rel_goal_pos = observation[0]
+        rel_goal_pos = targets[0]
         if np.linalg.norm(rel_goal_pos)<self.car_dim:
-            return observation, params.reward_goal, True
+            return observation_vector, params.reward_goal, True
 
-        rel_obs_pos = observation[1:]
+        rel_obs_pos = targets[1:]
         rel_obs_dist = np.linalg.norm(rel_obs_pos, axis=-1)
         if np.any(rel_obs_dist < self.car_dim):
-            return observation, params.reward_collision, True
+            return observation_vector, params.reward_collision, True
 
         if border_collision and params.stop_on_border_collision:
-            return observation, params.reward_collision, True
+            return observation_vector, params.reward_collision, True
 
         self.steps += 1
         if self.steps > params.timeout:
-            return observation, params.reward_timestep + dist_reward, True
+            return observation_vector, params.reward_timestep + dist_reward, True
 
-        return observation, params.reward_timestep + dist_reward, False
+        return observation_vector, params.reward_timestep + dist_reward, False
 
     def sample_action(self):
         # for atari, the actions are simply numbers
