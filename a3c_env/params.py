@@ -26,6 +26,7 @@ INPUT_SHAPE = (*FRAME_SIZE, 1)
 NUM_ACTIONS = 4
 MIN_BATCH = 32
 MAX_BATCH = 5 * MIN_BATCH
+RNN_SIZE = 126
 
 # parameters for the training
 LEARNING_RATE = 1e-4

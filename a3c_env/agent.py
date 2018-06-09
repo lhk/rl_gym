@@ -78,7 +78,7 @@ class Agent(threading.Thread):
         # and at the beginning of a new episode, he needs to initialize this memory:
         # the values for the random noise have been read from the keras source code,
         # compare with TODO: link initializer source
-        memory = np.random.rand(1, 256) * 0.1 - 0.05
+        memory = np.random.rand(1, params.RNN_SIZE) * 0.1 - 0.05
         self.seen_memories = [memory[0]]
 
         total_reward = 0

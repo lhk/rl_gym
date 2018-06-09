@@ -60,8 +60,8 @@ class Brain:
         # apply an rnn
         # expose the state of the cell, so that we can recreate the setup
         # of the cell during training
-        gru_cell = CuDNNGRU(256, return_state=True)
-        input_memory = Input(shape=(256,))
+        gru_cell = CuDNNGRU(params.RNN_SIZE, return_state=True)
+        input_memory = Input(shape=(params.RNN_SIZE,))
         gru_tensor, output_memory = gru_cell(dense, initial_state=input_memory)
 
         pred_actions = Dense(params.NUM_ACTIONS, activation='softmax')(gru_tensor)

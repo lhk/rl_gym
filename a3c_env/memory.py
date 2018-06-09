@@ -30,9 +30,9 @@ class Memory:
 
         with self.lock:
             assert from_state.shape == (*params.FRAME_SIZE, 1)
-            assert from_memory.shape == (256,)
+            assert from_memory.shape == (params.RNN_SIZE,)
             assert to_state.shape == (*params.FRAME_SIZE, 1)
-            assert to_memory.shape == (256,)
+            assert to_memory.shape == (params.RNN_SIZE,)
             assert action.shape == (params.NUM_ACTIONS,)
             assert type(reward) in [np.float, np.float64]
             assert type(advantage) in [np.float, np.float64]
