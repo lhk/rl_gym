@@ -145,8 +145,8 @@ class Brain:
         # the memory shape is given by the number of cells in the rnn layer
         # I don't want to move that to a parameter, so right now, it is a "magic number"
         # TODO: maybe a parameter after all ?
-        if memory.shape == (256,):
-            memory = memory.reshape((-1, 256))
+        if memory.shape == (params.RNN_SIZE,):
+            memory = memory.reshape((-1, params.RNN_SIZE))
 
         with self.default_graph.as_default():
             return self.model.predict([state, memory])
