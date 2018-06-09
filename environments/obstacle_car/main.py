@@ -2,9 +2,10 @@ import sys
 
 import pygame
 from pygame.locals import *
+import numpy as np
 
 import environments.obstacle_car.params as params
-from environments.obstacle_car.environment import Environment
+from environments.obstacle_car.environment import Environment_Graphical
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -13,13 +14,14 @@ pygame.display.set_caption("env")
 
 mouse_x, mouse_y = 0, 0
 
-env = Environment()
+env = Environment_Graphical()
 env.reset()
 
 while True:
 
-    frame = env.render(return_numpy=False)
-    window.blit(frame, (0, 0))
+    frame = (env.render()*255).astype(np.uint8)
+    surf = pygame.surfarray.make_surface(frame)
+    window.blit(surf, (0, 0))
 
     acceleration = 0
     steering_angle = 0

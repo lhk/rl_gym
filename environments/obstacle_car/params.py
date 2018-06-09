@@ -1,9 +1,9 @@
 # parameters for setup of environment
-screen_size = (160, 160)
-car_size = (20, 40)
-obstacle_size = (15, 15)
+screen_size = (256, 256)
+car_size = (40, 60)
+obstacle_size = (30, 30)
 goal_size = (40, 40)
-num_obstacles = 0
+num_obstacles = 2
 
 # parameters for mrp
 reward_goal = 2

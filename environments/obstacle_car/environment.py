@@ -5,92 +5,99 @@ import environments.obstacle_car.colors as colors
 import environments.obstacle_car.params as params
 import environments.obstacle_car.utils as utils
 
+from np_draw.sprite import Sprite
+from environments.obstacle_car.car import Car
 
-class Environment():
+
+from skimage.io import imread
+from skimage.transform import resize
+
+
+class Environment_Graphical():
     def __init__(self):
-        pygame.init()
 
-        # the surface on which everything is rendered
-        self.view = pygame.Surface(params.screen_size)
+        self.canvas = np.zeros((*params.screen_size, 3))
 
-        # loading assets
-        self.car = pygame.image.load("environments/obstacle_car/assets/car.png")
-        self.car = pygame.transform.smoothscale(self.car, params.car_size)
+        #car_img = imread("environments/obstacle_car/assets/car.png")
+        #car_img = car_img[:, :, :3] # cut away alpha
+        #car_img = resize(car_img, params.car_size)
 
-        self.black = pygame.Surface(params.obstacle_size)
-        self.black.fill(colors.black)
+        car_img = np.zeros((*params.car_size, 3))
+        car_img[:, :, 2] = np.linspace(0, 1, params.car_size[1])
+        car_img[:, :, 0] = 0.5
 
-        self.green = pygame.Surface(params.goal_size)
-        self.green.fill(colors.green)
 
-        # self.actions = [[1, -1], [1, 0], [1, 1],
-        #                [0, -1], [0, 0], [0, 1],
-        #                [-1, -1], [-1, 0], [-1, 1]]
+        obstacle_img = np.ones((*params.obstacle_size, 3))
+        goal_img = np.zeros((*params.goal_size, 3))
+        goal_img[:, :, 1] = 1
+
+
+        # the position will be overwritten later
+        default_pos = np.zeros((2,))
+        self.car_sprite = Sprite(car_img, car_img.sum(axis=-1)>0, default_pos, 0)
+        self.obstacle_sprite = Sprite(obstacle_img, obstacle_img.sum(axis=-1)>0, default_pos, 0)
+        self.goal_sprite = Sprite(goal_img, goal_img.sum(axis=-1)>0, default_pos, 0)
+
+        # car and car_sprite are not the same
+        # one is just for graphics, the other is for dynamic movement of the car
+        self.car = Car(default_pos, 0, 0)
 
         self.actions = [[0, 0], [0, -1], [0, 1], [1, 0]]
-
         self.num_actions = len(self.actions)
 
     def reset(self):
 
         self.steps = 0
 
+
+        # set up values for dynamics
+        self.car_sprite.set_rotation(0)
+        self.car.rot=0
+        self.car.speed=0
+
         # set up car, obstacle and goal positions
-        self.car_position = np.array([0, 0], dtype=np.float64)
-        self.car_position[0] = np.random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
-        self.car_position[1] = params.screen_size[1] - params.car_size[1] / 2
+        car_position = np.array([0, 0], dtype=np.float64)
+        car_position[0] = np.random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
+        car_position[1] = params.screen_size[1] - params.car_size[1] / 2
+        self.car_sprite.set_position(car_position)
+        self.car.pos = car_position
 
-        self.goal_position = np.array([0, 0])
-        self.goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
-        self.goal_position[1] = 0  # + params.goal_size[1]/2
+        goal_position = np.array([0, 0])
+        goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
+        goal_position[1] = 0  # + params.goal_size[1]/2
+        self.goal_sprite.set_position(goal_position)
 
-        self.car_dim = np.linalg.norm(params.car_size, np.inf)
-        self.goal_dim = np.linalg.norm(params.goal_size, np.inf)
-        self.obs_dim = np.linalg.norm(params.obstacle_size, np.inf)
-
-        min_dist = (self.car_dim + self.goal_dim)
+        min_dist = (self.car_sprite.dim + self.goal_sprite.dim)
 
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
                 obstacle_position = np.random.rand(2) * params.screen_size
                 # obstacle must be away from car and goal
-                car_dist = np.linalg.norm(obstacle_position - self.car_position)
-                goal_dist = np.linalg.norm(obstacle_position - self.goal_position)
+                car_dist = np.linalg.norm(obstacle_position - self.car.pos)
+                goal_dist = np.linalg.norm(obstacle_position - self.goal_sprite.pos)
 
                 if car_dist > min_dist and goal_dist > min_dist:
                     self.obstacle_positions.append(obstacle_position)
                     break
 
-        # set up values for dynamics
-        self.car_rotation = 0
-        self.car_speed = 0
 
-    def render(self, return_numpy=True):
-        self.view.fill(colors.white)
+    def render(self):
+        # reset canvas
+        self.canvas[:] = 0
 
         # plot all the obstacles
-        self.view.fill(colors.white)
         for obstacle_position in self.obstacle_positions:
-            self.view.blit(self.black, obstacle_position)
+            self.obstacle_sprite.set_position(obstacle_position)
+            self.obstacle_sprite.render(self.canvas)
 
         # plot the goal
-        self.view.blit(self.green, self.goal_position)
+        self.goal_sprite.render(self.canvas)
 
-        car_rect = self.car.get_rect()
-        car_rect.center = self.car_position
+        # plot the car
+        self.car_sprite.render(self.canvas)
 
-        rotated_surface, rotated_rect = utils.rotate(self.car, car_rect, self.car_rotation)
-        self.view.blit(rotated_surface, rotated_rect)
-
-        if return_numpy:
-            # get numpy surface
-            np_arr = pygame.surfarray.array3d(self.view)
-
-            return np_arr
-
-        else:
-            return self.view
+        return self.canvas
 
     def step(self, action):
         # internally the action is not a number, but a combination of acceleration and steering
@@ -99,56 +106,45 @@ class Environment():
 
     def make_action(self, action):
         acceleration, steering_angle = action
-        acceleration = np.clip(acceleration, -1, 1)
-        steering_angle = np.clip(steering_angle, -1, 1)
+        self.car.update(acceleration, steering_angle)
 
-        # TODO: fill with proper single track model
-        self.car_speed += acceleration * params.dT
-        self.car_speed = np.clip(self.car_speed, params.min_speed, params.max_speed)
-        x, y = self.car_position
-        dx = -np.sin(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
-        new_x = x + dx
-        dy = -np.cos(self.car_rotation / 180 * np.pi) * self.car_speed * params.dT
-        new_y = y + dy
+        x, y = self.car.pos
 
         border_collision = False
-        if new_x > params.screen_size[0]:
+        if x > params.screen_size[0]:
             border_collision = True
-            new_x = params.screen_size[0]
-        elif new_x < 0:
+            self.car.pos[0] = params.screen_size[0]
+        elif x < 0:
             border_collision = True
-            new_x = 0
+            self.car.pos[0] = 0
 
-        if new_y > params.screen_size[1]:
+        if y > params.screen_size[1]:
             border_collision = True
-            new_y = params.screen_size[1]
-        elif new_y < 0:
+            self.car.pos[1] = params.screen_size[1]
+        elif y < 0:
             border_collision = True
-            new_y = 0
+            self.car.pos[1] = 0
 
         if border_collision:
-            self.car_speed = 0
+            self.car.speed = 0
 
-        # move the car, get the new rendering
-        self.car_position[:] = (new_x, new_y)
-        self.car_rotation -= self.car_speed * steering_angle * params.dT * params.steering_factor
+        # sync dynamics and graphics
+        self.car_sprite.set_position(self.car.pos)
+        self.car_sprite.set_rotation(-self.car.rot)
+
         observation = self.render()
+
+
+        if self.car_sprite.collide(self.goal_sprite):
+            return observation, params.reward_goal, True
 
         if border_collision and params.stop_on_border_collision:
             return observation, params.reward_collision, True
 
         for obstacle in self.obstacle_positions:
-            obstacle = obstacle + np.array(params.obstacle_size) / 2
-            dist_obs = np.linalg.norm(obstacle - self.car_position, np.inf)
-            if dist_obs < 0.5 * (self.car_dim + self.obs_dim):
-                # collision with obstacle
+            self.obstacle_sprite.set_position(obstacle)
+            if self.car_sprite.collide(self.obstacle_sprite):
                 return observation, params.reward_collision, True
-
-        goal_pos = self.goal_position + np.array(params.goal_size) / 2
-        dist_goal = np.linalg.norm(goal_pos - self.car_position, np.inf)
-        if dist_goal < 0.5 * (self.car_dim + self.goal_dim):
-            # collision with goal, yay
-            return observation, params.reward_goal, True
 
         self.steps += 1
         if self.steps > params.timeout:
