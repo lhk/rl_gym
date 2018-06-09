@@ -22,7 +22,7 @@ REWARD_SCALE = 1
 
 # parameters for the neural network
 FRAME_SIZE = (84, 84)
-INPUT_SHAPE = (*FRAME_SIZE, 1)
+INPUT_SHAPE = (*FRAME_SIZE, 3)
 NUM_ACTIONS = 4
 MIN_BATCH = 32
 MAX_BATCH = 5 * MIN_BATCH
