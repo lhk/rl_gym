@@ -27,9 +27,13 @@ class Sprite():
 
         self.pos = pos
         self.dim = np.linalg.norm(self.img.shape[:2])
+        self.rot = None
         self.set_rotation(rot)
 
     def set_rotation(self, new_rot):
+        if self.rot == new_rot:
+            return
+
         self.rot = new_rot
         self.img_rotated = rotate(self.img, self.rot, resize=True, order=1)
         self.mask_rotated = rotate(self.mask, self.rot, resize=True, order=1).astype(np.bool)
