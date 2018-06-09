@@ -2,7 +2,7 @@ import numpy as np
 import pygame
 
 import environments.obstacle_car.colors as colors
-import environments.obstacle_car.params as params
+import environments.obstacle_car.params_radial as params
 import environments.obstacle_car.utils as utils
 
 from np_draw.sprite import Sprite
@@ -16,7 +16,7 @@ class Environment_Vector():
     def __init__(self):
         # the position will be overwritten later
         default_pos = np.zeros((2,))
-        self.car = Car(default_pos, 0, 0)
+        self.car = Car(default_pos, 0, 0, params)
         self.car_dim = np.linalg.norm(params.car_size)
 
         self.goal_pos = default_pos
@@ -41,16 +41,16 @@ class Environment_Vector():
 
         goal_position = np.array([0, 0])
         goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
-        goal_position[1] = params.goal_size[1]/2
+        goal_position[1] = params.goal_size[1] / 2
         self.goal_pos = goal_position
 
-        min_dist = (1.5*self.car_dim + min(params.goal_size))
+        min_dist = (1.5 * self.car_dim + min(params.goal_size))
 
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
-                obs_x = np.random.random()*params.screen_size[0]
-                obs_y = params.screen_size[1]* 1/3*(1 + np.random.random())
+                obs_x = np.random.random() * params.screen_size[0]
+                obs_y = params.screen_size[1] * 1 / 3 * (1 + np.random.random())
                 obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
@@ -64,7 +64,7 @@ class Environment_Vector():
 
         # set up a rotation matrix
         if rotated:
-            theta = -self.car.rot
+            theta = -self.car.rot / 180 * np.pi
         else:
             theta = 0
 
@@ -75,10 +75,10 @@ class Environment_Vector():
         targets = np.vstack([self.goal_pos, *self.obstacle_positions])
 
         # origin is car position
-        targets = targets - self.car.pos
+        targets = self.car.pos - targets
 
         # rotate to face car
-        targets = (mat@targets.T).T
+        targets = (mat @ targets.T).T
 
         observation_vector = np.stack([self.car.speed, *targets.flatten()])
 
@@ -98,7 +98,7 @@ class Environment_Vector():
 
         # if params.reward_distance != 0,
         # then the environment rewards you for moving closer to the goal
-        dist_reward = (old_dist - new_dist)*params.reward_distance
+        dist_reward = (old_dist - new_dist) * params.reward_distance
 
         x, y = self.car.pos
 
@@ -121,10 +121,10 @@ class Environment_Vector():
             self.car.speed = 0
 
         observation_vector = self.render()
-        targets = observation_vector[1:].reshape((-1,2))
+        targets = observation_vector[1:].reshape((-1, 2))
 
         rel_goal_pos = targets[0]
-        if np.linalg.norm(rel_goal_pos)<self.car_dim:
+        if np.linalg.norm(rel_goal_pos) < self.car_dim:
             return observation_vector, params.reward_goal, True
 
         rel_obs_pos = targets[1:]

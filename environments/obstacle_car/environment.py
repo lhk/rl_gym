@@ -37,7 +37,7 @@ class Environment_Graphical():
 
         # car and car_sprite are not the same
         # one is just for graphics, the other is for dynamic movement of the car
-        self.car = Car(default_pos, 0, 0)
+        self.car = Car(default_pos, 0, 0, params)
 
         self.actions = [[0, 0], [0, -1], [0, 1], [1, 0]]
         self.num_actions = len(self.actions)
@@ -60,16 +60,16 @@ class Environment_Graphical():
 
         goal_position = np.array([0, 0])
         goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
-        goal_position[1] = params.goal_size[1]/2
+        goal_position[1] = params.goal_size[1] / 2
         self.goal_sprite.set_position(goal_position)
 
-        min_dist = (1.5*self.car_sprite.dim + min(self.goal_sprite.size))
+        min_dist = (1.5 * self.car_sprite.dim + min(self.goal_sprite.size))
 
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
-                obs_x = np.random.random()*params.screen_size[0]
-                obs_y = params.screen_size[1]* 1/3*(1 + np.random.random())
+                obs_x = np.random.random() * params.screen_size[0]
+                obs_y = params.screen_size[1] * 1 / 3 * (1 + np.random.random())
                 obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
@@ -94,7 +94,7 @@ class Environment_Graphical():
         # plot the car
         self.car_sprite.render(self.canvas)
 
-        return (self.canvas*255).astype(np.uint8)
+        return (self.canvas * 255).astype(np.uint8)
 
     def step(self, action):
         # internally the action is not a number, but a combination of acceleration and steering
@@ -110,7 +110,7 @@ class Environment_Graphical():
 
         # if params.reward_distance != 0,
         # then the environment rewards you for moving closer to the goal
-        dist_reward = (old_dist - new_dist)*params.reward_distance
+        dist_reward = (old_dist - new_dist) * params.reward_distance
 
         x, y = self.car.pos
 
