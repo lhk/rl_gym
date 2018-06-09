@@ -19,7 +19,7 @@ env.reset()
 
 while True:
 
-    frame = (env.render()*255).astype(np.uint8)
+    frame = (env.render() * 255).astype(np.uint8)
     surf = pygame.surfarray.make_surface(frame)
     window.blit(surf, (0, 0))
 

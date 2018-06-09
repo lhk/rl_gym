@@ -8,7 +8,6 @@ import environments.obstacle_car.utils as utils
 from np_draw.sprite import Sprite
 from environments.obstacle_car.car import Car
 
-
 from skimage.io import imread
 from skimage.transform import resize
 
@@ -18,25 +17,23 @@ class Environment_Graphical():
 
         self.canvas = np.zeros((*params.screen_size, 3))
 
-        #car_img = imread("environments/obstacle_car/assets/car.png")
-        #car_img = car_img[:, :, :3] # cut away alpha
-        #car_img = resize(car_img, params.car_size)
+        # car_img = imread("environments/obstacle_car/assets/car.png")
+        # car_img = car_img[:, :, :3] # cut away alpha
+        # car_img = resize(car_img, params.car_size)
 
         car_img = np.zeros((*params.car_size, 3))
         car_img[:, :, 2] = np.linspace(0, 1, params.car_size[1])
         car_img[:, :, 0] = 0.5
 
-
         obstacle_img = np.ones((*params.obstacle_size, 3))
         goal_img = np.zeros((*params.goal_size, 3))
         goal_img[:, :, 1] = 1
 
-
         # the position will be overwritten later
         default_pos = np.zeros((2,))
-        self.car_sprite = Sprite(car_img, car_img.sum(axis=-1)>0, default_pos, 0)
-        self.obstacle_sprite = Sprite(obstacle_img, obstacle_img.sum(axis=-1)>0, default_pos, 0)
-        self.goal_sprite = Sprite(goal_img, goal_img.sum(axis=-1)>0, default_pos, 0)
+        self.car_sprite = Sprite(car_img, car_img.sum(axis=-1) > 0, default_pos, 0)
+        self.obstacle_sprite = Sprite(obstacle_img, obstacle_img.sum(axis=-1) > 0, default_pos, 0)
+        self.goal_sprite = Sprite(goal_img, goal_img.sum(axis=-1) > 0, default_pos, 0)
 
         # car and car_sprite are not the same
         # one is just for graphics, the other is for dynamic movement of the car
@@ -49,11 +46,10 @@ class Environment_Graphical():
 
         self.steps = 0
 
-
         # set up values for dynamics
         self.car_sprite.set_rotation(0)
-        self.car.rot=0
-        self.car.speed=0
+        self.car.rot = 0
+        self.car.speed = 0
 
         # set up car, obstacle and goal positions
         car_position = np.array([0, 0], dtype=np.float64)
@@ -80,7 +76,6 @@ class Environment_Graphical():
                 if car_dist > min_dist and goal_dist > min_dist:
                     self.obstacle_positions.append(obstacle_position)
                     break
-
 
     def render(self):
         # reset canvas
@@ -133,7 +128,6 @@ class Environment_Graphical():
         self.car_sprite.set_rotation(-self.car.rot)
 
         observation = self.render()
-
 
         if self.car_sprite.collide(self.goal_sprite):
             return observation, params.reward_goal, True
