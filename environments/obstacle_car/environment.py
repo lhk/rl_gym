@@ -60,15 +60,17 @@ class Environment_Graphical():
 
         goal_position = np.array([0, 0])
         goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
-        goal_position[1] = 0  # + params.goal_size[1]/2
+        goal_position[1] = params.goal_size[1]/2
         self.goal_sprite.set_position(goal_position)
 
-        min_dist = (self.car_sprite.dim + self.goal_sprite.dim)
+        min_dist = (1.5*self.car_sprite.dim + min(self.goal_sprite.size))
 
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
-                obstacle_position = np.random.rand(2) * params.screen_size
+                obs_x = np.random.random()*params.screen_size[0]
+                obs_y = params.screen_size[1]* 1/3*(1 + np.random.random())
+                obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
                 goal_dist = np.linalg.norm(obstacle_position - self.goal_sprite.pos)
