@@ -41,9 +41,6 @@ class Brain:
             shutil.rmtree(os.getcwd() + "/checkpoints/")
         os.mkdir(os.getcwd() + "/checkpoints/")
 
-        #self.model.load_weights(os.getcwd() + "/checkpoints_bkup2/dqn_model370.hd5")
-        #self.target_model.load_weights(os.getcwd() + "/checkpoints_bkup2/dqn_model370.hd5")
-
     def create_model(self):
         assert False, "use one of the subclasses instead"
 
@@ -120,7 +117,7 @@ class DQN_Brain(Brain):
         rescaled = Lambda(lambda x: x / 255.)(input_layer)
         conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+        #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
         conv_flattened = Flatten()(conv)
 
