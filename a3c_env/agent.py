@@ -10,7 +10,7 @@ from a3c_env.memory import Memory
 
 import lycon
 
-from environments.openai_atari.environment import Environment
+from environments.obstacle_car.environment import Environment_Graphical as Environment
 
 import pygame
 from pygame.locals import *
@@ -57,9 +57,11 @@ class Agent(threading.Thread):
                                    interpolation=lycon.Interpolation.NEAREST)
         if len(downsampled.shape)==2:
             new_state = np.expand_dims(downsampled, axis=-1)
-        else:
+        elif downsampled.shape[2]>1 and params.INPUT_SHAPE[2]==1:
             grayscale = downsampled.mean(axis=-1)
             new_state = grayscale.reshape((params.INPUT_SHAPE))
+        else:
+            new_state = downsampled.reshape((params.INPUT_SHAPE))
         return new_state
 
     def run_one_episode(self):
