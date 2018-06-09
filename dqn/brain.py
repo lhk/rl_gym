@@ -41,8 +41,8 @@ class Brain:
             shutil.rmtree(os.getcwd() + "/checkpoints/")
         os.mkdir(os.getcwd() + "/checkpoints/")
 
-        self.model.load_weights(os.getcwd() + "/checkpoints_bkup2/dqn_model370.hd5")
-        self.target_model.load_weights(os.getcwd() + "/checkpoints_bkup2/dqn_model370.hd5")
+        #self.model.load_weights(os.getcwd() + "/checkpoints_bkup2/dqn_model370.hd5")
+        #self.target_model.load_weights(os.getcwd() + "/checkpoints_bkup2/dqn_model370.hd5")
 
     def create_model(self):
         assert False, "use one of the subclasses instead"

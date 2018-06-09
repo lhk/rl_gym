@@ -7,13 +7,13 @@ print(tf.GRAPH_DEF_VERSION)  # and if I don't use it, autoformatting gets rid of
 import dqn.params as params
 import environments.obstacle_car_graphical.params as env_params
 from dqn.agent import PER_Agent
-from dqn.brain import Dueling_Brain
+from dqn.brain import DQN_Brain
 from dqn.memory import Priority_Memory
 from environments.openai_atari.environment import Environment
 
 from util.loss_functions import huber_loss
 
-vis = True
+vis = False
 if vis:
     import pygame
 
@@ -23,7 +23,7 @@ if vis:
     pygame.display.set_caption("observations")
 
 memory = Priority_Memory()
-brain = Dueling_Brain(memory, loss=huber_loss)
+brain = DQN_Brain(memory, loss=huber_loss)
 env = Environment()
 agent = PER_Agent(memory, brain, env)
 

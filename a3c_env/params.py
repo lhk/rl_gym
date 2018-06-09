@@ -1,6 +1,6 @@
 # parameters for the training setup
 RUN_TIME = 120000
-NUM_EPISODES = 800
+NUM_EPISODES = 80000
 AGENTS = 32
 OPTIMIZERS = 2
 WAITING_TIME = 0.0001
