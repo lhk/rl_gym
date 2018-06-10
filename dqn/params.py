@@ -37,9 +37,9 @@ EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION
 REPEAT_ACTION_MAX = 10  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(2 ** 20)
+REPLAY_MEMORY_SIZE = int(2 ** 18)
 REPLAY_START_SIZE = int(5e4)
-MEMORY_MAPPED = True
+MEMORY_MAPPED = False
 ERROR_BIAS = 0.05
 ERROR_POW = 0.5
 
