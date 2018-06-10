@@ -7,7 +7,7 @@ import numpy as np
 import environments.obstacle_car.params_radial as params
 from environments.obstacle_car.environment_radial import Environment_Vector
 
-canvas_size = (500,500)
+canvas_size = (500, 500)
 x_coords = np.arange(canvas_size[0])
 y_coords = np.arange(canvas_size[1])
 x, y = np.meshgrid(x_coords, y_coords)
@@ -30,11 +30,11 @@ while True:
 
     # first observation is speed, throw it away
     # the rest has to be rescaled to the original range
-    observation = observation[1:]*params.distance_rescale
+    observation = observation[1:] * params.distance_rescale
 
     # then we organize it as vectors
     observation = observation.reshape((-1, 2))
-    offset = np.array([canvas.shape[0] // 2, canvas.shape[1]//2])
+    offset = np.array([canvas.shape[0] // 2, canvas.shape[1] // 2])
     observation = (observation + offset).astype(np.int)
 
     goal = observation[0]
@@ -45,9 +45,9 @@ while True:
 
     dist = coords - goal
     dist = np.linalg.norm(dist, axis=-1)
-    area = np.where(dist < env.initial_dist*params.max_dist)
+    area = np.where(dist < env.initial_dist * params.max_dist)
 
-    canvas[area[1], area[0], 2]=0.5
+    canvas[area[1], area[0], 2] = 0.5
 
     if np.all(goal > 0) and np.all(goal < canvas.shape[:2]):
         canvas[goal[0] - 5:goal[0] + 5, goal[1] - 5:goal[1] + 5, :] = 1
@@ -57,7 +57,7 @@ while True:
             canvas[obstacle[0] - 5:obstacle[0] + 5, obstacle[1] - 5:obstacle[1] + 5, 0] = 1
 
     # a green dot at the center of the canvas, for our car
-    canvas[offset[0]-5:offset[0]+5, offset[1]-5:offset[1]+5, 1]=1
+    canvas[offset[0] - 5:offset[0] + 5, offset[1] - 5:offset[1] + 5, 1] = 1
 
     canvas = (canvas * 255).astype(np.uint8)
 

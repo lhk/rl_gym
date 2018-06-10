@@ -108,11 +108,11 @@ class Environment_Vector():
 
         observation_vector = self.render()
         targets = observation_vector[1:].reshape((-1, 2))
-        targets = targets*params.distance_rescale
+        targets = targets * params.distance_rescale
 
         # we have moved out of the simulation domain
         if new_dist > params.max_dist * self.initial_dist:
-            return  observation_vector, params.reward_collision, True
+            return observation_vector, params.reward_collision, True
 
         rel_goal_pos = targets[0]
         if np.linalg.norm(rel_goal_pos) < self.car_dim:
