@@ -64,7 +64,7 @@ class Environment_Vector():
 
         # set up a rotation matrix
         if rotated:
-            theta = -self.car.rot / 180 * np.pi
+            theta = self.car.rot / 180 * np.pi
         else:
             theta = 0
 
@@ -79,6 +79,7 @@ class Environment_Vector():
 
         # rotate to face car
         targets = (mat @ targets.T).T
+        targets = targets / params.screen_size[0]
 
         observation_vector = np.stack([self.car.speed, *targets.flatten()])
 
@@ -102,37 +103,17 @@ class Environment_Vector():
 
         x, y = self.car.pos
 
-        border_collision = False
-        if x > params.screen_size[0]:
-            border_collision = True
-            self.car.pos[0] = params.screen_size[0]
-        elif x < 0:
-            border_collision = True
-            self.car.pos[0] = 0
-
-        if y > params.screen_size[1]:
-            border_collision = True
-            self.car.pos[1] = params.screen_size[1]
-        elif y < 0:
-            border_collision = True
-            self.car.pos[1] = 0
-
-        if border_collision:
-            self.car.speed = 0
-
         observation_vector = self.render()
         targets = observation_vector[1:].reshape((-1, 2))
+        targets = targets*params.screen_size[0]
 
         rel_goal_pos = targets[0]
-        if np.linalg.norm(rel_goal_pos) < self.car_dim:
+        if np.linalg.norm(rel_goal_pos) < self.car_dim*2:
             return observation_vector, params.reward_goal, True
 
         rel_obs_pos = targets[1:]
         rel_obs_dist = np.linalg.norm(rel_obs_pos, axis=-1)
         if np.any(rel_obs_dist < self.car_dim):
-            return observation_vector, params.reward_collision, True
-
-        if border_collision and params.stop_on_border_collision:
             return observation_vector, params.reward_collision, True
 
         self.steps += 1

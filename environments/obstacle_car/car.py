@@ -24,5 +24,3 @@ class Car():
 
         self.pos[:] = (new_x, new_y)
         self.rot -= self.speed * steering_angle * self.params.dT * self.params.steering_factor
-
-        i = 1

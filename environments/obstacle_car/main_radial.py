@@ -7,9 +7,10 @@ import numpy as np
 import environments.obstacle_car.params_radial as params
 from environments.obstacle_car.environment_radial import Environment_Vector
 
+canvas_size = (500,500)
 pygame.init()
 clock = pygame.time.Clock()
-window = pygame.display.set_mode(params.screen_size)
+window = pygame.display.set_mode(canvas_size)
 pygame.display.set_caption("env")
 
 mouse_x, mouse_y = 0, 0
@@ -19,25 +20,27 @@ env.reset()
 
 while True:
 
-    canvas = np.zeros([*params.screen_size, 3])
+    canvas = np.zeros([*canvas_size, 3])
     observation = env.render()
-    observation = observation[1:]
+    observation = observation[1:]*params.screen_size[0]
     observation = observation.reshape((-1, 2))
-    offset = np.array([params.screen_size[0] // 2, 0])
+    offset = np.array([canvas.shape[0] // 2, canvas.shape[1]//2])
     observation = (observation + offset).astype(np.int)
 
     goal = observation[0]
     obstacles = observation[1:]
 
-    goal = np.array(params.screen_size) - goal
-    obstacles = np.array(params.screen_size) - obstacles
+    goal = np.array(canvas.shape[:2]) - goal
+    obstacles = np.array(canvas.shape[:2]) - obstacles
 
-    if np.all(goal > 0) and np.all(goal < params.screen_size):
+    if np.all(goal > 0) and np.all(goal < canvas.shape[:2]):
         canvas[goal[0] - 5:goal[0] + 5, goal[1] - 5:goal[1] + 5, :] = 1
 
     for obstacle in obstacles:
-        if np.all(obstacle > 0) and np.all(obstacle < params.screen_size):
+        if np.all(obstacle > 0) and np.all(obstacle < canvas.shape[:2]):
             canvas[obstacle[0] - 5:obstacle[0] + 5, obstacle[1] - 5:obstacle[1] + 5, 0] = 1
+
+    canvas[offset[0]-5:offset[0]+5, offset[1]-5:offset[1]+5, 1]=1
 
     canvas = (canvas * 255).astype(np.uint8)
 
