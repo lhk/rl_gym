@@ -44,6 +44,12 @@ class Environment_Vector():
         goal_position[1] = params.goal_size[1] / 2
         self.goal_pos = goal_position
 
+        # if the car gets too far away from the goal,
+        # we stop the simulation
+        # this stop is based on the initial distance
+        self.initial_dist = np.linalg.norm(self.car.pos - self.goal_pos)
+
+        # minimum distance an obstacle needs to have from car and goal
         min_dist = (1.5 * self.car_dim + min(params.goal_size))
 
         self.obstacle_positions = []
@@ -79,8 +85,7 @@ class Environment_Vector():
 
         # rotate to face car
         targets = (mat @ targets.T).T
-        targets = targets / params.screen_size[0]
-
+        targets = targets / params.distance_rescale
         observation_vector = np.stack([self.car.speed, *targets.flatten()])
 
         return observation_vector
@@ -101,14 +106,16 @@ class Environment_Vector():
         # then the environment rewards you for moving closer to the goal
         dist_reward = (old_dist - new_dist) * params.reward_distance
 
-        x, y = self.car.pos
-
         observation_vector = self.render()
         targets = observation_vector[1:].reshape((-1, 2))
-        targets = targets*params.screen_size[0]
+        targets = targets*params.distance_rescale
+
+        # we have moved out of the simulation domain
+        if new_dist > params.max_dist * self.initial_dist:
+            return  observation_vector, params.reward_collision, True
 
         rel_goal_pos = targets[0]
-        if np.linalg.norm(rel_goal_pos) < self.car_dim*2:
+        if np.linalg.norm(rel_goal_pos) < self.car_dim:
             return observation_vector, params.reward_goal, True
 
         rel_obs_pos = targets[1:]
