@@ -145,8 +145,6 @@ class Agent(threading.Thread):
 
             if self.vis:
                 render_frame = state.copy()
-                if render_frame.max()<=1:
-                    render_frame*=255.
                 render_surf = pygame.surfarray.make_surface(render_frame)
                 self.window.blit(render_surf, (0, 0))
 

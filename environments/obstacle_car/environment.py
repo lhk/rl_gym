@@ -28,8 +28,9 @@ class Environment_Graphical():
         #car_img[:, :, 0] = 0.5
 
         obstacle_img = np.zeros((*params.obstacle_size, 3))
+        obstacle_img[:, :, 0] = np.sin(np.linspace(0, 2*np.pi, params.obstacle_size[0])).reshape((-1,1))
         goal_img = np.zeros((*params.goal_size, 3))
-        goal_img[:, :, 1]=1
+        goal_img[:, :, 1]=np.sin(np.linspace(0, 4*np.pi, params.goal_size[1]))
 
         obstacle_mask = np.ones(params.obstacle_size, dtype=np.bool)
         goal_mask = np.ones(params.goal_size, dtype=np.bool)
