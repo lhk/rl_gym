@@ -29,9 +29,9 @@ class Memory:
             time.sleep(params.WAITING_TIME) # yield control, if all agents sleep, brain gets to optimize away the memory
 
         with self.lock:
-            assert from_state.shape == (*params.FRAME_SIZE, 1)
+            assert from_state.shape == params.INPUT_SHAPE
             assert from_memory.shape == (params.RNN_SIZE,)
-            assert to_state.shape == (*params.FRAME_SIZE, 1)
+            assert to_state.shape == params.INPUT_SHAPE
             assert to_memory.shape == (params.RNN_SIZE,)
             assert action.shape == (params.NUM_ACTIONS,)
             assert type(reward) in [np.float, np.float64]
