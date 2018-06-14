@@ -15,17 +15,21 @@ from skimage.transform import resize
 class Environment_Graphical():
     def __init__(self):
 
+        # set up numpy arrays to be drawn to
         self.canvas = np.zeros((*params.screen_size, 3))
 
+        self.background = np.zeros((*params.screen_size, 3))
+        self.background_mask = np.zeros((*params.screen_size,), dtype=np.bool)
+
+        self.foreground = np.zeros((*params.screen_size,3))
+        self.foreground_mask = np.zeros((*params.screen_size,), dtype=np.bool)
+
+        # load images and set up their masks
         car_img_transp = imread("environments/obstacle_car/assets/car.png")
         car_img_transp = np.transpose(car_img_transp, [1,0,2])
         car_img_transp = resize(car_img_transp, params.car_size)
         car_img = car_img_transp[:, :, :3]# cut away alpha
         car_mask = (car_img_transp[:, :, 3]>0).astype(np.bool)
-
-        #car_img = np.zeros((*params.car_size, 3))
-        #car_img[:, :, 2] = np.linspace(0, 1, params.car_size[1])
-        #car_img[:, :, 0] = 0.5
 
         obstacle_img = np.zeros((*params.obstacle_size, 3))
         obstacle_img[:, :, 0] = np.sin(np.linspace(0, 2*np.pi, params.obstacle_size[0])).reshape((-1,1))
@@ -85,20 +89,28 @@ class Environment_Graphical():
                     self.obstacle_positions.append(obstacle_position)
                     break
 
-    def render(self):
-        # reset canvas
-        self.canvas[:] = 1
+        # render to background
+        self.background[:] = 0
+        self.background_mask[:] = False
 
-        # plot all the obstacles
+        self.goal_sprite.render(self.background, self.background_mask)
         for obstacle_position in self.obstacle_positions:
             self.obstacle_sprite.set_position(obstacle_position)
-            self.obstacle_sprite.render(self.canvas)
+            self.obstacle_sprite.render(self.background, self.background_mask)
 
-        # plot the goal
-        self.goal_sprite.render(self.canvas)
+
+    def render(self):
+        # reset canvas and foreground,
+        # background is not rerendered
+        self.canvas[:] = self.background
+        self.foreground[:] = 0
+        self.foreground_mask[:] = False
 
         # plot the car
-        self.car_sprite.render(self.canvas)
+        self.car_sprite.render(self.foreground, self.foreground_mask)
+
+        # overlay foreground to canvas
+        self.canvas[self.foreground_mask] = self.foreground[self.foreground_mask]
 
         return (self.canvas * 255).astype(np.uint8)
 
