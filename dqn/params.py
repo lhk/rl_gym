@@ -8,7 +8,7 @@ RETRAIN = True
 # parameters for the structure of the neural network
 NUM_ACTIONS = 4  # 4 for breakout, 6 for spaceinvaders
 FRAME_SIZE = (84, 84)
-FRAME_STACK = 3  # number of consecutive frames to stack as input for the network
+FRAME_STACK = 2  # number of consecutive frames to stack as input for the network
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
 BATCH_SIZE = 32
 
@@ -22,7 +22,7 @@ RHO = 0.95
 EPSILON = 0.01
 
 # parameters for the training
-TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops
+TOTAL_INTERACTIONS = int(8e6)  # after this many interactions, the training stops
 TRAIN_SKIPS = 2  # interact with the environment X times, update the network once
 
 TARGET_NETWORK_UPDATE_FREQ = 1e4  # update the target network every X training steps
@@ -37,9 +37,9 @@ EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION
 REPEAT_ACTION_MAX = 10  # maximum number of repeated actions before sampling random action
 
 # parameters for the memory
-REPLAY_MEMORY_SIZE = int(2 ** 18)
+REPLAY_MEMORY_SIZE = int(2 ** 20)
 REPLAY_START_SIZE = int(5e4)
-MEMORY_MAPPED = False
+MEMORY_MAPPED = True
 ERROR_BIAS = 0.05
 ERROR_POW = 0.7
 DEFAULT_PRIO = 1
