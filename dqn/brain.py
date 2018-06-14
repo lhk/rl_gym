@@ -83,7 +83,7 @@ class Brain:
         training_indices = self.memory.sample_indices()
         batch = self.memory[training_indices]
 
-        from_states, to_states, actions, q_targets, terminals = batch
+        from_states, to_states, actions, rewards, terminals = batch
 
         assert from_states.shape[0] == params.BATCH_SIZE, "batchsize must be as defined in dqn.params.BATCH_SIZE"
         assert from_states.dtype == np.uint8, "we work on uint8. are you mixing different types of preprocessing ?"
@@ -92,6 +92,7 @@ class Brain:
         action_mask = np.zeros((actions.shape[0], params.NUM_ACTIONS))
         action_mask[np.arange(actions.shape[0]), actions] = 1
 
+        q_targets = self.get_targets(to_states, rewards, terminals)
         q_targets = q_targets.reshape((-1, 1)) * action_mask
 
         self.model.train_on_batch([from_states, action_mask], q_targets)

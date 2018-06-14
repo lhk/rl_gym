@@ -188,4 +188,4 @@ class PER_Agent(Agent):
         error = np.abs(error)
         priority = np.power(error + params.ERROR_BIAS, params.ERROR_POW)
 
-        self.memory.push(from_state, to_state, action, q_target, done, priority)
+        self.memory.push(from_state, to_state, action, reward, done, priority)
