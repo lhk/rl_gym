@@ -15,14 +15,22 @@ from skimage.transform import resize
 class Environment_Graphical():
     def __init__(self):
 
+        # fillcolor
+        self.fillvalue = 1
+
         # set up numpy arrays to be drawn to
         self.canvas = np.zeros((*params.screen_size, 3))
 
-        self.background = np.zeros((*params.screen_size, 3))
-        self.background_mask = np.zeros((*params.screen_size,), dtype=np.bool)
+        self.obstacle_layer = np.zeros((*params.screen_size, 3))
+        self.obstacle_mask = np.zeros((*params.screen_size,), dtype=np.bool)
 
-        self.foreground = np.zeros((*params.screen_size,3))
-        self.foreground_mask = np.zeros((*params.screen_size,), dtype=np.bool)
+        self.goal_layer = np.zeros((*params.screen_size, 3))
+        self.goal_mask = np.zeros((*params.screen_size,), dtype=np.bool)
+
+        self.background = np.zeros((*params.screen_size, 3))
+
+        self.car_layer = np.zeros((*params.screen_size,3))
+        self.car_mask = np.zeros((*params.screen_size,), dtype=np.bool)
 
         # load images and set up their masks
         car_img_transp = imread("environments/obstacle_car/assets/car.png")
@@ -90,27 +98,33 @@ class Environment_Graphical():
                     break
 
         # render to background
-        self.background[:] = 0
-        self.background_mask[:] = False
+        self.goal_layer[:] = self.fillvalue
+        self.goal_mask[:] = False
+        self.goal_sprite.render(self.goal_layer, self.goal_mask)
 
-        self.goal_sprite.render(self.background, self.background_mask)
+        self.obstacle_layer[:] = self.fillvalue
+        self.obstacle_mask[:] = False
         for obstacle_position in self.obstacle_positions:
             self.obstacle_sprite.set_position(obstacle_position)
-            self.obstacle_sprite.render(self.background, self.background_mask)
+            self.obstacle_sprite.render(self.obstacle_layer, self.obstacle_mask)
+
+        self.background[:] = self.fillvalue
+        self.background[self.obstacle_mask] = self.obstacle_layer[self.obstacle_mask]
+        self.background[self.goal_mask] = self.goal_layer[self.goal_mask]
 
 
     def render(self):
         # reset canvas and foreground,
         # background is not rerendered
         self.canvas[:] = self.background
-        self.foreground[:] = 0
-        self.foreground_mask[:] = False
+        self.car_layer[:] = self.fillvalue
+        self.car_mask[:] = False
 
         # plot the car
-        self.car_sprite.render(self.foreground, self.foreground_mask)
+        self.car_sprite.render(self.car_layer, self.car_mask)
 
         # overlay foreground to canvas
-        self.canvas[self.foreground_mask] = self.foreground[self.foreground_mask]
+        self.canvas[self.car_mask] = self.car_layer[self.car_mask]
 
         return (self.canvas * 255).astype(np.uint8)
 
@@ -154,24 +168,54 @@ class Environment_Graphical():
         self.car_sprite.set_position(self.car.pos)
         self.car_sprite.set_rotation(-self.car.rot)
 
+        # update rendering
+        # attention: this has an important side effect:
+        # it also updates the occupation masks for foreground and background
         observation = self.render()
-
-        if self.car_sprite.collide(self.goal_sprite):
-            return observation, params.reward_goal, True
 
         if border_collision and params.stop_on_border_collision:
             return observation, params.reward_collision, True
 
-        for obstacle in self.obstacle_positions:
-            self.obstacle_sprite.set_position(obstacle)
-            if self.car_sprite.collide(self.obstacle_sprite):
-                return observation, params.reward_collision, True
+        reward, collides = self.old_collide()
+        self.new_collide1()
+        self.new_collide2()
+
+        if collides:
+            return observation, reward, True
+
 
         self.steps += 1
         if self.steps > params.timeout:
             return observation, params.reward_timestep + dist_reward, True
 
         return observation, params.reward_timestep + dist_reward, False
+
+    def new_collide1(self):
+        if np.any(self.obstacle_mask * self.car_mask == True):
+            return params.reward_collision, True
+        if np.any(self.goal_mask*self.car_mask == True):
+            return params.reward_goal, True
+
+        return 0, False
+
+    def new_collide2(self):
+        if np.any(self.car_mask[self.obstacle_mask]):
+            return params.reward_collision, True
+        if np.any(self.car_mask[self.goal_mask]):
+            return params.reward_goal, True
+
+        return 0, False
+
+    def old_collide(self):
+        if self.car_sprite.collide(self.goal_sprite):
+            return params.reward_goal, True
+
+        for obstacle in self.obstacle_positions:
+            self.obstacle_sprite.set_position(obstacle)
+            if self.car_sprite.collide(self.obstacle_sprite):
+                return params.reward_collision, True
+
+        return 0, False
 
     def sample_action(self):
         # for atari, the actions are simply numbers

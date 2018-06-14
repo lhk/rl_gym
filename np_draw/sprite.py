@@ -4,16 +4,10 @@ import matplotlib.pyplot as plt
 
 
 def render(img, mask, upperleft, canvas):
-    assert np.all(upperleft >= 0), "image must be withing canvas"
-    assert np.all(upperleft + img.shape[:2] <= canvas.shape[:2]), "image must be within canvas"
-
-    shape = img.shape[:2]
-    canvas_slice = canvas[upperleft[0]:upperleft[0] + shape[0],
-                   upperleft[1]:upperleft[1] + shape[1]]
+    canvas_slice = canvas[upperleft[0]:upperleft[0] + img.shape[0],
+                   upperleft[1]:upperleft[1] + img.shape[1]]
 
     canvas_slice[mask] = img[mask]
-
-    return canvas
 
 
 class Sprite():
@@ -51,10 +45,9 @@ class Sprite():
         self.upperleft = self.pos - self.size / 2
         self.upperleft_int = self.upperleft.astype(np.int)
 
-    def render(self, canvas):
-
+    def cut_to_canvas(self, canvas_shape):
         # is image outside of canvas ?
-        if np.all(self.upperleft > canvas.shape[:2]):
+        if np.all(self.upperleft > canvas_shape[:2]):
             return
 
         # if upperleft is negative, the image is not visible,
@@ -70,13 +63,29 @@ class Sprite():
 
         # the image can also move out of canvas on the other side
         # we have to cut again
-        visible = np.minimum(-new_upperleft + canvas.shape[:2], img_visible.shape[:2])
+        visible = np.minimum(-new_upperleft + canvas_shape[:2], img_visible.shape[:2])
 
         img_visible = img_visible[:visible[0], :visible[1]]
         mask_visible = mask_visible[:visible[0], :visible[1]]
 
-        upperleft = np.clip(self.upperleft_int, 0, max(canvas.shape))
-        return render(img_visible, mask_visible, upperleft, canvas)
+        upperleft = np.clip(self.upperleft_int, 0, max(canvas_shape))
+
+        return upperleft, img_visible, mask_visible
+
+
+
+    def render(self, canvas, canvas_mask):
+        # is image outside of canvas ?
+        if np.all(self.upperleft > canvas.shape[:2]):
+            return
+
+        upperleft, img_visible, mask_visible = self.cut_to_canvas(canvas.shape)
+
+        canvas = render(img_visible, mask_visible, upperleft, canvas)
+        canvas_mask = render(mask_visible, mask_visible, upperleft, canvas_mask)
+
+        return canvas, canvas_mask
+
 
     def collide(self, other):
         # if distance is high enough, collisions are impossible
@@ -102,5 +111,4 @@ class Sprite():
         render(self.mask_rotated, self.mask_rotated, own_pos, own_canvas)
         render(other.mask_rotated, other.mask_rotated, other_pos, other_canvas)
 
-        intersection = (own_canvas > 0) * (other_canvas > 0)
-        return np.any(intersection)
+        return np.any(own_canvas[other_canvas])
