@@ -137,13 +137,14 @@ class PER_Agent(Agent):
         updates the memory to provide training data for the brain
         :return:
         """
-        # use the brain to determine the best action for this state
-        current_q = self.brain.predict_q(self.state)[0]
-        action = current_q.argmax()
 
-        # let agent choose to explore instead
+        # exploration vs exploitation
         if np.random.rand() < self.exploration:
             action = np.random.choice(params.NUM_ACTIONS)
+        else:
+            # use the brain to determine the best action for this state
+            current_q = self.brain.predict_q(self.state)[0]
+            action = current_q.argmax()
 
         # anneal exploration
         if self.exploration > params.FINAL_EXPLORATION:
@@ -179,13 +180,16 @@ class PER_Agent(Agent):
             self.total_reward = 0
 
         # the value that should have been predicted
-        q_target = self.brain.get_targets(to_state, reward, done)
+        # q_target = self.brain.get_targets(to_state, reward, done)
 
         # this is what we actually predicted
-        q_predicted = current_q[action]
+        # q_predicted = current_q[action]
 
-        error = q_target - q_predicted
-        error = np.abs(error)
-        priority = np.power(error + params.ERROR_BIAS, params.ERROR_POW)
+        # error = q_target - q_predicted
+        # error = np.abs(error)
+        # priority = np.power(error + params.ERROR_BIAS, params.ERROR_POW)
 
-        self.memory.push(from_state, to_state, action, reward, done, priority)
+        # new observations are pushed to the memory with a default priority
+        # this means that for most interactions, we don't need to use the brain
+        # if the agent is exploring, we don't have to calculate any q values
+        self.memory.push(from_state, to_state, action, reward, done, params.DEFAULT_PRIO)

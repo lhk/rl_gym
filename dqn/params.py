@@ -41,7 +41,8 @@ REPLAY_MEMORY_SIZE = int(2 ** 18)
 REPLAY_START_SIZE = int(5e4)
 MEMORY_MAPPED = False
 ERROR_BIAS = 0.05
-ERROR_POW = 0.5
+ERROR_POW = 0.3
+DEFAULT_PRIO = 1
 
 # parameters for the behaviour of tensorflow
 TF_ALLOW_GROWTH = True
