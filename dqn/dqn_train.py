@@ -13,7 +13,7 @@ from environments.obstacle_car.environment import Environment_Graphical as Envir
 
 from util.loss_functions import huber_loss
 
-vis = True
+vis = False
 if vis:
     import pygame
 
@@ -23,7 +23,7 @@ if vis:
     pygame.display.set_caption("observations")
 
 memory = Priority_Memory()
-brain = DQN_Brain(memory, loss=huber_loss, load_path="/checkpoints/dqn_model250.hd5")
+brain = DQN_Brain(memory, loss=huber_loss, load_path=None)
 env = Environment()
 agent = PER_Agent(memory, brain, env)
 
@@ -48,7 +48,7 @@ for interaction in tqdm(range(params.TOTAL_INTERACTIONS), smoothing=1):
     if interaction % params.TRAIN_SKIPS != 0:
         continue
 
-    #brain.train_once()
+    brain.train_once()
 
     # update the target network every N steps
     if interaction % params.TARGET_NETWORK_UPDATE_FREQ != 0:
