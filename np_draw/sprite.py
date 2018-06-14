@@ -1,5 +1,9 @@
 import numpy as np
-from skimage.transform import rotate
+# this is a small wrapper for opencv and offers a fast rotate function
+from imutils import rotate_bound as im_rotate
+# if you don't have it installed, use this instead
+from skimage.transform import rotate as sk_rotate
+
 import matplotlib.pyplot as plt
 
 
@@ -29,9 +33,7 @@ class Sprite():
             return
 
         self.rot = new_rot
-        self.img_rotated = rotate(self.img, self.rot, resize=True, order=1)
-        self.mask_rotated = rotate(self.mask, self.rot, resize=True, order=1).astype(np.bool)
-
+        self.rotate_with_cv()
         self.size = np.array(self.img_rotated.shape[:2])
         self.upperleft = self.pos - self.size / 2
 
@@ -39,6 +41,14 @@ class Sprite():
         self.upperleft_int = self.upperleft.astype(np.int)
 
         self.masked_img = self.img_rotated[self.mask_rotated]
+
+    def rotate_with_sk(self):
+        self.img_rotated = sk_rotate(self.img, self.rot, resize=True, order=1, preserve_range=True).astype(np.uint8)
+        self.mask_rotated = sk_rotate(self.mask, self.rot, resize=True, order=1, preserve_range=True).astype(np.bool)
+
+    def rotate_with_cv(self):
+        self.img_rotated = (im_rotate(self.img, -self.rot)*255).astype(np.uint8)
+        self.mask_rotated = im_rotate(self.mask.astype(np.uint8), -self.rot).astype(np.bool)
 
     def set_position(self, new_pos):
         self.pos = new_pos
