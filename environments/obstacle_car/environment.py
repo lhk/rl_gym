@@ -176,13 +176,10 @@ class Environment_Graphical():
         if border_collision and params.stop_on_border_collision:
             return observation, params.reward_collision, True
 
-        reward, collides = self.old_collide()
-        self.new_collide1()
-        self.new_collide2()
+        reward, collides = self.check_collisions()
 
         if collides:
             return observation, reward, True
-
 
         self.steps += 1
         if self.steps > params.timeout:
@@ -190,30 +187,11 @@ class Environment_Graphical():
 
         return observation, params.reward_timestep + dist_reward, False
 
-    def new_collide1(self):
-        if np.any(self.obstacle_mask * self.car_mask == True):
-            return params.reward_collision, True
-        if np.any(self.goal_mask*self.car_mask == True):
-            return params.reward_goal, True
-
-        return 0, False
-
-    def new_collide2(self):
+    def check_collisions(self):
         if np.any(self.car_mask[self.obstacle_mask]):
             return params.reward_collision, True
         if np.any(self.car_mask[self.goal_mask]):
             return params.reward_goal, True
-
-        return 0, False
-
-    def old_collide(self):
-        if self.car_sprite.collide(self.goal_sprite):
-            return params.reward_goal, True
-
-        for obstacle in self.obstacle_positions:
-            self.obstacle_sprite.set_position(obstacle)
-            if self.car_sprite.collide(self.obstacle_sprite):
-                return params.reward_collision, True
 
         return 0, False
 

@@ -105,8 +105,8 @@ class Sprite():
         max_x = max(own_pos[0] + self.size[0], other_pos[0] + other.size[0])
         max_y = max(own_pos[1] + self.size[1], other_pos[1] + other.size[1])
 
-        own_canvas = np.zeros((max_x, max_y))
-        other_canvas = np.zeros((max_x, max_y))
+        own_canvas = np.zeros((max_x, max_y), dtype=bool)
+        other_canvas = np.zeros((max_x, max_y), dtype=bool)
 
         render(self.mask_rotated, self.mask_rotated, own_pos, own_canvas)
         render(other.mask_rotated, other.mask_rotated, other_pos, other_canvas)
