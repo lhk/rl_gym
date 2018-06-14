@@ -36,7 +36,7 @@ class Sprite():
 
         # we use opencv for rotation, but if that is not used with a color range of 0-1
         # it produces noisy artefacts
-        self.img_rotated = (im_rotate(self.img.astype(np.float64)/255., -self.rot)*255.).astype(np.uint8)
+        self.img_rotated = (im_rotate(self.img.astype(np.float32)/255., -self.rot)*255.).astype(np.uint8)
         self.mask_rotated = im_rotate(self.mask.astype(np.uint8), -self.rot).astype(np.bool)
         self.size = np.array(self.img_rotated.shape[:2])
         self.upperleft = self.pos - self.size / 2
@@ -81,10 +81,6 @@ class Sprite():
 
 
     def render(self, canvas, canvas_mask):
-        # is image outside of canvas ?
-        if np.all(self.upperleft > canvas.shape[:2]):
-            return
-
         upperleft, img_visible, mask_visible = self.cut_to_canvas(canvas.shape)
 
         canvas = render(img_visible, mask_visible, upperleft, canvas)

@@ -16,7 +16,7 @@ import shutil
 
 
 class Brain:
-    def __init__(self, memory: Memory, loss="mse"):
+    def __init__(self, memory: Memory, loss="mse", load_path=None):
 
         self.memory = memory
         # use this to influence the tensorflow behaviour
@@ -36,10 +36,14 @@ class Brain:
 
         self.target_updates = 0
 
-        # cleaning a directory for checkpoints
-        if os.path.exists(os.getcwd() + "/checkpoints/"):
-            shutil.rmtree(os.getcwd() + "/checkpoints/")
-        os.mkdir(os.getcwd() + "/checkpoints/")
+        if not load_path is None:
+            self.model.load_weights(os.getcwd()+load_path)
+            self.target_model.load_weights(os.getcwd()+load_path)
+        else:
+            # cleaning a directory for checkpoints
+            if os.path.exists(os.getcwd() + "/checkpoints/"):
+                shutil.rmtree(os.getcwd() + "/checkpoints/")
+            os.mkdir(os.getcwd() + "/checkpoints/")
 
     def create_model(self):
         assert False, "use one of the subclasses instead"
@@ -109,8 +113,8 @@ class Brain:
 
 
 class DQN_Brain(Brain):
-    def __init__(self, memory: Memory, loss="mse"):
-        Brain.__init__(self, memory, loss)
+    def __init__(self, memory: Memory, loss="mse", load_path=None):
+        Brain.__init__(self, memory, loss, load_path)
 
     def create_model(self):
         input_layer = Input(params.INPUT_SHAPE)
@@ -132,8 +136,8 @@ class DQN_Brain(Brain):
 
 
 class Dueling_Brain(Brain):
-    def __init__(self, memory: Memory, loss="mse"):
-        Brain.__init__(self, memory, loss)
+    def __init__(self, memory: Memory, loss="mse", load_path=None):
+        Brain.__init__(self, memory, loss, load_path)
 
     def create_model(self):
         input_layer = Input(params.INPUT_SHAPE)

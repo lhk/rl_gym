@@ -1,8 +1,8 @@
 # parameters for the training setup
 RUN_TIME = 3600*10
 NUM_EPISODES = 1000000
-AGENTS = 20
-OPTIMIZERS = 4
+AGENTS = 24
+OPTIMIZERS = 2
 WAITING_TIME = 0.0001
 
 # parameters for the agent
@@ -33,7 +33,7 @@ LEARNING_RATE = 1e-4
 DECAY = 0.99
 LOSS_VALUE = .5
 LOSS_ENTROPY = .05
-GRADIENT_NORM_CLIP = 30.
+GRADIENT_NORM_CLIP = 20.
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True
