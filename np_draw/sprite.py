@@ -33,7 +33,11 @@ class Sprite():
             return
 
         self.rot = new_rot
-        self.rotate_with_cv()
+
+        # we use opencv for rotation, but if that is not used with a color range of 0-1
+        # it produces noisy artefacts
+        self.img_rotated = (im_rotate(self.img.astype(np.float64)/255., -self.rot)*255.).astype(np.uint8)
+        self.mask_rotated = im_rotate(self.mask.astype(np.uint8), -self.rot).astype(np.bool)
         self.size = np.array(self.img_rotated.shape[:2])
         self.upperleft = self.pos - self.size / 2
 
@@ -41,14 +45,6 @@ class Sprite():
         self.upperleft_int = self.upperleft.astype(np.int)
 
         self.masked_img = self.img_rotated[self.mask_rotated]
-
-    def rotate_with_sk(self):
-        self.img_rotated = sk_rotate(self.img, self.rot, resize=True, order=1, preserve_range=True).astype(np.uint8)
-        self.mask_rotated = sk_rotate(self.mask, self.rot, resize=True, order=1, preserve_range=True).astype(np.bool)
-
-    def rotate_with_cv(self):
-        self.img_rotated = (im_rotate(self.img, -self.rot)*255).astype(np.uint8)
-        self.mask_rotated = im_rotate(self.mask.astype(np.uint8), -self.rot).astype(np.bool)
 
     def set_position(self, new_pos):
         self.pos = new_pos
