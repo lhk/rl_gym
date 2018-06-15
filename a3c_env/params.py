@@ -29,11 +29,14 @@ MAX_BATCH = 5 * MIN_BATCH
 RNN_SIZE = 126
 
 # parameters for the training
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 7e-4
 DECAY = 0.99
 LOSS_VALUE = .5
 LOSS_ENTROPY = .05
-GRADIENT_NORM_CLIP = 20.
+GRADIENT_NORM_CLIP = 0.5
+
+L2_REG_CONV = 1e-2
+L2_REG_FULLY = 1e-2
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True
