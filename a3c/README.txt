@@ -1,1 +1,0 @@
-# this code is heavily influenced by https://github.com/jaara/AI-blog
