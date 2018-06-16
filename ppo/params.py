@@ -33,7 +33,7 @@ LEARNING_RATE = 7e-4
 DECAY = 0.99
 LOSS_VALUE = .5
 LOSS_ENTROPY = .05
-GRADIENT_NORM_CLIP = 0.5
+GRADIENT_NORM_CLIP = 5
 RATIO_CLIP_VALUE = 0.1
 NUM_UPDATES = 1e4  # updates before we switch old and new policies
 

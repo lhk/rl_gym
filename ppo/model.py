@@ -42,6 +42,8 @@ class ConvLSTMModel():
         loss_regularization = sum(model.losses)
 
         self.model = model
+        self.input_state = input_state
+        self.input_memory = input_memory
         self.trainable_weights = model.trainable_weights
         self.pred_policy = pred_policy
         self.pred_value = pred_value

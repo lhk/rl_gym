@@ -27,7 +27,6 @@ class Brain:
         self.old_model = ModelClass()
         self.new_model = ModelClass()
 
-
         # the model only contains the function approximator
         # the loss function for training is set up here
         self.__setup_losses()
@@ -53,19 +52,18 @@ class Brain:
         # we use tensorflow to create a minimization step for the custom loss
 
         # placeholders
-        action_mask = Input(shape=(params.NUM_ACTIONS,))
+        self.action_mask = Input(shape=(params.NUM_ACTIONS,))
 
-        # TODO: rename n_step_reward, this also includes the target value at the end
-        n_step_reward = Input(shape=(1,))
-        advantage = Input(shape=(1,))
+        self.target_value = Input(shape=(1,))
+        self.advantage = Input(shape=(1,))
 
         # the policies as predicted by old and new network
         old_policy = self.old_model.pred_policy
         new_policy = self.new_model.pred_policy
 
         # masking them, only looking at the action that was actually taken
-        old_action = old_policy * action_mask
-        new_action = new_policy * action_mask
+        old_action = old_policy * self.action_mask
+        new_action = new_policy * self.action_mask
 
         old_action = K.sum(old_action, axis=-1, keepdims=True)
         new_action = K.sum(new_action, axis=-1, keepdims=True)
@@ -75,7 +73,7 @@ class Brain:
 
         # ppo looks at two losses for the policy
         # their minimum is maximized
-        loss1 = ratio * advantage
+        loss1 = ratio * self.advantage
         loss2 = tf.clip_by_value(ratio, 1.0 - params.RATIO_CLIP_VALUE, 1.0 + params.RATIO_CLIP_VALUE)
         loss_policy = - tf.reduce_mean(tf.minimum(loss1, loss2))
 
@@ -83,7 +81,7 @@ class Brain:
         # this is the same as for A3C: an n_step TD-lambda
         # TODO: since we look many steps into the future, this will be high variance. Replace it with huber loss
         pred_value = self.new_model.pred_value
-        loss_value = params.LOSS_VALUE * (n_step_reward - pred_value) ** 2
+        loss_value = params.LOSS_VALUE * (self.target_value - pred_value) ** 2
 
         # the loss contains an entropy component which rewards exploration
         eps = 1e-10
@@ -125,18 +123,19 @@ class Brain:
         length = np.vstack(length)
 
         # predict the final value
-        # TODO: this is incorrect, if the local memory of the states unrols after an episode end. it might not be N steps into the future
         _, end_values, _ = self.predict(to_states, to_memories)
         n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)
 
         self.session.run(self.minimize_step, feed_dict={
-            self.input_state: from_states,
-            self.input_memory: from_memories,
+            self.old_model.input_state: from_states,
+            self.new_model.input_state: from_states,
+            self.old_model.input_memory: from_memories,
+            self.new_model.input_memory: from_memories,
             self.action_mask: actions,
             self.advantage: advantages,
-            self.t_step_reward: n_step_reward})
+            self.target_value: n_step_reward})
 
-        # print("step")
+        #print("step")
 
     def predict(self, state, memory):
         # keras always needs a batch dimension
