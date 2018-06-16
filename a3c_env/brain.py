@@ -90,11 +90,16 @@ class Brain:
         chosen_action = K.sum(chosen_action, axis=-1, keepdims=True)
         log_prob = K.log(chosen_action)
 
+        # policy is the standard loss for a policy update with advantage function as weight
         loss_policy = -log_prob * advantage
+
+        # value is trained on n_step TD-lambda value estimation
+        # TODO: this is very high variance, maybe switch to Huber loss
         loss_value = params.LOSS_VALUE * (n_step_reward - pred_values) ** 2
 
+        # entropy is maximized
         eps = 1e-10
-        entropy = params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
+        entropy =- params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
 
         loss = tf.reduce_sum(loss_policy + loss_value +loss_regularization+ entropy)
 
