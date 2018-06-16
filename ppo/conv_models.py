@@ -18,18 +18,18 @@ class ConvLSTMModel():
         self.RNN_SIZE = 64
 
         # build a model to predict action probabilities and values
-        input_observation = Input(shape=(*self.INPUT_SHAPE,))
+        self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
 
-        rescaled = Lambda(lambda x: x / 255.)(input_observation)
+        rescaled = Lambda(lambda x: x / 255.)(self.input_observation)
         conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(
             rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(conv)
 
         conv_flattened = Flatten()(conv)
-        dense = Dense(256, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
+        dense = Dense(64, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
 
         # shape = [batch_size, time_steps, input_dim]
-        dense = Reshape((1, 256))(dense)
+        dense = Reshape((1, 64))(dense)
 
         # apply an rnn
         # expose the state of the cell, so that we can recreate the setup
@@ -42,7 +42,7 @@ class ConvLSTMModel():
             gru_tensor)
         pred_value = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(gru_tensor)
 
-        model = Model(inputs=[input_observation, input_state], outputs=[pred_policy, pred_value, output_memory])
+        model = Model(inputs=[self.input_observation, input_state], outputs=[pred_policy, pred_value, output_memory])
 
         # the model is not compiled with any loss function
         # but the regularizers are still exposed as losses
