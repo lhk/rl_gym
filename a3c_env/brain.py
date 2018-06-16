@@ -52,7 +52,7 @@ class Brain:
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(conv)
 
         conv_flattened = Flatten()(conv)
-        dense = Dense(256, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
+        dense = Dense(64, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
 
         # shape = [batch_size, time_steps, input_dim]
         dense = Reshape((1, 256))(dense)
