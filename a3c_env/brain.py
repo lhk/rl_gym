@@ -55,7 +55,7 @@ class Brain:
         dense = Dense(64, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
 
         # shape = [batch_size, time_steps, input_dim]
-        dense = Reshape((1, 256))(dense)
+        dense = Reshape((1, 64))(dense)
 
         # apply an rnn
         # expose the state of the cell, so that we can recreate the setup
