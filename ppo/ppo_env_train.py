@@ -8,7 +8,8 @@ import time, threading, os
 
 from ppo.agent import Agent
 from ppo.brain import Brain
-from ppo.model import ConvLSTMModel
+from ppo.conv_models import ConvLSTMModel
+from ppo.fc_models import FullyConnectedModel
 from ppo.memory import Memory
 import ppo.params as params
 
@@ -26,7 +27,7 @@ class Optimizer(threading.Thread):
 
 
 memory = Memory()
-brain = Brain(memory, ConvLSTMModel)
+brain = Brain(memory, FullyConnectedModel)
 
 agents = [Agent(brain, memory) for i in range(params.AGENTS)]
 # agents.append(Agent(brain, memory, vis=True))  # one agent for the visualization

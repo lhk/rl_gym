@@ -6,7 +6,7 @@ from keras.models import *
 from keras.regularizers import l2
 import ppo.params as params
 from ppo.memory import Memory
-from ppo.model import ConvLSTMModel
+from ppo.conv_models import ConvLSTMModel
 from threading import Lock
 
 

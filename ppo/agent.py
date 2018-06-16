@@ -10,8 +10,7 @@ from ppo.memory import Memory
 
 import lycon
 
-from environments.obstacle_car.environment import Environment_Graphical as Environment
-
+from environments.obstacle_car.environment_radial import Environment_Vector as Environment
 import pygame
 from pygame.locals import *
 
@@ -64,7 +63,7 @@ class Agent(threading.Thread):
         # the model can be stateful
         # TODO: handle this in a clean way for models without state, I guess I'll just define no state as []
         state = self.brain.get_initial_state()
-        self.seen_states = [state[0]]
+        self.seen_states = [state]
 
         total_reward = 0
         self.n_step_reward = 0
@@ -77,8 +76,10 @@ class Agent(threading.Thread):
             actions, value, state = self.brain.predict(observation, state)
 
             # flatten the output
+            # TODO: predict flattened output by the model
             actions = actions[0]
-            state = state[0]
+            if state:
+                state = state[0]
             value = value[0, 0]
 
             # get next action, explore with probability self.eps

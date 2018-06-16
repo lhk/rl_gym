@@ -50,8 +50,6 @@ class ConvLSTMModel():
 
         # the model and its inputs
         self.model = model
-        self.input_observation = input_observation
-        self.input_state = input_state
 
         # the weights that can be updated
         self.trainable_weights = model.trainable_weights
@@ -72,7 +70,7 @@ class ConvLSTMModel():
         # this model has a state: the rnn cell
         # the initial state of this rnn cell is given by the following code
         # read from the keras source for initializers
-        return np.random.rand(1, self.RNN_SIZE) * 0.1 - 0.05
+        return np.random.rand(self.RNN_SIZE) * 0.1 - 0.05
 
     def predict(self, observation, state):
 
