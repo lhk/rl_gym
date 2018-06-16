@@ -30,9 +30,9 @@ class Agent(threading.Thread):
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
-        self.seen_states = []  # state of the environment
+        self.seen_observations = []  # state of the environment
         self.seen_values = []  # corresponding estimated values (given by network)
-        self.seen_memories = []  # internal states of the rnns
+        self.seen_states = []  # state of the model
         self.seen_actions = []  # actions taken
         self.seen_rewards = []  # rewards given
         self.n_step_reward = 0  # reward for n consecutive steps
@@ -53,34 +53,18 @@ class Agent(threading.Thread):
             self.window = pygame.display.set_mode(params.FRAME_SIZE)
             pygame.display.set_caption("Pygame cheat sheet")
 
-    def preprocess_state(self, new_state):
-        downsampled = lycon.resize(new_state, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
-                                   interpolation=lycon.Interpolation.NEAREST)
-        if len(downsampled.shape) == 2:
-            new_state = np.expand_dims(downsampled, axis=-1)
-        elif downsampled.shape[2] > 1 and params.INPUT_SHAPE[2] == 1:
-            grayscale = downsampled.mean(axis=-1)
-            new_state = grayscale.reshape((params.INPUT_SHAPE))
-        else:
-            new_state = downsampled.reshape((params.INPUT_SHAPE))
-        return new_state
-
     def run_one_episode(self):
 
         # reset state of the agent
         self.env.reset()
-        state = self.env.render()
-        state = self.preprocess_state(state)
-        self.seen_states = [state]
+        observation = self.env.render()
+        observation = self.brain.preprocess(observation)
+        self.seen_observations = [observation]
 
-        # our network always needs to know the state of the internal rnn layers
-        # since the network is used by many agents at once, each agent needs to keep track
-        # of the memory on his own
-        # and at the beginning of a new episode, he needs to initialize this memory:
-        # the values for the random noise have been read from the keras source code,
-        # compare with TODO: link initializer source
-        memory = np.random.rand(1, params.RNN_SIZE) * 0.1 - 0.05
-        self.seen_memories = [memory[0]]
+        # the model can be stateful
+        # TODO: handle this in a clean way for models without state, I guess I'll just define no state as []
+        state = self.brain.get_initial_state()
+        self.seen_states = [state[0]]
 
         total_reward = 0
         self.n_step_reward = 0
@@ -90,11 +74,11 @@ class Agent(threading.Thread):
             time.sleep(params.WAITING_TIME)
 
             # show current state to network and get predicted policy
-            actions, value, memory = self.brain.predict(state, memory)
+            actions, value, state = self.brain.predict(observation, state)
 
             # flatten the output
             actions = actions[0]
-            memory = memory[0]
+            state = state[0]
             value = value[0, 0]
 
             # get next action, explore with probability self.eps
@@ -107,23 +91,23 @@ class Agent(threading.Thread):
             if self.exploration > params.FINAL_EXPLORATION:
                 self.exploration -= params.EXPLORATION_STEP
 
-            new_state, reward, done = self.env.step(action_index)
+            new_observation, reward, done = self.env.step(action_index)
             reward *= params.REWARD_SCALE
 
             if done:
-                new_state = np.zeros_like(state)
+                new_observation = np.zeros_like(observation)
             else:
-                new_state = self.preprocess_state(new_state)
+                new_observation = self.brain.preprocess(new_observation)
 
             actions_onehot = np.zeros(params.NUM_ACTIONS)
             actions_onehot[action_index] = 1
 
             # append observations to local memory
             self.seen_values.append(value)
-            self.seen_memories.append(memory)
+            self.seen_states.append(state)
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)
-            self.seen_states.append(new_state)
+            self.seen_observations.append(new_observation)
             self.n_step_reward = (self.n_step_reward + reward * params.GAMMA ** params.NUM_STEPS) / params.GAMMA
 
             assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
@@ -140,11 +124,11 @@ class Agent(threading.Thread):
                 self.move_to_memory(done)
 
             # update state of agent
-            state = new_state
+            observation = new_observation
             total_reward += reward
 
             if self.vis:
-                render_frame = state.copy()
+                render_frame = observation.copy()
                 render_surf = pygame.surfarray.make_surface(render_frame)
                 self.window.blit(render_surf, (0, 0))
 
@@ -191,15 +175,16 @@ class Agent(threading.Thread):
         weighted_series = deltas * weights
         advantage_gae = weighted_series.sum()
 
+        from_observation = self.seen_observations.pop(0)
         from_state = self.seen_states.pop(0)
-        from_memory = self.seen_memories.pop(0)
+        to_observation = self.seen_observations[-1]
         to_state = self.seen_states[-1]
-        to_memory = self.seen_memories[-1]
         first_action = self.seen_actions.pop(0)
         first_reward = self.seen_rewards.pop(0)
         first_value = self.seen_values.pop(0)
 
-        self.shared_memory.push(from_state, from_memory, to_state, to_memory, first_action, self.n_step_reward,
+        batch = (from_observation, from_state, to_observation, to_state, first_action, self.n_step_reward,
                                 advantage_gae, terminal, length)
+        self.shared_memory.push(batch)
 
         self.n_step_reward = (self.n_step_reward - first_reward)

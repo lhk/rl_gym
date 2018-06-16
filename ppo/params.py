@@ -1,8 +1,8 @@
 # parameters for the training setup
 RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
-AGENTS = 24
-OPTIMIZERS = 2
+AGENTS = 1
+OPTIMIZERS = 1
 WAITING_TIME = 0.0001
 
 # parameters for the agent
@@ -21,12 +21,9 @@ LAMBDA = 0.75
 REWARD_SCALE = 1
 
 # parameters for the neural network
-FRAME_SIZE = (84, 84)
-INPUT_SHAPE = (*FRAME_SIZE, 3)
 NUM_ACTIONS = 4
 MIN_BATCH = 32
 MAX_BATCH = 5 * MIN_BATCH
-RNN_SIZE = 126
 
 # parameters for the training
 LEARNING_RATE = 7e-4

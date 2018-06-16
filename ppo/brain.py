@@ -110,46 +110,47 @@ class Brain:
             return
 
         # get up to MAX_BATCH items from the training queue
-        from_states, from_memories, to_states, to_memories, actions, rewards, advantages, terminal, length = self.memory.pop(
+        batch= self.memory.pop(
             params.MAX_BATCH)
+        from_observations, from_states, to_observations, to_states, actions, rewards, advantages, terminals, length = batch
+        from_observations = np.array(from_observations)
         from_states = np.array(from_states)
-        from_memories = np.array(from_memories)
+        to_observations = np.array(to_observations)
         to_states = np.array(to_states)
-        to_memories = np.array(to_memories)
         actions = np.vstack(actions)
         rewards = np.vstack(rewards)
-        terminal = np.vstack(terminal)
+        terminals = np.vstack(terminals)
         advantages = np.vstack(advantages)
         length = np.vstack(length)
 
         # predict the final value
-        _, end_values, _ = self.predict(to_states, to_memories)
-        n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)
+        _, end_values, _ = self.predict(to_observations, to_states)
+        n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+
+        # the model is responsible for plugging in observations and states as needed
+        old_model_feed_dict = self.old_model.create_feed_dict(from_observations, from_states)
+        new_model_feed_dict = self.new_model.create_feed_dict(from_observations, from_states)
 
         self.session.run(self.minimize_step, feed_dict={
-            self.old_model.input_state: from_states,
-            self.new_model.input_state: from_states,
-            self.old_model.input_memory: from_memories,
-            self.new_model.input_memory: from_memories,
+            **old_model_feed_dict,
+            **new_model_feed_dict,
             self.action_mask: actions,
             self.advantage: advantages,
             self.target_value: n_step_reward})
 
-        #print("step")
+        print("step")
 
-    def predict(self, state, memory):
-        # keras always needs a batch dimension
-        if state.shape == params.INPUT_SHAPE:
-            state = state.reshape((-1, *params.INPUT_SHAPE))
-
-        # the memory shape is given by the number of cells in the rnn layer
-        # I don't want to move that to a parameter, so right now, it is a "magic number"
-        # TODO: maybe a parameter after all ?
-        if memory.shape == (params.RNN_SIZE,):
-            memory = memory.reshape((-1, params.RNN_SIZE))
-
+    # the following methods will simply be routed to the model
+    # this routing is not really elegant but I didn't want to expose the model outside of the brain
+    def predict(self, observation, state):
         with self.default_graph.as_default():
-            return self.old_model.model.predict([state, memory])
+            return self.old_model.predict(observation, state)
+
+    def preprocess(self, observation):
+        return self.old_model.preprocess(observation)
+
+    def get_initial_state(self):
+        return self.old_model.get_initial_state()
 
     def update_model(self):
         self.old_model.model.set_weights(self.new_model.model.get_weights())

@@ -24,16 +24,13 @@ class Memory:
 
             return retval
 
-    def push(self, from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length):
+    def push(self, batch):
         while (len(self) > params.MEM_SIZE):
             time.sleep(
                 params.WAITING_TIME)  # yield control, if all agents sleep, brain gets to optimize away the memory
 
         with self.lock:
-            assert from_state.shape == params.INPUT_SHAPE
-            assert from_memory.shape == (params.RNN_SIZE,)
-            assert to_state.shape == params.INPUT_SHAPE
-            assert to_memory.shape == (params.RNN_SIZE,)
+            from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length = batch
             assert action.shape == (params.NUM_ACTIONS,)
             assert type(reward) in [np.float, np.float64]
             assert type(advantage) in [np.float, np.float64]
