@@ -17,12 +17,12 @@ MEM_SIZE = 10000
 # parameters for the discount
 NUM_STEPS = 15
 GAMMA = 0.99
-LAMBDA = 0.75
+LAMBDA = 0.8
 REWARD_SCALE = 1
 
 # parameters for the neural network
 NUM_ACTIONS = 4
-MIN_BATCH = 32
+MIN_BATCH = 2
 MAX_BATCH = 5 * MIN_BATCH
 
 # parameters for the training
@@ -30,12 +30,12 @@ LEARNING_RATE = 7e-4
 DECAY = 0.99
 LOSS_VALUE = .5
 LOSS_ENTROPY = .05
-GRADIENT_NORM_CLIP = 5
+GRADIENT_NORM_CLIP = 10
 RATIO_CLIP_VALUE = 0.1
-NUM_UPDATES = 1e4  # updates before we switch old and new policies
+NUM_UPDATES = 1  # updates before we switch old and new policies
 
-L2_REG_CONV = 1e-2
-L2_REG_FULLY = 1e-2
+L2_REG_CONV = 1e-3
+L2_REG_FULLY = 1e-3
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True

@@ -37,7 +37,7 @@ class Brain:
         self.new_model.model._make_predict_function()
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
-        self.default_graph.finalize()
+        #self.default_graph.finalize()
 
         # a globally shared memory, this will be filled by the asynchronous agents
         self.memory = memory
@@ -101,6 +101,8 @@ class Brain:
 
         self.minimize_step = minimize_step
 
+        self.assignments = [tf.assign(old, new) for (old, new) in zip(self.old_model.trainable_weights, self.new_model.trainable_weights)]
+
     def optimize(self):
         # yield control if there is not enough training data in the memory
         if len(self.memory) < params.MIN_BATCH:
@@ -156,4 +158,5 @@ class Brain:
         return self.old_model.get_initial_state()
 
     def update_model(self):
-        self.old_model.model.set_weights(self.new_model.model.get_weights())
+        with self.default_graph.as_default():
+            self.old_model.model.set_weights(self.new_model.model.get_weights())
