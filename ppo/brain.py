@@ -47,7 +47,6 @@ class Brain:
         self.num_updates = 0
 
     def __setup_losses(self):
-
         # due to keras' restrictions on loss functions,
         # we use tensorflow to create a minimization step for the custom loss
 
@@ -103,14 +102,13 @@ class Brain:
         self.minimize_step = minimize_step
 
     def optimize(self):
-
         # yield control if there is not enough training data in the memory
         if len(self.memory) < params.MIN_BATCH:
             time.sleep(0)
             return
 
         # get up to MAX_BATCH items from the training queue
-        batch= self.memory.pop(
+        batch = self.memory.pop(
             params.MAX_BATCH)
         from_observations, from_states, to_observations, to_states, actions, rewards, advantages, terminals, length = batch
         from_observations = np.array(from_observations)

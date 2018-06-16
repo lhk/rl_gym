@@ -184,7 +184,7 @@ class Agent(threading.Thread):
         first_value = self.seen_values.pop(0)
 
         batch = (from_observation, from_state, to_observation, to_state, first_action, self.n_step_reward,
-                                advantage_gae, terminal, length)
+                 advantage_gae, terminal, length)
         self.shared_memory.push(batch)
 
         self.n_step_reward = (self.n_step_reward - first_reward)

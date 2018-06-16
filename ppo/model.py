@@ -17,7 +17,6 @@ class ConvLSTMModel():
         self.INPUT_SHAPE = (*self.FRAME_SIZE, 3)
         self.RNN_SIZE = 64
 
-
         # build a model to predict action probabilities and values
         input_observation = Input(shape=(*self.INPUT_SHAPE,))
 
@@ -66,7 +65,7 @@ class ConvLSTMModel():
         downsampled = lycon.resize(observation, width=self.FRAME_SIZE[0], height=self.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
 
-        #grayscale = downsampled.mean(axis=-1)
+        # grayscale = downsampled.mean(axis=-1)
         return downsampled.reshape((self.INPUT_SHAPE))
 
     def get_initial_state(self):
@@ -88,4 +87,4 @@ class ConvLSTMModel():
 
     def create_feed_dict(self, observation, state):
         return {self.input_observation: observation,
-        self.input_state: state}
+                self.input_state: state}
