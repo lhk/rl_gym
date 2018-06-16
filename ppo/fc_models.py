@@ -26,7 +26,7 @@ class FullyConnectedModel():
         hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
         bnorm = BatchNormalization()(hidden)
 
-        pred_policy = Dense(params.NUM_ACTIONS, activation='tanh', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
+        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
         pred_value = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
 
         model = Model(inputs=[self.input_observation], outputs=[pred_policy, pred_value])
