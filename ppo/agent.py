@@ -10,7 +10,7 @@ from ppo.memory import Memory
 
 import lycon
 
-from environments.obstacle_car.environment_radial import Environment_Vector as Environment
+from environments.obstacle_car.environment import Environment_Graphical as Environment
 import pygame
 from pygame.locals import *
 
@@ -78,7 +78,7 @@ class Agent(threading.Thread):
             # flatten the output
             # TODO: predict flattened output by the model
             actions = actions[0]
-            if state:
+            if [] != state:
                 state = state[0]
             value = value[0, 0]
 

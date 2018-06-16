@@ -35,14 +35,14 @@ class ConvLSTMModel():
         # expose the state of the cell, so that we can recreate the setup
         # of the cell during training
         gru_cell = GRU(self.RNN_SIZE, return_state=True, kernel_regularizer=l2(params.L2_REG_FULLY))
-        input_state = Input(shape=(self.RNN_SIZE,))
-        gru_tensor, output_memory = gru_cell(dense, initial_state=input_state)
+        self.input_state = Input(shape=(self.RNN_SIZE,))
+        gru_tensor, output_memory = gru_cell(dense, initial_state=self.input_state)
 
         pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(
             gru_tensor)
         pred_value = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(gru_tensor)
 
-        model = Model(inputs=[self.input_observation, input_state], outputs=[pred_policy, pred_value, output_memory])
+        model = Model(inputs=[self.input_observation, self.input_state], outputs=[pred_policy, pred_value, output_memory])
 
         # the model is not compiled with any loss function
         # but the regularizers are still exposed as losses
