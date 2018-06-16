@@ -27,6 +27,11 @@ class Brain:
         self.old_model = ModelClass()
         self.new_model = ModelClass()
 
+
+        # the model only contains the function approximator
+        # the loss function for training is set up here
+        self.__setup_losses()
+
         # running tensorflow in a multithreaded environment requires additional setup work
         # and freezing the resulting graph
         self.old_model.model._make_predict_function()
@@ -34,10 +39,6 @@ class Brain:
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
         self.default_graph.finalize()
-
-        # the model only contains the function approximator
-        # the loss function for training is set up here
-        self.__setup_losses()
 
         # a globally shared memory, this will be filled by the asynchronous agents
         self.memory = memory
@@ -149,7 +150,7 @@ class Brain:
             memory = memory.reshape((-1, params.RNN_SIZE))
 
         with self.default_graph.as_default():
-            return self.old_model.predict([state, memory])
+            return self.old_model.model.predict([state, memory])
 
     def update_model(self):
         self.old_model.model.set_weights(self.new_model.model.get_weights())
