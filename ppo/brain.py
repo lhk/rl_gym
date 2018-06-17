@@ -75,7 +75,7 @@ class Brain:
         # ppo looks at two losses for the policy
         # their minimum is maximized
         loss1 = ratio * self.advantage
-        loss2 = tf.clip_by_value(ratio, 1.0 - params.RATIO_CLIP_VALUE, 1.0 + params.RATIO_CLIP_VALUE)
+        loss2 = tf.clip_by_value(ratio, 1.0 - params.RATIO_CLIP_VALUE, 1.0 + params.RATIO_CLIP_VALUE) * self.advantage
         loss_policy = - tf.reduce_mean(tf.minimum(loss1, loss2))
 
         # the next component of the loss is the value function
