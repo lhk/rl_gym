@@ -57,8 +57,7 @@ class Agent(threading.Thread):
     def run_one_episode(self):
 
         # reset state of the agent
-        self.env.reset()
-        observation = self.env.render()
+        observation = self.env.reset()
         observation = self.brain.preprocess(observation)
         self.seen_observations = [observation]
 
@@ -94,7 +93,7 @@ class Agent(threading.Thread):
             if self.exploration > params.FINAL_EXPLORATION:
                 self.exploration -= params.EXPLORATION_STEP
 
-            new_observation, reward, done = self.env.step(action_index)
+            new_observation, reward, done, _ = self.env.step(action_index)
             reward *= params.REWARD_SCALE
 
             if done:
