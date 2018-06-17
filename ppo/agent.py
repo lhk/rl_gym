@@ -10,7 +10,8 @@ from ppo.memory import Memory
 
 import lycon
 
-from environments.obstacle_car.environment import Environment_Graphical as Environment
+#from environments.obstacle_car.environment import Environment_Graphical as Environment
+from environments.obstacle_car.environment_radial import Environment_Vector as Environment
 import pygame
 from pygame.locals import *
 

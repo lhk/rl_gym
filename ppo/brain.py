@@ -9,6 +9,8 @@ from ppo.memory import Memory
 from ppo.conv_models import ConvLSTMModel
 from threading import Lock
 
+from colorama import Fore, Style
+
 
 class Brain:
 
@@ -138,12 +140,12 @@ class Brain:
             self.advantage: advantages,
             self.target_value: n_step_reward})
 
-        print("step")
         with self.lock:
             self.num_updates+=1
             if self.num_updates > params.NUM_UPDATES:
                 self.update_model()
                 self.num_updates = 0
+                print(Fore.RED + "update" + Style.RESET_ALL)
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain
