@@ -87,7 +87,7 @@ class Environment_Radial():
         targets = (mat @ targets.T).T
         targets = targets / params.distance_rescale
         distances = np.linalg.norm(targets, axis=1)
-        angles = np.arctan2(targets[:,0], targets[:,1])
+        angles = np.arctan2(targets[:, 0], targets[:, 1])
         distance_angles = np.array(list(zip(distances, angles)))
         observation_vector = np.stack([self.car.speed, *distance_angles.flatten()])
 

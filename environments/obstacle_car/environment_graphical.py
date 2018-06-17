@@ -29,21 +29,22 @@ class Environment_Graphical():
 
         self.background = np.zeros((*params.screen_size, 3), dtype=np.uint8)
 
-        self.car_layer = np.zeros((*params.screen_size,3), dtype=np.uint8)
+        self.car_layer = np.zeros((*params.screen_size, 3), dtype=np.uint8)
         self.car_mask = np.zeros((*params.screen_size,), dtype=np.bool)
 
         # load images and set up their masks
         car_img_transp = imread("environments/obstacle_car/assets/car.png")
-        car_img_transp = np.transpose(car_img_transp, [1,0,2])
+        car_img_transp = np.transpose(car_img_transp, [1, 0, 2])
         car_img_transp = resize(car_img_transp, params.car_size)
-        car_img = car_img_transp[:, :, :3]# cut away alpha
-        car_img = (car_img*255).astype(np.uint8)
-        car_mask = (car_img_transp[:, :, 3]>0).astype(np.bool)
+        car_img = car_img_transp[:, :, :3]  # cut away alpha
+        car_img = (car_img * 255).astype(np.uint8)
+        car_mask = (car_img_transp[:, :, 3] > 0).astype(np.bool)
 
         obstacle_img = np.zeros((*params.obstacle_size, 3), dtype=np.uint8)
-        obstacle_img[:, :, 0] = (255*np.sin(np.linspace(0, 2*np.pi, params.obstacle_size[0])).reshape((-1,1))).astype(np.uint8)
+        obstacle_img[:, :, 0] = (
+                    255 * np.sin(np.linspace(0, 2 * np.pi, params.obstacle_size[0])).reshape((-1, 1))).astype(np.uint8)
         goal_img = np.zeros((*params.goal_size, 3), dtype=np.uint8)
-        goal_img[:, :, 1]=(255*np.sin(np.linspace(0, 4*np.pi, params.goal_size[1]))).astype(np.uint8)
+        goal_img[:, :, 1] = (255 * np.sin(np.linspace(0, 4 * np.pi, params.goal_size[1]))).astype(np.uint8)
 
         obstacle_mask = np.ones(params.obstacle_size, dtype=np.bool)
         goal_mask = np.ones(params.goal_size, dtype=np.bool)
@@ -112,7 +113,6 @@ class Environment_Graphical():
         self.background[:] = self.fillvalue
         self.background[self.obstacle_mask] = self.obstacle_layer[self.obstacle_mask]
         self.background[self.goal_mask] = self.goal_layer[self.goal_mask]
-
 
     def render(self):
         # reset canvas and foreground,

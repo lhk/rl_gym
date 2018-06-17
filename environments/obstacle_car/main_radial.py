@@ -34,15 +34,14 @@ while True:
 
     # then we organize it as vectors
     observation = observation.reshape((-1, 2))
-    distances = observation[:,0]
+    distances = observation[:, 0]
     angles = observation[:, 1]
     x = distances * np.cos(angles)
     y = distances * np.sin(angles)
 
-    observation = np.stack([y,x], axis=-1)
+    observation = np.stack([y, x], axis=-1)
     # and we need to rescale this
-    observation = observation*params.distance_rescale
-
+    observation = observation * params.distance_rescale
 
     offset = np.array([canvas.shape[0] // 2, canvas.shape[1] // 2])
     observation = (observation + offset).astype(np.int)
