@@ -1,7 +1,7 @@
 # parameters for the training setup
 RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
-AGENTS = 32
+AGENTS = 1
 OPTIMIZERS = 1
 WAITING_TIME = 0.0001
 
@@ -30,9 +30,9 @@ LOSS_VALUE = .5
 LOSS_ENTROPY = .01
 GRADIENT_NORM_CLIP = 100
 RATIO_CLIP_VALUE = 0.2
-NUM_UPDATES = 10  # updates before we switch old and new policies
+NUM_UPDATES = 1  # updates before we switch old and new policies
 
-NUM_BATCHES = 30
+NUM_BATCHES = 20
 BATCH_SIZE = 32
 
 L2_REG_CONV = 0# 1e-3

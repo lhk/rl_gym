@@ -128,14 +128,20 @@ class Brain:
         advantages = np.vstack(advantages)
         length = np.vstack(length)
 
-        # TODO: is this necessary
-        # after reading the openAI baseline, I'm adding some small tweaks to my implementation
-        # such as z-normalizing the advantages in a batch
-        advantages = (advantages - advantages.mean())/(advantages.std() + 1e-8)
 
         # predict the final value
         _, end_values, _ = self.predict(to_observations, to_states)
         target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+
+        # alternatively, reuse the GAE estimate for the value
+        #_, current_values, _ = self.predict(from_observations, from_states)
+        #target_values = advantages + current_values
+
+
+        # TODO: is this necessary
+        # after reading the openAI baseline, I'm adding some small tweaks to my implementation
+        # such as z-normalizing the advantages in a batch
+        # advantages = (advantages - advantages.mean())/(advantages.std() + 1e-8)
 
         # now we iterate through the training data
         # for each iteration, we slice a block of BATCH_SIZE out of it

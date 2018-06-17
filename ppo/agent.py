@@ -169,6 +169,10 @@ class Agent(threading.Thread):
 
         # delta functions are 1 step TD lambda
         values = np.array(self.seen_values[:])
+        # if the last state is terminal, we have to overwrite it with 0
+        # TODO: check against A3C
+        values[-1] = values[-1] * (1-terminal)
+
         deltas = rewards[:-1] + params.GAMMA * values[1:] - values[:-1]
 
         # gae advantage uses a weighted sum of deltas,
