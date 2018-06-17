@@ -67,8 +67,8 @@ class Environment_Radial(gym.Env):
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
-                obs_x = self.np_random.random() * params.screen_size[0]
-                obs_y = params.screen_size[1] * 1 / 3 * (1 + self.np_random.random())
+                obs_x = self.np_random.rand() * params.screen_size[0]
+                obs_y = params.screen_size[1] * 1 / 3 * (1 + self.np_random.rand())
                 obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
