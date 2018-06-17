@@ -29,7 +29,7 @@ class Brain:
 
         # the model only contains the function approximator
         # the loss function for training is set up here
-        self.__setup_losses()
+        self.__setup_training()
 
         # running tensorflow in a multithreaded environment requires additional setup work
         # and freezing the resulting graph
@@ -37,7 +37,7 @@ class Brain:
         self.new_model.model._make_predict_function()
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
-        #self.default_graph.finalize()
+        self.default_graph.finalize()
 
         # a globally shared memory, this will be filled by the asynchronous agents
         self.memory = memory
@@ -46,7 +46,7 @@ class Brain:
         self.lock = Lock()
         self.num_updates = 0
 
-    def __setup_losses(self):
+    def __setup_training(self):
         # due to keras' restrictions on loss functions,
         # we use tensorflow to create a minimization step for the custom loss
 
@@ -101,7 +101,7 @@ class Brain:
 
         self.minimize_step = minimize_step
 
-        self.assignments = [tf.assign(old, new) for (old, new) in zip(self.old_model.trainable_weights, self.new_model.trainable_weights)]
+        self.assignments = [tf.assign(to_var, from_var) for (to_var, from_var) in zip(self.old_model.trainable_weights, self.new_model.trainable_weights)]
 
     def optimize(self):
         # yield control if there is not enough training data in the memory
@@ -159,4 +159,4 @@ class Brain:
 
     def update_model(self):
         with self.default_graph.as_default():
-            self.old_model.model.set_weights(self.new_model.model.get_weights())
+            self.session.run(self.assignments)
