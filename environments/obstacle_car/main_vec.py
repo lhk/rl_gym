@@ -5,7 +5,7 @@ import pygame.locals as pgl
 import numpy as np
 
 import environments.obstacle_car.params_radial as params
-from environments.obstacle_car.environment_radial import Environment_Radial
+from environments.obstacle_car.environment_vec import Environment_Vector
 
 canvas_size = (500, 500)
 x_coords = np.arange(canvas_size[0])
@@ -20,7 +20,7 @@ pygame.display.set_caption("env")
 
 mouse_x, mouse_y = 0, 0
 
-env = Environment_Radial()
+env = Environment_Vector()
 env.reset()
 
 while True:
@@ -30,20 +30,10 @@ while True:
 
     # first observation is speed, throw it away
     # the rest has to be rescaled to the original range
-    observation = observation[1:]
+    observation = observation[1:] * params.distance_rescale
 
     # then we organize it as vectors
     observation = observation.reshape((-1, 2))
-    distances = observation[:,0]
-    angles = observation[:, 1]
-    x = distances * np.cos(angles)
-    y = distances * np.sin(angles)
-
-    observation = np.stack([y,x], axis=-1)
-    # and we need to rescale this
-    observation = observation*params.distance_rescale
-
-
     offset = np.array([canvas.shape[0] // 2, canvas.shape[1] // 2])
     observation = (observation + offset).astype(np.int)
 

@@ -12,7 +12,7 @@ from skimage.io import imread
 from skimage.transform import resize
 
 
-class Environment_Radial():
+class Environment_Vector():
     def __init__(self):
         # the position will be overwritten later
         default_pos = np.zeros((2,))
@@ -86,10 +86,7 @@ class Environment_Radial():
         # rotate to face car
         targets = (mat @ targets.T).T
         targets = targets / params.distance_rescale
-        distances = np.linalg.norm(targets, axis=1)
-        angles = np.arctan2(targets[:,0], targets[:,1])
-        distance_angles = np.array(list(zip(distances, angles)))
-        observation_vector = np.stack([self.car.speed, *distance_angles.flatten()])
+        observation_vector = np.stack([self.car.speed, *targets.flatten()])
 
         return observation_vector
 
@@ -111,18 +108,18 @@ class Environment_Radial():
 
         observation_vector = self.render()
         targets = observation_vector[1:].reshape((-1, 2))
-        distances = targets[:, 0]
-        distances = distances * params.distance_rescale
+        targets = targets * params.distance_rescale
 
         # we have moved out of the simulation domain
         if new_dist > params.max_dist * self.initial_dist:
             return observation_vector, params.reward_collision, True
 
-        rel_goal_dist = distances[0]
-        if rel_goal_dist < self.car_dim:
+        rel_goal_pos = targets[0]
+        if np.linalg.norm(rel_goal_pos) < self.car_dim:
             return observation_vector, params.reward_goal, True
 
-        rel_obs_dist = distances[1:]
+        rel_obs_pos = targets[1:]
+        rel_obs_dist = np.linalg.norm(rel_obs_pos, axis=-1)
         if np.any(rel_obs_dist < self.car_dim):
             return observation_vector, params.reward_collision, True
 
