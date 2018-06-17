@@ -17,7 +17,10 @@ from gym.utils import seeding
 
 
 class Environment_Radial(gym.Env):
-    def __init__(self):
+    def __init__(self, polar_coords = True):
+
+        self.polar_coords = polar_coords
+
         # the position will be overwritten later
         default_pos = np.zeros((2,))
         self.car = Car(default_pos, 0, 0, params)
@@ -78,7 +81,7 @@ class Environment_Radial(gym.Env):
                     self.obstacle_positions.append(obstacle_position)
                     break
 
-    def render(self, rotated=True):
+    def get_observation(self, rotated=True):
 
         # set up a rotation matrix
         if rotated:
@@ -97,11 +100,16 @@ class Environment_Radial(gym.Env):
 
         # rotate to face car
         targets = (mat @ targets.T).T
-        distances = np.linalg.norm(targets, axis=1)
-        distances = distances / params.distance_rescale
-        angles = np.arctan2(targets[:, 0], targets[:, 1])
-        distance_angles = np.array(list(zip(distances, angles)))
-        observation_vector = np.stack([self.car.speed, *distance_angles.flatten()])
+
+        if self.polar_coords :
+            distances = np.linalg.norm(targets, axis=1)
+            distances = distances / params.distance_rescale
+            angles = np.arctan2(targets[:, 0], targets[:, 1])
+            distance_angles = np.array(list(zip(distances, angles)))
+            observation_vector = np.stack([self.car.speed, *distance_angles.flatten()])
+        else:
+            targets = targets / params.distance_rescale
+            observation_vector = np.stack([self.car.speed, *targets.flatten()])
 
         return observation_vector
 
@@ -122,10 +130,15 @@ class Environment_Radial(gym.Env):
         # then the environment rewards you for moving closer to the goal
         dist_reward = (old_dist - new_dist) * params.reward_distance
 
-        observation_vector = self.render()
+        observation_vector = self.get_observation()
         targets = observation_vector[1:].reshape((-1, 2))
-        distances = targets[:, 0]
-        distances = distances * params.distance_rescale
+
+        if self.polar_coords:
+            distances = targets[:, 0]
+            distances = distances * params.distance_rescale
+        else:
+            targets = targets * params.distance_rescale
+            distances = np.linalg.norm(targets, axis=1)
 
         # we have moved out of the simulation domain
         if new_dist > params.max_dist * self.initial_dist:

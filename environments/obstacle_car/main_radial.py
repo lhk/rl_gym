@@ -26,7 +26,7 @@ env.reset()
 while True:
 
     canvas = np.zeros([*canvas_size, 3])
-    observation = env.render()
+    observation = env.get_observation()
 
     # first observation is speed, throw it away
     # the rest has to be rescaled to the original range
