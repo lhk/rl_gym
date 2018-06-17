@@ -11,8 +11,8 @@ from ppo.memory import Memory
 import lycon
 
 #from environments.obstacle_car.environment import Environment_Graphical as Environment
-#from environments.obstacle_car.environment_radial import Environment_Vector as Environment
-from environments.openai_gym.environment import Environment
+from environments.obstacle_car.environment_vec import Environment_Vec as Environment
+#from environments.openai_gym.environment import Environment
 import pygame
 from pygame.locals import *
 
