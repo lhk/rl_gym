@@ -43,12 +43,10 @@ while True:
         y = distances * np.sin(angles)
         observation = np.stack([y, x], axis=-1)
 
-    observation = observation*params.distance_rescale
+    observation = observation * params.distance_rescale
 
     offset = np.array([canvas.shape[0] // 2, canvas.shape[1] // 2])
     observation = (observation + offset).astype(np.int)
-
-
 
     goal = observation[0]
     obstacles = observation[1:]

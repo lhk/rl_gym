@@ -42,7 +42,7 @@ class Environment_Graphical():
 
         obstacle_img = np.zeros((*params.obstacle_size, 3), dtype=np.uint8)
         obstacle_img[:, :, 0] = (
-                    255 * np.sin(np.linspace(0, 2 * np.pi, params.obstacle_size[0])).reshape((-1, 1))).astype(np.uint8)
+                255 * np.sin(np.linspace(0, 2 * np.pi, params.obstacle_size[0])).reshape((-1, 1))).astype(np.uint8)
         goal_img = np.zeros((*params.goal_size, 3), dtype=np.uint8)
         goal_img[:, :, 1] = (255 * np.sin(np.linspace(0, 4 * np.pi, params.goal_size[1]))).astype(np.uint8)
 

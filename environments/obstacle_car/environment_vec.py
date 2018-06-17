@@ -17,7 +17,7 @@ from gym.utils import seeding
 
 
 class Environment_Vec(gym.Env):
-    def __init__(self, polar_coords = True):
+    def __init__(self, polar_coords=True):
 
         self.polar_coords = polar_coords
 
@@ -39,7 +39,7 @@ class Environment_Vec(gym.Env):
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
-    
+
     def reset(self):
 
         self.steps = 0
@@ -101,7 +101,7 @@ class Environment_Vec(gym.Env):
         # rotate to face car
         targets = (mat @ targets.T).T
 
-        if self.polar_coords :
+        if self.polar_coords:
             distances = np.linalg.norm(targets, axis=1)
             distances = distances / params.distance_rescale
             angles = np.arctan2(targets[:, 0], targets[:, 1])

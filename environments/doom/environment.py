@@ -6,7 +6,8 @@ class Environment():
     def __init__(self):
         # setting up doom as specified here: https://github.com/awjuliani/DeepRL-Agents/blob/master/a3c_doom-Doom.ipynb
         game = DoomGame()
-        game.set_doom_scenario_path("environments/doom/basic.wad")  # This corresponds to the simple task we will pose our agent
+        game.set_doom_scenario_path(
+            "environments/doom/basic.wad")  # This corresponds to the simple task we will pose our agent
         game.set_doom_map("map01")
         game.set_screen_resolution(ScreenResolution.RES_160X120)
         game.set_screen_format(ScreenFormat.GRAY8)
