@@ -5,7 +5,7 @@ import pygame.locals as pgl
 import numpy as np
 
 import environments.obstacle_car.params_radial as params
-from environments.obstacle_car.environment_radial import Environment_Radial as Environment
+from environments.obstacle_car.environment_vec import Environment_Vec as Environment
 
 canvas_size = (500, 500)
 x_coords = np.arange(canvas_size[0])

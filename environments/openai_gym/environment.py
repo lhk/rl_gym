@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 
-import environments.openai_atari.params as params
+import environments.openai_gym.params as params
 
 
 class Environment():

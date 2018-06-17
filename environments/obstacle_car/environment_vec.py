@@ -11,9 +11,16 @@ from environments.obstacle_car.car import Car
 from skimage.io import imread
 from skimage.transform import resize
 
+import gym
+from gym import spaces, logger
+from gym.utils import seeding
 
-class Environment_Vector():
-    def __init__(self):
+
+class Environment_Vec(gym.Env):
+    def __init__(self, polar_coords = True):
+
+        self.polar_coords = polar_coords
+
         # the position will be overwritten later
         default_pos = np.zeros((2,))
         self.car = Car(default_pos, 0, 0, params)
@@ -25,6 +32,14 @@ class Environment_Vector():
         self.actions = [[0, 0], [0, -1], [0, 1], [1, 0]]
         self.num_actions = len(self.actions)
 
+        self.action_space = spaces.Discrete(self.num_actions)
+
+        self.seed()
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+    
     def reset(self):
 
         self.steps = 0
@@ -35,12 +50,12 @@ class Environment_Vector():
 
         # set up car, obstacle and goal positions
         car_position = np.array([0, 0], dtype=np.float64)
-        car_position[0] = np.random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
+        car_position[0] = self.np_random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
         car_position[1] = params.screen_size[1] - params.car_size[1] / 2
         self.car.pos = car_position
 
         goal_position = np.array([0, 0])
-        goal_position[0] = np.random.uniform(0, params.screen_size[0] - params.goal_size[0])
+        goal_position[0] = self.np_random.uniform(0, params.screen_size[0] - params.goal_size[0])
         goal_position[1] = params.goal_size[1] / 2
         self.goal_pos = goal_position
 
@@ -55,8 +70,8 @@ class Environment_Vector():
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
-                obs_x = np.random.random() * params.screen_size[0]
-                obs_y = params.screen_size[1] * 1 / 3 * (1 + np.random.random())
+                obs_x = self.np_random.rand() * params.screen_size[0]
+                obs_y = params.screen_size[1] * 1 / 3 * (1 + self.np_random.rand())
                 obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
@@ -66,7 +81,7 @@ class Environment_Vector():
                     self.obstacle_positions.append(obstacle_position)
                     break
 
-    def render(self, rotated=True):
+    def get_observation(self, rotated=True):
 
         # set up a rotation matrix
         if rotated:
@@ -85,12 +100,21 @@ class Environment_Vector():
 
         # rotate to face car
         targets = (mat @ targets.T).T
-        targets = targets / params.distance_rescale
-        observation_vector = np.stack([self.car.speed, *targets.flatten()])
+
+        if self.polar_coords :
+            distances = np.linalg.norm(targets, axis=1)
+            distances = distances / params.distance_rescale
+            angles = np.arctan2(targets[:, 0], targets[:, 1])
+            distance_angles = np.array(list(zip(distances, angles)))
+            observation_vector = np.stack([self.car.speed, *distance_angles.flatten()])
+        else:
+            targets = targets / params.distance_rescale
+            observation_vector = np.stack([self.car.speed, *targets.flatten()])
 
         return observation_vector
 
     def step(self, action):
+        assert self.action_space.contains(action)
         # internally the action is not a number, but a combination of acceleration and steering
         action = self.actions[action]
         return self.make_action(action)
@@ -106,20 +130,25 @@ class Environment_Vector():
         # then the environment rewards you for moving closer to the goal
         dist_reward = (old_dist - new_dist) * params.reward_distance
 
-        observation_vector = self.render()
+        observation_vector = self.get_observation()
         targets = observation_vector[1:].reshape((-1, 2))
-        targets = targets * params.distance_rescale
+
+        if self.polar_coords:
+            distances = targets[:, 0]
+            distances = distances * params.distance_rescale
+        else:
+            targets = targets * params.distance_rescale
+            distances = np.linalg.norm(targets, axis=1)
 
         # we have moved out of the simulation domain
         if new_dist > params.max_dist * self.initial_dist:
             return observation_vector, params.reward_collision, True
 
-        rel_goal_pos = targets[0]
-        if np.linalg.norm(rel_goal_pos) < self.car_dim:
+        rel_goal_dist = distances[0]
+        if rel_goal_dist < self.car_dim:
             return observation_vector, params.reward_goal, True
 
-        rel_obs_pos = targets[1:]
-        rel_obs_dist = np.linalg.norm(rel_obs_pos, axis=-1)
+        rel_obs_dist = distances[1:]
         if np.any(rel_obs_dist < self.car_dim):
             return observation_vector, params.reward_collision, True
 
@@ -131,4 +160,4 @@ class Environment_Vector():
 
     def sample_action(self):
         # for atari, the actions are simply numbers
-        return np.random.choice(self.num_actions)
+        return self.np_random.choice(self.num_actions)
