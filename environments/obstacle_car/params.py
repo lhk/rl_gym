@@ -7,9 +7,9 @@ num_obstacles = 2
 distance_rescale = 100 # only used in radial environment
 
 # parameters for mrp
-reward_goal = 5
-reward_distance = 0.01
-reward_collision = -5
+reward_goal = 2
+reward_distance = 0.02
+reward_collision = -4
 reward_timestep = -0.1
 timeout = 600
 max_dist = 1.05

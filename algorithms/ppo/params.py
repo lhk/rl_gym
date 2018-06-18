@@ -1,7 +1,7 @@
 # parameters for the training setup
 RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
-AGENTS = 24
+AGENTS = 12
 OPTIMIZERS = 1
 WAITING_TIME = 0.0001
 
@@ -11,7 +11,7 @@ MEM_SIZE = 10000
 # parameters for the discount
 NUM_STEPS = 15
 GAMMA = 0.99
-LAMBDA = 0.8
+LAMBDA = 0.9
 REWARD_SCALE = 1
 
 # parameters for the neural network
