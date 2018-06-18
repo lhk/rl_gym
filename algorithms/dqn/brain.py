@@ -16,7 +16,7 @@ import shutil
 
 
 class Brain:
-    def __init__(self, memory: Memory, loss="mse", load_path=None):
+    def __init__(self, Model, memory: Memory, loss="mse", load_path=None):
 
         self.memory = memory
         # use this to influence the tensorflow behaviour
@@ -24,43 +24,60 @@ class Brain:
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
         config.log_device_placement = params.TF_LOG_DEVICE_PLACEMENT
 
-        sess = tf.Session(config=config)
-        K.set_session(sess)
+        self.sess = tf.Session(config=config)
+        K.set_session(self.sess)
 
         # dqn works on two models
-        self.model = self.create_model()
-        self.target_model = self.create_model()
+        self.model = Model()
+        self.target_model = Model()
+        self.stateful = Model.STATEFUL
 
-        # only one of them needs to be compiled for training
-        self.model.compile(RMSprop(params.LEARNING_RATE, rho=params.RHO, epsilon=params.EPSILON), loss=loss)
+        # set up ops for training
+        self.__setup_training()
 
         self.target_updates = 0
 
-        if not load_path is None:
-            self.model.load_weights(os.getcwd() + load_path)
-            self.target_model.load_weights(os.getcwd() + load_path)
-        else:
-            # cleaning a directory for checkpoints
-            if os.path.exists(os.getcwd() + "/checkpoints/"):
-                shutil.rmtree(os.getcwd() + "/checkpoints/")
-            os.mkdir(os.getcwd() + "/checkpoints/")
+        # cleaning a directory for checkpoints
+        if os.path.exists(os.getcwd() + "/checkpoints/"):
+            shutil.rmtree(os.getcwd() + "/checkpoints/")
+        os.mkdir(os.getcwd() + "/checkpoints/")
 
-    def create_model(self):
-        assert False, "use one of the subclasses instead"
+    def __setup_training(self):
 
-    def predict_q(self, state):
+        self.q_target = Input(shape=(params.NUM_ACTIONS))
 
-        # keras only works if there is a batch dimension
-        if state.shape == params.INPUT_SHAPE:
-            state = state.reshape((-1, *params.INPUT_SHAPE))
-        return self.model.predict([state, np.ones((state.shape[0], params.NUM_ACTIONS))])
+        loss_q = tf.reduce_mean((self.model.q_values_masked - self.q_target)**2)
 
-    def predict_q_target(self, state):
+        loss = loss_q + self.model.loss_regularization
 
-        # keras only works if there is a batch dimension
-        if state.shape == params.INPUT_SHAPE:
-            state = state.reshape((-1, *params.INPUT_SHAPE))
-        return self.target_model.predict([state, np.ones((state.shape[0], params.NUM_ACTIONS))])
+        model_variables = self.model.trainable_weights
+        target_model_variables = self.target_model.trainable_weights
+        optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
+        gradients_variables = optimizer.compute_gradients(loss, model_variables)
+        gradients, variables = zip(*gradients_variables)
+        gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
+        gradients_variables = zip(gradients, variables)
+        minimize_step = optimizer.apply_gradients(gradients_variables)
+
+        self.minimize_step = minimize_step
+
+        self.assignments = [tf.assign(to_var, from_var) for (to_var, from_var) in
+                            zip(target_model_variables, model_variables)]
+
+    # the following methods will simply be routed to the model
+    # this routing is not really elegant but I didn't want to expose the model outside of the brain
+
+    def preprocess(self, observation):
+        return self.model.preprocess(observation)
+
+    def get_initial_state(self):
+        return self.model.get_initial_state()
+
+    def predict_q(self, observation, state):
+        return self.model.predict(observation, state)
+
+    def predict_q_target(self, observation, state):
+        return self.target_model.predict(observation, state)
 
     def get_targets(self, to_states, rewards, done):
         next_q_target = self.predict_q_target(to_states)
@@ -73,13 +90,13 @@ class Brain:
         return q_targets
 
     def update_target_model(self):
-        self.target_model.set_weights(self.model.get_weights())
+        self.sess.run(self.assignments)
 
         self.target_updates += 1
 
         # save the target network every N steps
         if self.target_updates % params.SAVE_NETWORK_FREQ == 0:
-            self.target_model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates + 120))
+            self.target_model.model.save("checkpoints/dqn_model{}.hd5".format(self.target_updates + 120))
 
     def train_once(self):
 
@@ -87,11 +104,7 @@ class Brain:
         training_indices = self.memory.sample_indices()
         batch = self.memory[training_indices]
 
-        from_states, to_states, actions, rewards, terminals = batch
-
-        assert from_states.shape[
-                   0] == params.BATCH_SIZE, "batchsize must be as defined in algorithms.dqn.params.BATCH_SIZE"
-        assert from_states.dtype == np.uint8, "we work on uint8. are you mixing different types of preprocessing ?"
+        from_observations, to_observations, from_states, to_states, actions, rewards, terminals = batch
 
         # create a one-hot mask for the actions
         action_mask = np.zeros((actions.shape[0], params.NUM_ACTIONS))
@@ -100,10 +113,14 @@ class Brain:
         q_targets = self.get_targets(to_states, rewards, terminals)
         q_targets = q_targets.reshape((-1, 1)) * action_mask
 
-        self.model.train_on_batch([from_states, action_mask], q_targets)
+        model_feed_dict = self.model.create_feed_dict(from_observations, from_states, action_mask)
+        self.sess.run(self.minimize_step, feed_dict={
+            **model_feed_dict,
+            self.q_target : q_targets
+        })
 
         if (self.memory.priority_based_sampling):
-            q_predicted = self.predict_q(from_states)
+            q_predicted = self.predict_q(from_observations, from_states)
             q_predicted *= action_mask
 
             errors = np.abs(q_targets - q_predicted)
@@ -111,56 +128,3 @@ class Brain:
             priorities = np.power(errors + params.ERROR_BIAS, params.ERROR_POW)
 
             self.memory.update_priority(training_indices, priorities)
-
-
-class DQN_Brain(Brain):
-    def __init__(self, memory: Memory, loss="mse", load_path=None):
-        Brain.__init__(self, memory, loss, load_path)
-
-    def create_model(self):
-        input_layer = Input(params.INPUT_SHAPE)
-
-        rescaled = Lambda(lambda x: x / 255.)(input_layer)
-        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
-        conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-        # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
-
-        conv_flattened = Flatten()(conv)
-
-        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-        output_layer = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
-
-        mask_layer = Input((params.NUM_ACTIONS,))
-
-        output_masked = Multiply()([output_layer, mask_layer])
-        return Model(inputs=(input_layer, mask_layer), outputs=output_masked)
-
-
-class Dueling_Brain(Brain):
-    def __init__(self, memory: Memory, loss="mse", load_path=None):
-        Brain.__init__(self, memory, loss, load_path)
-
-    def create_model(self):
-        input_layer = Input(params.INPUT_SHAPE)
-
-        rescaled = Lambda(lambda x: x / 255.)(input_layer)
-        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
-        conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-        conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
-
-        conv_flattened = Flatten()(conv)
-
-        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-        advantage = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
-        advantage_mean = keras.layers.Lambda(lambda x: K.mean(x, axis=-1))(advantage)
-
-        hidden = keras.layers.Dense(256, activation='relu')(conv_flattened)
-        value = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
-
-        advantage_white = Subtract()([advantage, advantage_mean])
-        q_values = Add()([advantage_white, value])
-
-        mask_layer = Input((params.NUM_ACTIONS,))
-
-        q_values_masked = Multiply()([q_values, mask_layer])
-        return Model(inputs=(input_layer, mask_layer), outputs=q_values_masked)
