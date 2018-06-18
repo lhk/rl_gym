@@ -21,7 +21,6 @@ class Agent:
 
         self.reset()
 
-
     def reset(self):
         self.observation = self.env.reset()
 
@@ -34,7 +33,7 @@ class Agent:
         self.observation = self.brain.preprocess(self.observation)
 
         if params.FRAME_STACK:
-            self.observation = np.stack([self.observation]*params.FRAME_STACK, axis=-1)
+            self.observation = np.stack([self.observation] * params.FRAME_STACK, axis=-1)
 
         self.total_reward = 0
 
@@ -74,7 +73,6 @@ class Agent:
                 action = current_q.argmax()
 
             to_state = None
-
 
         # anneal exploration
         if self.exploration > params.FINAL_EXPLORATION:
@@ -130,4 +128,5 @@ class Agent:
         # new observations are pushed to the memory with a default priority
         # this means that for most interactions, we don't need to use the brain
         # if the agent is exploring, we don't have to calculate any q values
-        self.memory.push(from_observation, to_observation, from_state, to_state, action, reward, done, params.DEFAULT_PRIO)
+        self.memory.push(from_observation, to_observation, from_state, to_state, action, reward, done,
+                         params.DEFAULT_PRIO)

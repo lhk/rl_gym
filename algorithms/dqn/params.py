@@ -20,7 +20,7 @@ REWARD_SCALE = 1
 LEARNING_RATE = 0.00025
 RHO = 0.95
 EPSILON = 0.01
-GRADIENT_NORM_CLIP = 100 # very high, basically switched off
+GRADIENT_NORM_CLIP = 100  # very high, basically switched off
 
 # parameters for the training
 TOTAL_INTERACTIONS = int(8e6)  # after this many interactions, the training stops

@@ -3,10 +3,7 @@ import numpy as np
 np.random.seed(0)
 
 import tensorflow as tf
-import keras
-from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda, Subtract, Add
-from keras.models import Model
-from keras.optimizers import RMSprop
+from keras.layers import Input
 import keras.backend as K
 
 import algorithms.dqn.params as params
@@ -46,7 +43,7 @@ class Brain:
 
         self.q_target = Input(shape=(params.NUM_ACTIONS,))
 
-        loss_q = tf.reduce_mean((self.model.q_values_masked - self.q_target)**2)
+        loss_q = tf.reduce_mean((self.model.q_values_masked - self.q_target) ** 2)
 
         loss = loss_q + self.model.loss_regularization
 
@@ -116,7 +113,7 @@ class Brain:
         model_feed_dict = self.model.create_feed_dict(from_observations, from_states, action_mask)
         self.sess.run(self.minimize_step, feed_dict={
             **model_feed_dict,
-            self.q_target : q_targets
+            self.q_target: q_targets
         })
 
         if (self.memory.priority_based_sampling):

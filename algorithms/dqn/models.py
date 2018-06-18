@@ -2,21 +2,15 @@ import numpy as np
 
 np.random.seed(0)
 
-import tensorflow as tf
 import keras
-from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda, Subtract, Add
+from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda
 from keras.models import Model
-from keras.optimizers import RMSprop
-import keras.backend as K
 import lycon
 
 import algorithms.dqn.params as params
-from algorithms.dqn.memory import Memory
-import os
-import shutil
+
 
 class DQN_Model():
-
     OBSERVATION_SHAPE = (84, 84, params.FRAME_STACK)
     STATEFUL = False
 
@@ -66,4 +60,4 @@ class DQN_Model():
     def create_feed_dict(self, observation, state, mask):
         if not state is None:
             raise AssertionError("this model is not stateful")
-        return {self.input_observation : observation, self.mask_layer : mask}
+        return {self.input_observation: observation, self.mask_layer: mask}

@@ -24,13 +24,13 @@ class Memory():
 
         if params.MEMORY_MAPPED:
             self.from_observation_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                                               shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
+                                                     shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
             self.to_observation_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                                             shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
+                                                   shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
         else:
-            self.from_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
+            self.from_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE),
+                                                    dtype=np.uint8)
             self.to_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
-
 
         self.stateful = Model.STATEFUL
         if self.stateful:
@@ -90,7 +90,7 @@ class Equal_Memory(Memory):
         return selected_indices
 
     def push(self,
-             from_observation : np.array,
+             from_observation: np.array,
              to_observation: np.array,
              from_state: np.array,
              to_state: np.array,
@@ -135,7 +135,7 @@ class Priority_Memory(Memory):
         return selected_indices
 
     def push(self,
-             from_observation : np.array,
+             from_observation: np.array,
              to_observation: np.array,
              from_state: np.array,
              to_state: np.array,
