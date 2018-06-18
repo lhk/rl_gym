@@ -8,6 +8,7 @@ from keras.layers import Conv2D, Flatten, Input, Multiply, Lambda, Subtract, Add
 from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
+import lycon
 
 import algorithms.dqn.params as params
 from algorithms.dqn.memory import Memory
@@ -15,10 +16,14 @@ import os
 import shutil
 
 class DQN_Model():
-    def __init__(self):
-        input_layer = Input(params.INPUT_SHAPE)
 
-        rescaled = Lambda(lambda x: x / 255.)(input_layer)
+    OBSERVATION_SHAPE = (84, 84, 3)
+    STATEFUL = False
+
+    def __init__(self):
+        input_observation = Input(self.OBSERVATION_SHAPE)
+
+        rescaled = Lambda(lambda x: x / 255.)(input_observation)
         conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
         # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
@@ -31,8 +36,34 @@ class DQN_Model():
         mask_layer = Input((params.NUM_ACTIONS,))
 
         q_values_masked = Multiply()([q_values, mask_layer])
-        self.model = Model(inputs=(input_layer, mask_layer), outputs=q_values_masked)
+        self.model = Model(inputs=(input_observation, mask_layer), outputs=q_values_masked)
+
+        self.input_observation = input_observation
+        self.mask_layer = mask_layer
 
         self.loss_regularization = sum(self.model.losses)
         self.trainable_weights = self.model.trainable_weights
         self.q_values_masked = q_values_masked
+
+    def preprocess_frame(self, frame):
+        downsampled = lycon.resize(frame, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
+                                   interpolation=lycon.Interpolation.NEAREST)
+        grayscale = downsampled.mean(axis=-1).astype(np.uint8)
+        return grayscale
+
+    def predict(self, observation, state=None):
+        if not state is None:
+            raise AssertionError("this model is not stateful")
+
+        # keras only works if there is a batch dimension
+        if observation.shape == params.INPUT_SHAPE:
+            observation = observation.reshape((-1, *params.INPUT_SHAPE))
+        return self.model.predict([observation, np.ones((observation.shape[0], params.NUM_ACTIONS))])
+
+    def get_initial_state(self):
+        raise AssertionError("this model is not stateful")
+
+    def create_feed_dict(self, observation, state, mask):
+        if not state is None:
+            raise AssertionError("this model is not stateful")
+        return {self.input_observation : observation, self.mask_layer : mask}
