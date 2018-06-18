@@ -10,7 +10,7 @@ from algorithms.a3c_env.memory import Memory
 
 import lycon
 
-from environments.obstacle_car.environment import Environment_Graphical as Environment
+from environments.obstacle_car.environment_graphical import Environment_Graphical as Environment
 
 import pygame
 
