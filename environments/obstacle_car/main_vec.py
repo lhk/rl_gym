@@ -18,6 +18,7 @@ mouse_x, mouse_y = 0, 0
 
 env = Environment()
 env.reset()
+total_reward = 0
 
 while True:
 
@@ -37,6 +38,8 @@ while True:
 
         if event.type == pgl.KEYDOWN:
             if event.key == pgl.K_SPACE:
+                print(total_reward)
+                total_reward = 0
                 env.reset()
 
     keys = pygame.key.get_pressed()
@@ -50,7 +53,7 @@ while True:
         steering_angle = 1
 
     observation, reward, done = env.make_action((acceleration, steering_angle))
-    print(reward)
+    total_reward += reward
     if done:
         print("collision")
 
