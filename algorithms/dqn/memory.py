@@ -13,19 +13,29 @@ from util.sumtree import SumTree
 
 class Memory():
 
-    def __init__(self):
+    def __init__(self, Model):
 
         # creating a new memory, remove existing memory maps
         if os.path.exists(os.getcwd() + "/memory_maps/"):
             shutil.rmtree(os.getcwd() + "/memory_maps/")
         os.mkdir(os.getcwd() + "/memory_maps/")
 
+        OBSERVATION_SHAPE = Model.OBSERVATION_SHAPE
+        STATE_SHAPE = Model.STATE_SHAPE
+
         if params.MEMORY_MAPPED:
+            self.from_observation_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                                               shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
+            self.to_observation_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                                             shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
+
             self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                                               shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
+                                               shape=(params.REPLAY_MEMORY_SIZE, *STATE_SHAPE))
             self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                                             shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE))
+                                             shape=(params.REPLAY_MEMORY_SIZE, *STATE_SHAPE))
         else:
+            self.from_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
+            self.to_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
             self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
             self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
 
@@ -44,13 +54,15 @@ class Memory():
         assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
         assert max(index) < len(self), "index out of range"
 
+        from_observations = self.from_state_memory[index]
+        to_observations = self.to_state_memory[index]
         from_states = self.from_state_memory[index]
         to_states = self.to_state_memory[index]
         actions = self.action_memory[index]
         rewards = self.reward_memory[index]
         terminal = self.terminal_memory[index]
 
-        return from_states, to_states, actions, rewards, terminal
+        return from_observations, to_observations, from_states, to_states, actions, rewards, terminal
 
 
 class Equal_Memory(Memory):
@@ -65,12 +77,16 @@ class Equal_Memory(Memory):
         return selected_indices
 
     def push(self,
+             from_observation : np.array,
+             to_observation: np.array,
              from_state: np.array,
              to_state: np.array,
              action: np.uint8,
              reward: np.float32,
              terminal: np.bool):
         # write observation to memory
+        self.from_observation_memory[self.replay_index] = from_observation
+        self.to_observation_memory[self.replay_index] = to_observation
         self.from_state_memory[self.replay_index] = from_state
         self.to_state_memory[self.replay_index] = to_state
         self.action_memory[self.replay_index] = action
@@ -101,14 +117,18 @@ class Priority_Memory(Memory):
         return selected_indices
 
     def push(self,
+             from_observation : np.array,
+             to_observation: np.array,
              from_state: np.array,
              to_state: np.array,
              action: np.uint8,
              reward: np.float32,
              terminal: np.bool,
-             priority: np.float32):
+             priority: np.float):
 
         # write observation to memory
+        self.from_observation_memory[self.replay_index] = from_observation
+        self.to_observation_memory[self.replay_index] = to_observation
         self.from_state_memory[self.replay_index] = from_state
         self.to_state_memory[self.replay_index] = to_state
         self.action_memory[self.replay_index] = action
