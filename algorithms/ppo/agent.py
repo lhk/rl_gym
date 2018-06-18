@@ -21,9 +21,6 @@ class Agent(threading.Thread):
 
         threading.Thread.__init__(self)
 
-        # chance of sampling a random action
-        self.exploration = params.INITIAL_EXPLORATION
-
         self.env = Environment()
 
         # a local memory, to store observations made by this agent
@@ -46,9 +43,11 @@ class Agent(threading.Thread):
 
         self.vis = vis
         if self.vis:
+            self.canvas_size = (500, 500)
+            self.canvas = np.zeros([*self.canvas_size, 3])
             pygame.init()
             self.clock = pygame.time.Clock()
-            self.window = pygame.display.set_mode(params.FRAME_SIZE)
+            self.window = pygame.display.set_mode(self.canvas_size)
             pygame.display.set_caption("Pygame cheat sheet")
 
     def run_one_episode(self):
@@ -80,15 +79,7 @@ class Agent(threading.Thread):
                 state = state[0]
             value = value[0, 0]
 
-            # get next action, explore with probability self.eps
-            if np.random.rand() < self.exploration:
-                action_index = np.random.randint(params.NUM_ACTIONS)
-            else:
-                action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
-
-            # anneal epsilon
-            if self.exploration > params.FINAL_EXPLORATION:
-                self.exploration -= params.EXPLORATION_STEP
+            action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
 
             new_observation, reward, done, _ = self.env.step(action_index)
             reward *= params.REWARD_SCALE
@@ -127,9 +118,11 @@ class Agent(threading.Thread):
             total_reward += reward
 
             if self.vis:
-                render_frame = observation.copy()
-                render_surf = pygame.surfarray.make_surface(render_frame)
-                self.window.blit(render_surf, (0, 0))
+                self.canvas[:] = 0
+                self.env.render_to_canvas(self.canvas)
+
+                surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
+                self.window.blit(surf, (0, 0))
 
                 self.clock.tick(10)
                 pygame.display.update()
