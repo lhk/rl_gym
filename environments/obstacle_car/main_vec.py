@@ -1,10 +1,9 @@
 import sys
 
+import numpy as np
 import pygame
 import pygame.locals as pgl
-import numpy as np
 
-import environments.obstacle_car.params_radial as params
 from environments.obstacle_car.environment_vec import Environment_Vec as Environment
 
 canvas_size = (500, 500)

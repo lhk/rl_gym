@@ -1,19 +1,10 @@
-import numpy as np
-import pygame
-
-import environments.obstacle_car.colors as colors
-import environments.obstacle_car.params_radial as params
-import environments.obstacle_car.utils as utils
-
-from np_draw.sprite import Sprite
-from environments.obstacle_car.car import Car
-
-from skimage.io import imread
-from skimage.transform import resize
-
 import gym
-from gym import spaces, logger
+import numpy as np
+from gym import spaces
 from gym.utils import seeding
+
+import environments.obstacle_car.params_radial as params
+from environments.obstacle_car.car import Car
 
 
 class Environment_Vec(gym.Env):
