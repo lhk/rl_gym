@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-import a3c_env.params as params
+import algorithms.a3c_env.params as params
 
 
 class Memory:
@@ -25,8 +25,9 @@ class Memory:
             return retval
 
     def push(self, from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length):
-        while(len(self) > params.MEM_SIZE):
-            time.sleep(params.WAITING_TIME) # yield control, if all agents sleep, brain gets to optimize away the memory
+        while (len(self) > params.MEM_SIZE):
+            time.sleep(
+                params.WAITING_TIME)  # yield control, if all agents sleep, brain gets to optimize away the memory
 
         with self.lock:
             assert from_state.shape == params.INPUT_SHAPE

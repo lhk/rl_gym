@@ -1,7 +1,7 @@
 import lycon
 import numpy as np
 
-import dqn.params as params
+import algorithms.dqn.params as params
 
 
 def preprocess_frame(frame):

@@ -4,16 +4,16 @@ np.seterr(all="raise")
 
 import time, threading
 
-import a3c_env.params as params
-from a3c_env.brain import Brain
-from a3c_env.memory import Memory
+import algorithms.a3c_env.params as params
+from algorithms.a3c_env.brain import Brain
+from algorithms.a3c_env.memory import Memory
 
 import lycon
 
 from environments.obstacle_car.environment import Environment_Graphical as Environment
 
 import pygame
-from pygame.locals import *
+
 
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
@@ -55,9 +55,9 @@ class Agent(threading.Thread):
     def preprocess_state(self, new_state):
         downsampled = lycon.resize(new_state, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
-        if len(downsampled.shape)==2:
+        if len(downsampled.shape) == 2:
             new_state = np.expand_dims(downsampled, axis=-1)
-        elif downsampled.shape[2]>1 and params.INPUT_SHAPE[2]==1:
+        elif downsampled.shape[2] > 1 and params.INPUT_SHAPE[2] == 1:
             grayscale = downsampled.mean(axis=-1)
             new_state = grayscale.reshape((params.INPUT_SHAPE))
         else:
@@ -101,7 +101,6 @@ class Agent(threading.Thread):
                 action_index = np.random.randint(params.NUM_ACTIONS)
             else:
                 action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
-
 
             # anneal epsilon
             if self.exploration > params.FINAL_EXPLORATION:

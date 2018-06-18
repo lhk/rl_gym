@@ -4,9 +4,9 @@ np.seterr(all="raise")
 
 import time, threading
 
-import ppo.params as params
-from ppo.brain import Brain
-from ppo.memory import Memory
+import algorithms.ppo.params as params
+from algorithms.ppo.brain import Brain
+from algorithms.ppo.memory import Memory
 
 # from environments.obstacle_car.environment import Environment_Graphical as Environment
 from environments.obstacle_car.environment_vec import Environment_Vec as Environment

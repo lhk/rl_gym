@@ -1,5 +1,5 @@
 # parameters for the training setup
-RUN_TIME = 3600*10
+RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
 AGENTS = 24
 OPTIMIZERS = 1
@@ -11,7 +11,7 @@ FINAL_EXPLORATION = .1
 FINAL_EXPLORATION_ACTION = 10000
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_ACTION
 
-#params for the memory
+# params for the memory
 MEM_SIZE = 10000
 
 # parameters for the discount

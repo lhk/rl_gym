@@ -6,10 +6,10 @@ np.random.seed(0)
 
 import time, threading, os
 
-from a3c_env.agent import Agent
-from a3c_env.brain import Brain
-from a3c_env.memory import Memory
-import a3c_env.params as params
+from algorithms.a3c_env.agent import Agent
+from algorithms.a3c_env.brain import Brain
+from algorithms.a3c_env.memory import Memory
+import algorithms.a3c_env.params as params
 
 
 class Optimizer(threading.Thread):
@@ -28,7 +28,7 @@ memory = Memory()
 brain = Brain(memory)
 
 agents = [Agent(brain, memory) for i in range(params.AGENTS)]
-#agents.append(Agent(brain, memory, vis=True)) # one agent for the visualization
+# agents.append(Agent(brain, memory, vis=True)) # one agent for the visualization
 opts = [Optimizer(brain) for i in range(params.OPTIMIZERS)]
 
 for o in opts:
@@ -48,4 +48,4 @@ for o in opts:
 for o in opts:
     o.join()
 
-brain.model.save(os.getcwd()+"/a3c_env/weights.hdf5")
+brain.model.save(os.getcwd() + "/a3c_env/weights.hdf5")

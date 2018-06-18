@@ -1,4 +1,4 @@
-# the architecture of optimizers and agents is taken from: https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py
+# the architecture of optimizers and agents is taken from: https://github.com/jaara/AI-blog/blob/master/CartPole-algorithms.a3c.py
 import numpy as np
 
 np.seterr(all='raise')
@@ -6,10 +6,10 @@ np.random.seed(0)
 
 import time, threading
 
-from a3c.agent import Agent
-from a3c.brain import Brain
-from a3c.memory import Memory
-import a3c.params as params
+from algorithms.a3c.agent import Agent
+from algorithms.a3c.brain import Brain
+from algorithms.a3c.memory import Memory
+import algorithms.a3c.params as params
 
 
 class Optimizer(threading.Thread):

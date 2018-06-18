@@ -4,8 +4,9 @@ import tensorflow as tf
 from keras.layers import *
 from keras.models import *
 from keras.regularizers import l2
-import a3c_env.params as params
-from a3c_env.memory import Memory
+
+import algorithms.a3c_env.params as params
+from algorithms.a3c_env.memory import Memory
 
 
 class Brain:
@@ -48,7 +49,8 @@ class Brain:
         input_state = Input(shape=(*params.INPUT_SHAPE,))
 
         rescaled = Lambda(lambda x: x / 255.)(input_state)
-        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(rescaled)
+        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(
+            rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(conv)
 
         conv_flattened = Flatten()(conv)
@@ -64,7 +66,8 @@ class Brain:
         input_memory = Input(shape=(params.RNN_SIZE,))
         gru_tensor, output_memory = gru_cell(dense, initial_state=input_memory)
 
-        pred_actions = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(gru_tensor)
+        pred_actions = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(
+            gru_tensor)
         pred_values = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(gru_tensor)
 
         model = Model(inputs=[input_state, input_memory], outputs=[pred_actions, pred_values, output_memory])
@@ -72,7 +75,6 @@ class Brain:
         # the model is not compiled with any loss function
         # but the regularizers are still exposed as losses
         loss_regularization = sum(model.losses)
-
 
         # due to keras' restrictions on loss functions,
         # the above can't be trained with a simple keras loss function
@@ -99,9 +101,9 @@ class Brain:
 
         # entropy is maximized
         eps = 1e-10
-        entropy =- params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
+        entropy = - params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
 
-        loss = tf.reduce_sum(loss_policy + loss_value +loss_regularization+ entropy)
+        loss = tf.reduce_sum(loss_policy + loss_value + loss_regularization + entropy)
 
         # we have to use tensorflow, this is not possible withing a custom keras loss function
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)

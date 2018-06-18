@@ -9,8 +9,8 @@ from keras.models import Model
 from keras.optimizers import RMSprop
 import keras.backend as K
 
-import dqn.params as params
-from dqn.memory import Memory
+import algorithms.dqn.params as params
+from algorithms.dqn.memory import Memory
 import os
 import shutil
 
@@ -37,8 +37,8 @@ class Brain:
         self.target_updates = 0
 
         if not load_path is None:
-            self.model.load_weights(os.getcwd()+load_path)
-            self.target_model.load_weights(os.getcwd()+load_path)
+            self.model.load_weights(os.getcwd() + load_path)
+            self.target_model.load_weights(os.getcwd() + load_path)
         else:
             # cleaning a directory for checkpoints
             if os.path.exists(os.getcwd() + "/checkpoints/"):
@@ -89,7 +89,8 @@ class Brain:
 
         from_states, to_states, actions, rewards, terminals = batch
 
-        assert from_states.shape[0] == params.BATCH_SIZE, "batchsize must be as defined in dqn.params.BATCH_SIZE"
+        assert from_states.shape[
+                   0] == params.BATCH_SIZE, "batchsize must be as defined in algorithms.dqn.params.BATCH_SIZE"
         assert from_states.dtype == np.uint8, "we work on uint8. are you mixing different types of preprocessing ?"
 
         # create a one-hot mask for the actions
@@ -122,7 +123,7 @@ class DQN_Brain(Brain):
         rescaled = Lambda(lambda x: x / 255.)(input_layer)
         conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu')(rescaled)
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu')(conv)
-        #conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
+        # conv = Conv2D(64, (3, 3), strides=(1, 1), activation='relu')(conv)
 
         conv_flattened = Flatten()(conv)
 

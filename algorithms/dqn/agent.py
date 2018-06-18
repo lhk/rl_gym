@@ -1,7 +1,7 @@
 import numpy as np
 
-import dqn.params as params
-from dqn.preprocessing import preprocess_frame
+import algorithms.dqn.params as params
+from algorithms.dqn.preprocessing import preprocess_frame
 
 
 class Agent:

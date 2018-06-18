@@ -30,7 +30,7 @@ SAVE_NETWORK_FREQ = 5  # save every Xth version of the target network
 
 # parameters for interacting with the environment
 INITIAL_EXPLORATION = 1.0  # initial chance of sampling a random action
-FINAL_EXPLORATION = 0.1 # final chance
+FINAL_EXPLORATION = 0.1  # final chance
 FINAL_EXPLORATION_FRAME = int(TOTAL_INTERACTIONS // 2)  # frame at which final value is reached
 EXPLORATION_STEP = (INITIAL_EXPLORATION - FINAL_EXPLORATION) / FINAL_EXPLORATION_FRAME
 

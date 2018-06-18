@@ -4,9 +4,9 @@ np.seterr(all="raise")
 
 import gym, time, threading
 
-import a3c.params as params
-from a3c.brain import Brain
-from a3c.memory import Memory
+import algorithms.a3c.params as params
+from algorithms.a3c.brain import Brain
+from algorithms.a3c.memory import Memory
 
 
 class Agent(threading.Thread):

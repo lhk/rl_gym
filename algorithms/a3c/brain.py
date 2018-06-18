@@ -4,8 +4,8 @@ import tensorflow as tf
 from keras.layers import *
 from keras.models import *
 
-import a3c.params as params
-from a3c.memory import Memory
+import algorithms.a3c.params as params
+from algorithms.a3c.memory import Memory
 
 
 class Brain:

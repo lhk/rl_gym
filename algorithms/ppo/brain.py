@@ -1,12 +1,13 @@
 import time
 from threading import Lock
 
-import ppo.params as params
 import tensorflow as tf
 from colorama import Fore, Style
 from keras.models import *
-from ppo.conv_models import ConvLSTMModel
-from ppo.memory import Memory
+
+import algorithms.ppo.params as params
+from algorithms.ppo.conv_models import ConvLSTMModel
+from algorithms.ppo.memory import Memory
 
 
 class Brain:

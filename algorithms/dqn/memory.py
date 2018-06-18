@@ -7,7 +7,7 @@ from tempfile import mkstemp
 
 import numpy as np
 
-import dqn.params as params
+import algorithms.dqn.params as params
 from util.sumtree import SumTree
 
 
