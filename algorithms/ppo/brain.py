@@ -128,8 +128,8 @@ class Brain:
         length = np.vstack(length)
 
         # predict the final value
-        #_, end_values, _ = self.predict(to_observations, to_states)
-        #target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+        # _, end_values, _ = self.predict(to_observations, to_states)
+        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
         # TODO: is this necessary
         # TODO: for terminal = True, the value seems not to be set to 0
