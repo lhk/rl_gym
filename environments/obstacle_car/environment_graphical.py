@@ -61,9 +61,9 @@ class Environment_Graphical(gym.Env):
 
         self.seed()
 
-        def seed(self, seed=None):
-            self.self.np_random, seed = seeding.self.np_random(seed)
-            return [seed]
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.self.np_random(seed)
+        return [seed]
 
     def reset(self):
 
