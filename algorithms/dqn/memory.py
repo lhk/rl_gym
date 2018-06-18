@@ -21,23 +21,31 @@ class Memory():
         os.mkdir(os.getcwd() + "/memory_maps/")
 
         OBSERVATION_SHAPE = Model.OBSERVATION_SHAPE
-        STATE_SHAPE = Model.STATE_SHAPE
 
         if params.MEMORY_MAPPED:
             self.from_observation_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
                                                shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
             self.to_observation_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
                                              shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE))
-
-            self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                                               shape=(params.REPLAY_MEMORY_SIZE, *STATE_SHAPE))
-            self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
-                                             shape=(params.REPLAY_MEMORY_SIZE, *STATE_SHAPE))
         else:
             self.from_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
             self.to_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
-            self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
-            self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
+
+
+        if Model.STATEFUL:
+            self.stateful = True
+            STATE_SHAPE = Model.STATE_SHAPE
+
+            if params.MEMORY_MAPPED:
+                self.from_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                                                   shape=(params.REPLAY_MEMORY_SIZE, *STATE_SHAPE))
+                self.to_state_memory = np.memmap(mkstemp(dir="memory_maps")[0], dtype=np.uint8, mode="w+",
+                                                 shape=(params.REPLAY_MEMORY_SIZE, *STATE_SHAPE))
+
+            else:
+                self.from_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE),
+                                                  dtype=np.uint8)
+                self.to_state_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *params.INPUT_SHAPE), dtype=np.uint8)
 
         # these other parts of the memory consume only very little memory and can be kept in ram
         self.action_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE), dtype=np.uint8)
@@ -56,11 +64,16 @@ class Memory():
 
         from_observations = self.from_state_memory[index]
         to_observations = self.to_state_memory[index]
-        from_states = self.from_state_memory[index]
-        to_states = self.to_state_memory[index]
         actions = self.action_memory[index]
         rewards = self.reward_memory[index]
         terminal = self.terminal_memory[index]
+
+        if self.stateful:
+            from_states = self.from_state_memory[index]
+            to_states = self.to_state_memory[index]
+        else:
+            from_states = None
+            to_states = None
 
         return from_observations, to_observations, from_states, to_states, actions, rewards, terminal
 
@@ -87,11 +100,16 @@ class Equal_Memory(Memory):
         # write observation to memory
         self.from_observation_memory[self.replay_index] = from_observation
         self.to_observation_memory[self.replay_index] = to_observation
-        self.from_state_memory[self.replay_index] = from_state
-        self.to_state_memory[self.replay_index] = to_state
         self.action_memory[self.replay_index] = action
         self.reward_memory[self.replay_index] = reward
         self.terminal_memory[self.replay_index] = terminal
+
+        if not self.stateful:
+            assert from_state is None
+            assert to_state is None
+        else:
+            self.from_state_memory[self.replay_index] = from_state
+            self.to_state_memory[self.replay_index] = to_state
 
         # this acts like a ringbuffer
         self.replay_index += 1
@@ -129,11 +147,16 @@ class Priority_Memory(Memory):
         # write observation to memory
         self.from_observation_memory[self.replay_index] = from_observation
         self.to_observation_memory[self.replay_index] = to_observation
-        self.from_state_memory[self.replay_index] = from_state
-        self.to_state_memory[self.replay_index] = to_state
         self.action_memory[self.replay_index] = action
         self.reward_memory[self.replay_index] = reward
         self.terminal_memory[self.replay_index] = terminal
+
+        if not self.stateful:
+            assert from_state is None
+            assert to_state is None
+        else:
+            self.from_state_memory[self.replay_index] = from_state
+            self.to_state_memory[self.replay_index] = to_state
 
         self.priority_sumtree.push(self.replay_index, priority)
 
