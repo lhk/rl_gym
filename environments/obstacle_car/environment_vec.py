@@ -3,7 +3,7 @@ import numpy as np
 from gym import spaces
 from gym.utils import seeding
 
-import environments.obstacle_car.params_radial as params
+import environments.obstacle_car.params as params
 from environments.obstacle_car.car import Car
 
 
@@ -24,7 +24,20 @@ class Environment_Vec(gym.Env):
         self.num_actions = len(self.actions)
 
         self.action_space = spaces.Discrete(self.num_actions)
+        if self.polar_coords:
+            min = np.array([params.min_speed,
+                           *[0,-np.pi]*3])
 
+            max = np.array([params.max_speed,
+                           *[np.finfo(np.float32).max,+np.pi]*3])
+        else:
+            min = np.array([params.min_speed,
+                            *[-np.finfo(np.float32).max, -np.finfo(np.float32).max] * 3])
+
+            max = np.array([params.max_speed,
+                            *[np.finfo(np.float32).max, np.finfo(np.float32).max] * 3])
+
+        self.observation_space = spaces.Box(min, max)
         self.seed()
 
     def seed(self, seed=None):
@@ -123,6 +136,8 @@ class Environment_Vec(gym.Env):
                     self.obstacle_positions.append(obstacle_position)
                     break
 
+        return self.get_observation()
+
     def get_observation(self, rotated=True):
 
         # set up a rotation matrix
@@ -159,7 +174,8 @@ class Environment_Vec(gym.Env):
         assert self.action_space.contains(action)
         # internally the action is not a number, but a combination of acceleration and steering
         action = self.actions[action]
-        return self.make_action(action)
+        obs, rew, done = self.make_action(action)
+        return obs, rew, done, {}
 
     def make_action(self, action):
         acceleration, steering_angle = action
