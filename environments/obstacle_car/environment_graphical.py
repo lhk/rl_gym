@@ -1,17 +1,12 @@
 import gym
 import numpy as np
-from gym import spaces
 from gym.utils import seeding
-
-import environments.obstacle_car.colors as colors
-import environments.obstacle_car.params as params
-import environments.obstacle_car.utils as utils
-
-from np_draw.sprite import Sprite
-from environments.obstacle_car.car import Car
-
 from skimage.io import imread
 from skimage.transform import resize
+
+import environments.obstacle_car.params as params
+from environments.obstacle_car.car import Car
+from np_draw.sprite import Sprite
 
 
 class Environment_Graphical(gym.Env):
