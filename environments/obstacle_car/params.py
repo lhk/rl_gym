@@ -9,15 +9,15 @@ distance_rescale = 100 # only used in radial environment
 # parameters for mrp
 reward_goal = 2
 reward_distance = 0.02
-reward_collision = -4
+reward_collision = -10
 reward_timestep = -0.1
 timeout = 600
 max_dist = 1.05
 
 # parameters for simulation
-dT = 0.7
-min_speed = -8
-max_speed = 10
+dT = 1
+min_speed = -4
+max_speed = 6
 stop_on_border_collision = True
 
 # parameters for car
