@@ -32,8 +32,8 @@ class Memory():
             self.to_observation_memory = np.empty(shape=(params.REPLAY_MEMORY_SIZE, *OBSERVATION_SHAPE), dtype=np.uint8)
 
 
-        if Model.STATEFUL:
-            self.stateful = True
+        self.stateful = Model.STATEFUL
+        if self.stateful:
             STATE_SHAPE = Model.STATE_SHAPE
 
             if params.MEMORY_MAPPED:
@@ -62,8 +62,8 @@ class Memory():
         assert type(index) in [int, np.ndarray, list], "you are using an unsupported index type"
         assert max(index) < len(self), "index out of range"
 
-        from_observations = self.from_state_memory[index]
-        to_observations = self.to_state_memory[index]
+        from_observations = self.from_observation_memory[index]
+        to_observations = self.to_observation_memory[index]
         actions = self.action_memory[index]
         rewards = self.reward_memory[index]
         terminal = self.terminal_memory[index]
@@ -121,8 +121,8 @@ class Equal_Memory(Memory):
 class Priority_Memory(Memory):
     priority_based_sampling = True
 
-    def __init__(self):
-        Memory.__init__(self)
+    def __init__(self, Model):
+        Memory.__init__(self, Model)
 
         self.priority_sumtree = SumTree(params.REPLAY_MEMORY_SIZE)
 

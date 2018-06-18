@@ -17,7 +17,7 @@ import shutil
 
 class DQN_Model():
 
-    OBSERVATION_SHAPE = (84, 84, 3)
+    OBSERVATION_SHAPE = (84, 84, params.FRAME_STACK)
     STATEFUL = False
 
     def __init__(self):
@@ -45,8 +45,8 @@ class DQN_Model():
         self.trainable_weights = self.model.trainable_weights
         self.q_values_masked = q_values_masked
 
-    def preprocess_frame(self, frame):
-        downsampled = lycon.resize(frame, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
+    def preprocess(self, observation):
+        downsampled = lycon.resize(observation, width=self.OBSERVATION_SHAPE[0], height=self.OBSERVATION_SHAPE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
         grayscale = downsampled.mean(axis=-1).astype(np.uint8)
         return grayscale
@@ -58,7 +58,7 @@ class DQN_Model():
         # keras only works if there is a batch dimension
         if observation.shape == params.INPUT_SHAPE:
             observation = observation.reshape((-1, *params.INPUT_SHAPE))
-        return self.model.predict([observation, np.ones((observation.shape[0], params.NUM_ACTIONS))])
+        return self.model.predict([observation, np.ones((observation.shape[0], params.NUM_ACTIONS))]), None
 
     def get_initial_state(self):
         raise AssertionError("this model is not stateful")

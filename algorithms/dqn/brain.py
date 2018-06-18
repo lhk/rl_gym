@@ -44,7 +44,7 @@ class Brain:
 
     def __setup_training(self):
 
-        self.q_target = Input(shape=(params.NUM_ACTIONS))
+        self.q_target = Input(shape=(params.NUM_ACTIONS,))
 
         loss_q = tf.reduce_mean((self.model.q_values_masked - self.q_target)**2)
 
@@ -79,9 +79,9 @@ class Brain:
     def predict_q_target(self, observation, state):
         return self.target_model.predict(observation, state)
 
-    def get_targets(self, to_states, rewards, done):
-        next_q_target = self.predict_q_target(to_states)
-        next_q = self.predict_q(to_states)
+    def get_targets(self, to_observations, to_states, rewards, done):
+        next_q_target, _ = self.predict_q_target(to_observations, to_states)
+        next_q, _ = self.predict_q(to_observations, to_states)
         chosen_q = next_q_target[np.arange(next_q.shape[0]), next_q.argmax(axis=-1)]
 
         # this is the value that should be predicted by the network
@@ -110,7 +110,7 @@ class Brain:
         action_mask = np.zeros((actions.shape[0], params.NUM_ACTIONS))
         action_mask[np.arange(actions.shape[0]), actions] = 1
 
-        q_targets = self.get_targets(to_states, rewards, terminals)
+        q_targets = self.get_targets(to_observations, to_states, rewards, terminals)
         q_targets = q_targets.reshape((-1, 1)) * action_mask
 
         model_feed_dict = self.model.create_feed_dict(from_observations, from_states, action_mask)
@@ -120,7 +120,7 @@ class Brain:
         })
 
         if (self.memory.priority_based_sampling):
-            q_predicted = self.predict_q(from_observations, from_states)
+            q_predicted, _ = self.predict_q(from_observations, from_states)
             q_predicted *= action_mask
 
             errors = np.abs(q_targets - q_predicted)

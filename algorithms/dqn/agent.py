@@ -26,8 +26,12 @@ class Agent:
         self.observation = self.env.reset()
 
         # internally, the brain uses a model, and that can have a state, rnns for example
-        self.state = self.brain.get_initial_state()
-        self.observation = self.brain.preprocess(self.observation, self.state)
+        if self.brain.stateful:
+            self.state = self.brain.get_initial_state()
+        else:
+            self.state = None
+
+        self.observation = self.brain.preprocess(self.observation)
 
         if params.FRAME_STACK:
             self.observation = np.stack([self.observation]*params.FRAME_STACK, axis=-1)
@@ -52,7 +56,8 @@ class Agent:
         # this is a potentially huge speedup
         if self.brain.stateful:
             # use the brain to determine the best action for this state
-            current_q, to_state = self.brain.predict_q(self.observation, self.state)[0]
+            current_q, to_state = self.brain.predict_q(self.observation, self.state)
+            current_q = current_q[0]
             action = current_q.argmax()
 
             # maybe overwrite the action
@@ -64,10 +69,11 @@ class Agent:
                 action = np.random.choice(params.NUM_ACTIONS)
             else:
                 # use the brain to determine the best action for this state
-                current_q, to_state = self.brain.predict_q(self.observation, self.state)[0]
+                current_q, to_state = self.brain.predict_q(self.observation, self.state)
+                current_q = current_q[0]
                 action = current_q.argmax()
 
-                assert to_state is None
+            to_state = None
 
 
         # anneal exploration
@@ -92,10 +98,10 @@ class Agent:
         self.total_reward += reward
 
         # preprocess the new observation
-        from_observation = self.observation.copy()
-        from_state = self.state.copy()
+        from_observation = self.observation
+        from_state = self.state
 
-        new_observation, to_state = self.brain.preprocess(new_observation, self.state)
+        new_observation = self.brain.preprocess(new_observation)
 
         if params.FRAME_STACK:
             to_observation = np.zeros_like(self.observation)
@@ -108,10 +114,8 @@ class Agent:
             self.observation = to_observation
             self.state = to_state
         else:
-            self.reset()
-
             print(self.total_reward)
-            self.total_reward = 0
+            self.reset()
 
         # the value that should have been predicted
         # q_target = self.brain.get_targets(to_state, reward, done)
