@@ -35,8 +35,8 @@ NUM_UPDATES = 5  # updates before we switch old and new policies
 NUM_BATCHES = 30
 BATCH_SIZE = 32
 
-L2_REG_CONV = 0# 1e-3
-L2_REG_FULLY = 0# 1e-3
+L2_REG_CONV = 0  # 1e-3
+L2_REG_FULLY = 0  # 1e-3
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True

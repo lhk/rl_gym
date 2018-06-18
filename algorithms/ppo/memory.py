@@ -2,7 +2,6 @@ import threading
 import time
 
 import numpy as np
-
 import ppo.params as params
 
 

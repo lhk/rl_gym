@@ -8,13 +8,10 @@ import ppo.params as params
 from ppo.brain import Brain
 from ppo.memory import Memory
 
-import lycon
-
-#from environments.obstacle_car.environment import Environment_Graphical as Environment
+# from environments.obstacle_car.environment import Environment_Graphical as Environment
 from environments.obstacle_car.environment_vec import Environment_Vec as Environment
-#from environments.openai_gym.environment import Environment
+# from environments.openai_gym.environment import Environment
 import pygame
-from pygame.locals import *
 
 
 class Agent(threading.Thread):
@@ -170,7 +167,7 @@ class Agent(threading.Thread):
         values = np.array(self.seen_values[:])
         # if the last state is terminal, we have to overwrite it with 0
         # TODO: check against A3C
-        values[-1] = values[-1] * (1-terminal)
+        values[-1] = values[-1] * (1 - terminal)
 
         deltas = rewards[:-1] + params.GAMMA * values[1:] - values[:-1]
 

@@ -1,15 +1,12 @@
 import time
-
-import tensorflow as tf
-from keras.layers import *
-from keras.models import *
-from keras.regularizers import l2
-import ppo.params as params
-from ppo.memory import Memory
-from ppo.conv_models import ConvLSTMModel
 from threading import Lock
 
+import ppo.params as params
+import tensorflow as tf
 from colorama import Fore, Style
+from keras.models import *
+from ppo.conv_models import ConvLSTMModel
+from ppo.memory import Memory
 
 
 class Brain:
@@ -103,7 +100,8 @@ class Brain:
 
         self.minimize_step = minimize_step
 
-        self.assignments = [tf.assign(to_var, from_var) for (to_var, from_var) in zip(self.old_model.trainable_weights, self.new_model.trainable_weights)]
+        self.assignments = [tf.assign(to_var, from_var) for (to_var, from_var) in
+                            zip(self.old_model.trainable_weights, self.new_model.trainable_weights)]
 
     def optimize(self):
         # we train on blocks of this size
@@ -128,11 +126,9 @@ class Brain:
         advantages = np.vstack(advantages)
         length = np.vstack(length)
 
-
         # predict the final value
-        #_, end_values, _ = self.predict(to_observations, to_states)
-        #target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
-
+        # _, end_values, _ = self.predict(to_observations, to_states)
+        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
         # TODO: is this necessary
         # after reading the openAI baseline, I'm adding some small tweaks to my implementation
@@ -140,19 +136,19 @@ class Brain:
         # they calculate the target value based on the advantage and then z-normalize
         _, current_values, _ = self.predict(from_observations, from_states)
         target_values = advantages + current_values
-        advantages = (advantages - advantages.mean())/(advantages.std() + 1e-8)
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         # now we iterate through the training data
         # for each iteration, we slice a block of BATCH_SIZE out of it
         for idx in range(params.NUM_BATCHES):
-            lower_idx = idx*params.BATCH_SIZE
-            upper_idx = (idx+1)*params.BATCH_SIZE
+            lower_idx = idx * params.BATCH_SIZE
+            upper_idx = (idx + 1) * params.BATCH_SIZE
 
-            batch_observations = from_observations[lower_idx : upper_idx]
-            batch_states = from_states[lower_idx : upper_idx]
-            batch_action_mask = actions[lower_idx : upper_idx]
-            batch_advantages = advantages[lower_idx : upper_idx]
-            batch_target_values = target_values[lower_idx : upper_idx]
+            batch_observations = from_observations[lower_idx: upper_idx]
+            batch_states = from_states[lower_idx: upper_idx]
+            batch_action_mask = actions[lower_idx: upper_idx]
+            batch_advantages = advantages[lower_idx: upper_idx]
+            batch_target_values = target_values[lower_idx: upper_idx]
 
             # the model is responsible for plugging in observations and states as needed
             old_model_feed_dict = self.old_model.create_feed_dict(batch_observations, batch_states)
@@ -169,7 +165,7 @@ class Brain:
         # the infrastructure allows more than one optimizer
         # tensorflow graphs are threadsafe, this num_updates is the only volatile data here
         with self.lock:
-            self.num_updates+=1
+            self.num_updates += 1
             if self.num_updates > params.NUM_UPDATES:
                 self.update_model()
                 self.num_updates = 0

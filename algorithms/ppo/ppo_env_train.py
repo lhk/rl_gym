@@ -8,7 +8,6 @@ import time, threading, os
 
 from ppo.agent import Agent
 from ppo.brain import Brain
-from ppo.conv_models import ConvLSTMModel
 from ppo.fc_models import FullyConnectedModel
 from ppo.memory import Memory
 import ppo.params as params

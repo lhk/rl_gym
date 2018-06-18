@@ -1,26 +1,21 @@
-import time
-
-import tensorflow as tf
+import ppo.params as params
 from keras.layers import *
 from keras.models import *
 from keras.regularizers import l2
-import ppo.params as params
-from ppo.memory import Memory
-
-import lycon
 
 
 class FullyConnectedModel():
     def __init__(self):
         # some parameters now belong to the model
-        self.INPUT_SHAPE=(7,)
+        self.INPUT_SHAPE = (7,)
         self.FC_SIZE = 32
 
         # build a model to predict action probabilities and values
         self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
-        #bnorm = BatchNormalization()(self.input_observation)
+        # bnorm = BatchNormalization()(self.input_observation)
 
-        hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(self.input_observation)
+        hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(
+            self.input_observation)
         bnorm = BatchNormalization()(hidden)
 
         hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
@@ -53,7 +48,6 @@ class FullyConnectedModel():
         return []
 
     def predict(self, observation, state):
-
         # keras always needs a batch dimension
         if observation.shape == self.INPUT_SHAPE:
             observation = observation.reshape((-1, *self.INPUT_SHAPE))

@@ -1,13 +1,8 @@
-import time
-
-import tensorflow as tf
+import lycon
+import ppo.params as params
 from keras.layers import *
 from keras.models import *
 from keras.regularizers import l2
-import ppo.params as params
-from ppo.memory import Memory
-
-import lycon
 
 
 class ConvLSTMModel():
@@ -42,7 +37,8 @@ class ConvLSTMModel():
             gru_tensor)
         pred_value = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(gru_tensor)
 
-        model = Model(inputs=[self.input_observation, self.input_state], outputs=[pred_policy, pred_value, output_memory])
+        model = Model(inputs=[self.input_observation, self.input_state],
+                      outputs=[pred_policy, pred_value, output_memory])
 
         # the model is not compiled with any loss function
         # but the regularizers are still exposed as losses
