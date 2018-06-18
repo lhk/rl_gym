@@ -128,16 +128,17 @@ class Brain:
         length = np.vstack(length)
 
         # predict the final value
-        # _, end_values, _ = self.predict(to_observations, to_states)
-        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+        _, end_values, _ = self.predict(to_observations, to_states)
+        target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
         # TODO: is this necessary
+        # TODO: for terminal = True, the value seems not to be set to 0
         # after reading the openAI baseline, I'm adding some small tweaks to my implementation
         # such as z-normalizing the advantages in a batch
         # they calculate the target value based on the advantage and then z-normalize
-        _, current_values, _ = self.predict(from_observations, from_states)
-        target_values = advantages + current_values
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        #_, current_values, _ = self.predict(from_observations, from_states)
+        #target_values = advantages + current_values
+        #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         # now we iterate through the training data
         # for each iteration, we slice a block of BATCH_SIZE out of it
