@@ -24,7 +24,7 @@ if vis:
     pygame.display.set_caption("observations")
 
 memory = Priority_Memory(DQN_Model)
-brain = Brain(DQN_Model, memory, loss=huber_loss, load_path=None)
+brain = Brain(DQN_Model, memory, loss_func=huber_loss, load_path=None)
 env = Environment()
 agent = Agent(memory, brain, env)
 

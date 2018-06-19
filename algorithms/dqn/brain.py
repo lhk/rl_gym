@@ -13,7 +13,7 @@ import shutil
 
 
 class Brain:
-    def __init__(self, Model, memory: Memory, loss="mse", load_path=None):
+    def __init__(self, Model, memory: Memory, loss_func="mse", load_path=None):
 
         self.memory = memory
         # use this to influence the tensorflow behaviour
@@ -29,6 +29,8 @@ class Brain:
         self.target_model = Model()
         self.stateful = Model.STATEFUL
 
+        self.loss_func = loss_func
+
         # set up ops for training
         self.__setup_training()
 
@@ -43,13 +45,13 @@ class Brain:
 
         self.q_target = Input(shape=(params.NUM_ACTIONS,))
 
-        loss_q = tf.reduce_mean((self.model.q_values_masked - self.q_target) ** 2)
+        loss_q = self.loss_func(self.q_target, self.model.q_values_masked)
 
         loss = loss_q + self.model.loss_regularization
 
         model_variables = self.model.trainable_weights
         target_model_variables = self.target_model.trainable_weights
-        optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
+        optimizer = tf.train.RMSPropOptimizer(learning_rate=params.LEARNING_RATE, decay=params.RHO, epsilon=params.EPSILON)
         gradients_variables = optimizer.compute_gradients(loss, model_variables)
         if not params.GRADIENT_NORM_CLIP is None:
             gradients, variables = zip(*gradients_variables)
