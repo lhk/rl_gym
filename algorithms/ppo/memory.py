@@ -11,7 +11,7 @@ class Memory:
         # from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length
         # the length is the number of steps between from and to
         # this allows the agents to push observations of arbitrary length
-        self.train_queue = [[],[],[],[],[],[],[],[],[],[],[]]
+        self.train_queue = [[], [], [], [], [], [], [], [], [], [], []]
         self.lock = threading.Lock()
 
     def __len__(self):

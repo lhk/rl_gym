@@ -78,9 +78,10 @@ class Brain:
         # again we can feed the cached prediction
         self.old_value = Input(shape=(1,), name="old_value")
         new_value = self.new_model.pred_value
-        new_value_clipped = self.old_value + tf.clip_by_value(new_value - self.old_value, -params.VALUE_CLIP_RANGE, params.VALUE_CLIP_RANGE)
-        value_loss_1 = (new_value - self.target_value)**2
-        value_loss_2 = (new_value_clipped - self.target_value)**2
+        new_value_clipped = self.old_value + tf.clip_by_value(new_value - self.old_value, -params.VALUE_CLIP_RANGE,
+                                                              params.VALUE_CLIP_RANGE)
+        value_loss_1 = (new_value - self.target_value) ** 2
+        value_loss_2 = (new_value_clipped - self.target_value) ** 2
         loss_value = 0.5 * tf.reduce_mean(tf.maximum(value_loss_1, value_loss_2))
         loss_value = params.LOSS_VALUE * loss_value
 
@@ -122,15 +123,16 @@ class Brain:
         # get the training items from the training queue
         batch = self.memory.pop(num_samples)
 
-        (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards, advantages,
+        (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
+         advantages,
          terminals, lengths) = batch
 
         from_observations = np.array(from_observations)
         from_states = np.array(from_states)
         to_observations = np.array(to_observations)
         to_states = np.array(to_states)
-        pred_policies = np.array(pred_policies).reshape((-1,params.NUM_ACTIONS))
-        pred_values = np.array(pred_values).reshape((-1,1))
+        pred_policies = np.array(pred_policies).reshape((-1, params.NUM_ACTIONS))
+        pred_values = np.array(pred_values).reshape((-1, 1))
         actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
         rewards = np.vstack(rewards)
         terminals = np.vstack(terminals)
@@ -138,8 +140,8 @@ class Brain:
         lengths = np.vstack(lengths)
 
         # predict the final value
-        #_, end_values, _ = self.predict(to_observations, to_states)
-        #target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+        # _, end_values, _ = self.predict(to_observations, to_states)
+        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
         # TODO: again, this is the baseline version. find out why the z normalize the advantages
         target_values = advantages + pred_values
@@ -166,8 +168,8 @@ class Brain:
             self.session.run(self.minimize_step, feed_dict={
                 **old_model_feed_dict,
                 **new_model_feed_dict,
-                self.old_policy : batch_policies,
-                self.old_value : batch_values,
+                self.old_policy: batch_policies,
+                self.old_value: batch_values,
                 self.action_mask: batch_action_mask,
                 self.advantage: batch_advantages,
                 self.target_value: batch_target_values})

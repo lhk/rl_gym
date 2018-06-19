@@ -1,7 +1,7 @@
 # parameters for the training setup
 RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
-AGENTS = 1
+AGENTS = 32
 OPTIMIZERS = 1
 WAITING_TIME = 0.0001
 
@@ -9,7 +9,7 @@ WAITING_TIME = 0.0001
 MEM_SIZE = 10000
 
 # parameters for the discount
-NUM_STEPS = 500 # basically always run till episode end
+NUM_STEPS = 500  # basically always run till episode end
 GAMMA = 0.99
 LAMBDA = 0.9
 REWARD_SCALE = 1

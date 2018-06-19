@@ -27,7 +27,7 @@ class Agent(threading.Thread):
         # action 0 and reward 0 are between state 0 and 1
         self.seen_observations = []  # state of the environment
         self.seen_values = []  # corresponding estimated values (given by network)
-        self.seen_policies = [] # policies predicted by the network
+        self.seen_policies = []  # policies predicted by the network
         self.seen_states = []  # state of the model
         self.seen_actions = []  # actions taken
         self.seen_rewards = []  # rewards given
@@ -164,7 +164,9 @@ class Agent(threading.Thread):
         pred_value = self.seen_values.pop(0)
         pred_policy = self.seen_policies.pop(0)
 
-        batch = (from_observation, from_state, to_observation, to_state, pred_policy, pred_value, action, reward, advantage_gae, terminal, length)
+        batch = (
+        from_observation, from_state, to_observation, to_state, pred_policy, pred_value, action, reward, advantage_gae,
+        terminal, length)
         self.shared_memory.push(batch)
 
         self.n_step_reward = (self.n_step_reward - reward)
