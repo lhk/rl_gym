@@ -27,7 +27,7 @@ RATIO_CLIP_VALUE = 0.15
 VALUE_CLIP_RANGE = 0.15
 NUM_UPDATES = 1  # updates before we switch old and new policies
 
-NUM_BATCHES = 10
+NUM_BATCHES = 1
 BATCH_SIZE = 32
 
 L2_REG_CONV = 0  # 1e-3

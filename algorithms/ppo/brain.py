@@ -51,14 +51,14 @@ class Brain:
         # we use tensorflow to create a minimization step for the custom loss
 
         # placeholders
-        self.action_mask = Input(shape=(params.NUM_ACTIONS,))
+        self.action_mask = Input(shape=(params.NUM_ACTIONS,), name="action_mask")
 
-        self.target_value = Input(shape=(1,))
-        self.advantage = Input(shape=(1,))
+        self.target_value = Input(shape=(1,), name="target_value")
+        self.advantage = Input(shape=(1,), name="advantage")
 
         # the policies as predicted by old and new network
         # old policy should be cached in the memory, we can feed it here
-        self.old_policy = Input(shape=(params.NUM_ACTIONS,))
+        self.old_policy = Input(shape=(params.NUM_ACTIONS,), name="old_policy")
         new_policy = self.new_model.pred_policy
 
         # masking them, only looking at the action that was actually taken
@@ -76,7 +76,7 @@ class Brain:
 
         # the values as predicted by old and new,
         # again we can feed the cached prediction
-        self.old_value = Input(shape=(1,))
+        self.old_value = Input(shape=(1,), name="old_value")
         new_value = self.new_model.pred_value
         new_value_clipped = self.old_value + tf.clip_by_value(new_value - self.old_value, -params.VALUE_CLIP_RANGE, params.VALUE_CLIP_RANGE)
         value_loss_1 = (new_value - self.target_value)**2
@@ -129,12 +129,12 @@ class Brain:
         from_states = np.array(from_states)
         to_observations = np.array(to_observations)
         to_states = np.array(to_states)
-        pred_policies = np.array(pred_policies)
-        pred_values = np.array(pred_values)
-        actions = np.vstack(actions)
+        pred_policies = np.array(pred_policies).reshape((-1,params.NUM_ACTIONS))
+        pred_values = np.array(pred_values).reshape((-1,1))
+        actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
         rewards = np.vstack(rewards)
         terminals = np.vstack(terminals)
-        advantages = np.vstack(advantages)
+        advantages = np.vstack(advantages).reshape((-1, 1))
         lengths = np.vstack(lengths)
 
         # predict the final value
