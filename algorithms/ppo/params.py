@@ -24,6 +24,7 @@ LOSS_VALUE = .5
 LOSS_ENTROPY = .01
 GRADIENT_NORM_CLIP = 20
 RATIO_CLIP_VALUE = 0.15
+VALUE_CLIP_RANGE = 0.15
 NUM_UPDATES = 1  # updates before we switch old and new policies
 
 NUM_BATCHES = 10

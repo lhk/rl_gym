@@ -57,46 +57,52 @@ class Brain:
         self.advantage = Input(shape=(1,))
 
         # the policies as predicted by old and new network
-        old_policy = self.old_model.pred_policy
+        # old policy should be cached in the memory, we can feed it here
+        self.old_policy = Input(shape=(params.NUM_ACTIONS,))
         new_policy = self.new_model.pred_policy
 
         # masking them, only looking at the action that was actually taken
-        old_action = old_policy * self.action_mask
+        old_action = self.old_policy * self.action_mask
         new_action = new_policy * self.action_mask
 
         old_action = K.sum(old_action, axis=-1, keepdims=True)
         new_action = K.sum(new_action, axis=-1, keepdims=True)
 
-        # creating the ratio for ppo
+        # set up the policy loss of ppo
         ratio = K.exp(K.log(new_action) - K.log(old_action))
-
-        # ppo looks at two losses for the policy
-        # their minimum is maximized
         loss1 = ratio * self.advantage
         loss2 = tf.clip_by_value(ratio, 1.0 - params.RATIO_CLIP_VALUE, 1.0 + params.RATIO_CLIP_VALUE) * self.advantage
         loss_policy = - tf.reduce_mean(tf.minimum(loss1, loss2))
 
-        # the next component of the loss is the value function
-        # this is the same as for A3C: an n_step TD-lambda
-        # TODO: since we look many steps into the future, this will be high variance. Replace it with huber loss
-        pred_value = self.new_model.pred_value
-        loss_value = params.LOSS_VALUE * (self.target_value - pred_value) ** 2
+        # the values as predicted by old and new,
+        # again we can feed the cached prediction
+        self.old_value = Input(shape=(1,))
+        new_value = self.new_model.pred_value
+        new_value_clipped = self.old_value + tf.clip_by_value(new_value - self.old_value, -params.VALUE_CLIP_RANGE, params.VALUE_CLIP_RANGE)
+        value_loss_1 = (new_value - self.target_value)**2
+        value_loss_2 = (new_value_clipped - self.target_value)**2
+        loss_value = 0.5 * tf.reduce_mean(tf.maximum(value_loss_1, value_loss_2))
+        loss_value = params.LOSS_VALUE * loss_value
 
         # the loss contains an entropy component which rewards exploration
         eps = 1e-10
-        loss_entropy = - params.LOSS_ENTROPY * K.sum(new_policy * K.log(new_policy + eps), axis=-1, keepdims=True)
+        loss_entropy = - K.sum(new_policy * K.log(new_policy + eps), axis=-1, keepdims=True)
+        loss_entropy = params.LOSS_ENTROPY * loss_entropy
 
         # and we also add regularization
         loss_regularization = self.new_model.loss_regularization
+
+        # the sum of all losses is
         loss = tf.reduce_sum(loss_policy + loss_value + loss_regularization + loss_entropy)
 
-        # we have to use tensorflow, this is not possible withing a custom keras loss function
+        # set up a tensorflow minimizer
         new_policy_variables = self.new_model.trainable_weights
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
         gradients_variables = optimizer.compute_gradients(loss, new_policy_variables)
-        gradients, variables = zip(*gradients_variables)
-        gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
-        gradients_variables = zip(gradients, variables)
+        if params.GRADIENT_NORM_CLIP is not None:
+            gradients, variables = zip(*gradients_variables)
+            gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
+            gradients_variables = zip(gradients, variables)
         minimize_step = optimizer.apply_gradients(gradients_variables)
 
         self.minimize_step = minimize_step
@@ -116,29 +122,28 @@ class Brain:
         # get the training items from the training queue
         batch = self.memory.pop(num_samples)
 
-        from_observations, from_states, to_observations, to_states, actions, rewards, advantages, terminals, length = batch
+        (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards, advantages,
+         terminals, lengths) = batch
+
         from_observations = np.array(from_observations)
         from_states = np.array(from_states)
         to_observations = np.array(to_observations)
         to_states = np.array(to_states)
+        pred_policies = np.array(pred_policies)
+        pred_values = np.array(pred_values)
         actions = np.vstack(actions)
         rewards = np.vstack(rewards)
         terminals = np.vstack(terminals)
         advantages = np.vstack(advantages)
-        length = np.vstack(length)
+        lengths = np.vstack(lengths)
 
         # predict the final value
-        _, end_values, _ = self.predict(to_observations, to_states)
-        target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+        #_, end_values, _ = self.predict(to_observations, to_states)
+        #target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
-        # TODO: is this necessary
-        # TODO: for terminal = True, the value seems not to be set to 0
-        # after reading the openAI baseline, I'm adding some small tweaks to my implementation
-        # such as z-normalizing the advantages in a batch
-        # they calculate the target value based on the advantage and then z-normalize
-        #_, current_values, _ = self.predict(from_observations, from_states)
-        #target_values = advantages + current_values
-        #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        # TODO: again, this is the baseline version. find out why the z normalize the advantages
+        target_values = advantages + pred_values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         # now we iterate through the training data
         # for each iteration, we slice a block of BATCH_SIZE out of it
@@ -148,6 +153,8 @@ class Brain:
 
             batch_observations = from_observations[lower_idx: upper_idx]
             batch_states = from_states[lower_idx: upper_idx]
+            batch_policies = pred_policies[lower_idx:upper_idx]
+            batch_values = pred_values[lower_idx:upper_idx]
             batch_action_mask = actions[lower_idx: upper_idx]
             batch_advantages = advantages[lower_idx: upper_idx]
             batch_target_values = target_values[lower_idx: upper_idx]
@@ -159,6 +166,8 @@ class Brain:
             self.session.run(self.minimize_step, feed_dict={
                 **old_model_feed_dict,
                 **new_model_feed_dict,
+                self.old_policy : batch_policies,
+                self.old_value : batch_values,
                 self.action_mask: batch_action_mask,
                 self.advantage: batch_advantages,
                 self.target_value: batch_target_values})

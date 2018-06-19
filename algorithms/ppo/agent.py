@@ -27,6 +27,7 @@ class Agent(threading.Thread):
         # action 0 and reward 0 are between state 0 and 1
         self.seen_observations = []  # state of the environment
         self.seen_values = []  # corresponding estimated values (given by network)
+        self.seen_policies = [] # policies predicted by the network
         self.seen_states = []  # state of the model
         self.seen_actions = []  # actions taken
         self.seen_rewards = []  # rewards given
@@ -70,18 +71,18 @@ class Agent(threading.Thread):
             time.sleep(params.WAITING_TIME)
 
             # show current state to network and get predicted policy
-            actions, value, state = self.brain.predict(observation, state)
+            policy, value, state = self.brain.predict(observation, state)
 
             # flatten the output
             # TODO: predict flattened output by the model
-            actions = actions[0]
+            policy = policy[0]
             if [] != state:
                 state = state[0]
             value = value[0, 0]
 
-            action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
+            action = np.random.choice(params.NUM_ACTIONS, p=policy)
 
-            new_observation, reward, done, _ = self.env.step(action_index)
+            new_observation, reward, done, _ = self.env.step(action)
             reward *= params.REWARD_SCALE
 
             if done:
@@ -90,11 +91,12 @@ class Agent(threading.Thread):
                 new_observation = self.brain.preprocess(new_observation)
 
             actions_onehot = np.zeros(params.NUM_ACTIONS)
-            actions_onehot[action_index] = 1
+            actions_onehot[action] = 1
 
             # append observations to local memory
             self.seen_values.append(value)
             self.seen_states.append(state)
+            self.seen_policies.append(policy)
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)
             self.seen_observations.append(new_observation)
@@ -117,6 +119,7 @@ class Agent(threading.Thread):
             observation = new_observation
             total_reward += reward
 
+            # TODO: implement openai render() on custom envs
             if self.vis:
                 self.canvas[:] = 0
                 self.env.render_to_canvas(self.canvas)
@@ -156,15 +159,15 @@ class Agent(threading.Thread):
         from_state = self.seen_states.pop(0)
         to_observation = self.seen_observations[-1]
         to_state = self.seen_states[-1]
-        first_action = self.seen_actions.pop(0)
-        first_reward = self.seen_rewards.pop(0)
-        first_value = self.seen_values.pop(0)
+        action = self.seen_actions.pop(0)
+        reward = self.seen_rewards.pop(0)
+        pred_value = self.seen_values.pop(0)
+        pred_policy = self.seen_policies.pop(0)
 
-        batch = (from_observation, from_state, to_observation, to_state, first_action, self.n_step_reward,
-                 advantage_gae, terminal, length)
+        batch = (from_observation, from_state, to_observation, to_state, pred_policy, pred_value, action, reward, advantage_gae, terminal, length)
         self.shared_memory.push(batch)
 
-        self.n_step_reward = (self.n_step_reward - first_reward)
+        self.n_step_reward = (self.n_step_reward - reward)
 
     def compute_gae(self, rewards, values, terminal):
         length = len(rewards)
