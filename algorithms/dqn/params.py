@@ -8,7 +8,7 @@ RETRAIN = True
 # parameters for the structure of the neural network
 NUM_ACTIONS = 4  # 4 for breakout, 6 for spaceinvaders
 FRAME_SIZE = (84, 84)
-FRAME_STACK = 3  # number of consecutive frames to stack as input for the network
+FRAME_STACK = 2  # number of consecutive frames to stack as input for the network
 INPUT_SHAPE = (*FRAME_SIZE, FRAME_STACK)
 BATCH_SIZE = 32
 
@@ -20,7 +20,7 @@ REWARD_SCALE = 1
 LEARNING_RATE = 0.00025
 RHO = 0.95
 EPSILON = 0.01
-GRADIENT_NORM_CLIP = 100  # very high, basically switched off
+GRADIENT_NORM_CLIP = None  # switched off
 
 # parameters for the training
 TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops

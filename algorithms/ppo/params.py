@@ -15,7 +15,7 @@ LAMBDA = 0.9
 REWARD_SCALE = 1
 
 # parameters for the neural network
-NUM_ACTIONS = 4
+NUM_ACTIONS = 2
 
 # parameters for the training
 LEARNING_RATE = 5e-3
@@ -24,9 +24,9 @@ LOSS_VALUE = .5
 LOSS_ENTROPY = .01
 GRADIENT_NORM_CLIP = 20
 RATIO_CLIP_VALUE = 0.15
-NUM_UPDATES = 5  # updates before we switch old and new policies
+NUM_UPDATES = 1  # updates before we switch old and new policies
 
-NUM_BATCHES = 30
+NUM_BATCHES = 10
 BATCH_SIZE = 32
 
 L2_REG_CONV = 0  # 1e-3

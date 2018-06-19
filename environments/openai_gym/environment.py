@@ -20,9 +20,9 @@ class Environment():
         return self.last_observation
 
     def step(self, action):
-        observation, reward, done, _ = self.env.step(action)
+        observation, reward, done, info = self.env.step(action)
         self.last_observation = observation
-        return observation, reward, done
+        return observation, reward, done, info
 
     def sample_action(self):
         # for atari, the actions are simply numbers

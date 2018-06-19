@@ -51,9 +51,10 @@ class Brain:
         target_model_variables = self.target_model.trainable_weights
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
         gradients_variables = optimizer.compute_gradients(loss, model_variables)
-        gradients, variables = zip(*gradients_variables)
-        gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
-        gradients_variables = zip(gradients, variables)
+        if not params.GRADIENT_NORM_CLIP is None:
+            gradients, variables = zip(*gradients_variables)
+            gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
+            gradients_variables = zip(gradients, variables)
         minimize_step = optimizer.apply_gradients(gradients_variables)
 
         self.minimize_step = minimize_step
