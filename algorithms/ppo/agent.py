@@ -9,8 +9,8 @@ from algorithms.ppo.brain import Brain
 from algorithms.ppo.memory import Memory
 
 # from environments.obstacle_car.environment import Environment_Graphical as Environment
-# from environments.obstacle_car.environment_vec import Environment_Vec as Environment
-from environments.openai_gym.environment import Environment
+from environments.obstacle_car.environment_vec import Environment_Vec as Environment
+#from environments.openai_gym.environment import Environment
 import pygame
 
 

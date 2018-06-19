@@ -8,7 +8,7 @@ import algorithms.ppo.params as params
 class FullyConnectedModel():
     def __init__(self):
         # some parameters now belong to the model
-        self.INPUT_SHAPE = (4,)
+        self.INPUT_SHAPE = (7,)
         self.FC_SIZE = 32
 
         # build a model to predict action probabilities and values
