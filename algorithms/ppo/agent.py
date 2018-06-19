@@ -165,8 +165,9 @@ class Agent(threading.Thread):
         pred_policy = self.seen_policies.pop(0)
 
         batch = (
-        from_observation, from_state, to_observation, to_state, pred_policy, pred_value, action, reward, advantage_gae,
-        terminal, length)
+            from_observation, from_state, to_observation, to_state, pred_policy, pred_value, action, reward,
+            advantage_gae,
+            terminal, length)
         self.shared_memory.push(batch)
 
         self.n_step_reward = (self.n_step_reward - reward)
