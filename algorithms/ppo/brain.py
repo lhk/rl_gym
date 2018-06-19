@@ -117,72 +117,78 @@ class Brain:
 
         # yield control if there is not enough training data in the memory
         if len(self.memory) < num_samples:
+            print(Fore.RED + "memsleep" + Style.RESET_ALL)
             time.sleep(0)
             return
 
-        # get the training items from the training queue
-        batch = self.memory.pop(num_samples)
+        # get all training data from the memory
+        batch = self.memory.pop(None)
 
-        (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
-         advantages,
-         terminals, lengths) = batch
+        # during training, prevent agents from pushing new data to the memory
+        with self.memory.lock:
 
-        from_observations = np.array(from_observations)
-        from_states = np.array(from_states)
-        to_observations = np.array(to_observations)
-        to_states = np.array(to_states)
-        pred_policies = np.array(pred_policies).reshape((-1, params.NUM_ACTIONS))
-        pred_values = np.array(pred_values).reshape((-1, 1))
-        actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
-        rewards = np.vstack(rewards)
-        terminals = np.vstack(terminals)
-        advantages = np.vstack(advantages).reshape((-1, 1))
-        lengths = np.vstack(lengths)
+            (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
+             advantages,
+             terminals, lengths) = batch
 
-        # predict the final value
-        # _, end_values, _ = self.predict(to_observations, to_states)
-        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+            from_observations = np.array(from_observations)
+            from_states = np.array(from_states)
+            to_observations = np.array(to_observations)
+            to_states = np.array(to_states)
+            pred_policies = np.array(pred_policies).reshape((-1, params.NUM_ACTIONS))
+            pred_values = np.array(pred_values).reshape((-1, 1))
+            actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
+            rewards = np.vstack(rewards)
+            terminals = np.vstack(terminals)
+            advantages = np.vstack(advantages).reshape((-1, 1))
+            lengths = np.vstack(lengths)
 
-        # TODO: again, this is the baseline version. find out why the z normalize the advantages
-        target_values = advantages + pred_values
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+            num_samples = from_observations.shape[0]
 
-        # now we iterate through the training data
-        # for each iteration, we slice a block of BATCH_SIZE out of it
-        for idx in range(params.NUM_BATCHES):
-            lower_idx = idx * params.BATCH_SIZE
-            upper_idx = (idx + 1) * params.BATCH_SIZE
+            # predict the final value
+            # _, end_values, _ = self.predict(to_observations, to_states)
+            # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
-            batch_observations = from_observations[lower_idx: upper_idx]
-            batch_states = from_states[lower_idx: upper_idx]
-            batch_policies = pred_policies[lower_idx:upper_idx]
-            batch_values = pred_values[lower_idx:upper_idx]
-            batch_action_mask = actions[lower_idx: upper_idx]
-            batch_advantages = advantages[lower_idx: upper_idx]
-            batch_target_values = target_values[lower_idx: upper_idx]
+            # TODO: again, this is the baseline version. find out why the z normalize the advantages
+            target_values = advantages + pred_values
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-            # the model is responsible for plugging in observations and states as needed
-            old_model_feed_dict = self.old_model.create_feed_dict(batch_observations, batch_states)
-            new_model_feed_dict = self.new_model.create_feed_dict(batch_observations, batch_states)
+            # now we iterate through the training data
+            # for each iteration, we slice a block of BATCH_SIZE out of it
+            for idx in range(num_samples//params.BATCH_SIZE):
+                lower_idx = idx * params.BATCH_SIZE
+                upper_idx = (idx + 1) * params.BATCH_SIZE
 
-            self.session.run(self.minimize_step, feed_dict={
-                **old_model_feed_dict,
-                **new_model_feed_dict,
-                self.old_policy: batch_policies,
-                self.old_value: batch_values,
-                self.action_mask: batch_action_mask,
-                self.advantage: batch_advantages,
-                self.target_value: batch_target_values})
+                batch_observations = from_observations[lower_idx: upper_idx]
+                batch_states = from_states[lower_idx: upper_idx]
+                batch_policies = pred_policies[lower_idx:upper_idx]
+                batch_values = pred_values[lower_idx:upper_idx]
+                batch_action_mask = actions[lower_idx: upper_idx]
+                batch_advantages = advantages[lower_idx: upper_idx]
+                batch_target_values = target_values[lower_idx: upper_idx]
 
-        # after some training runs, we update the model
-        # the infrastructure allows more than one optimizer
-        # tensorflow graphs are threadsafe, this num_updates is the only volatile data here
-        with self.lock:
-            self.num_updates += 1
-            if self.num_updates > params.NUM_UPDATES:
-                self.update_model()
-                self.num_updates = 0
-                print(Fore.RED + "update" + Style.RESET_ALL)
+                # the model is responsible for plugging in observations and states as needed
+                old_model_feed_dict = self.old_model.create_feed_dict(batch_observations, batch_states)
+                new_model_feed_dict = self.new_model.create_feed_dict(batch_observations, batch_states)
+
+                self.session.run(self.minimize_step, feed_dict={
+                    **old_model_feed_dict,
+                    **new_model_feed_dict,
+                    self.old_policy: batch_policies,
+                    self.old_value: batch_values,
+                    self.action_mask: batch_action_mask,
+                    self.advantage: batch_advantages,
+                    self.target_value: batch_target_values})
+
+            # after some training runs, we update the model
+            # the infrastructure allows more than one optimizer
+            # tensorflow graphs are threadsafe, this num_updates is the only volatile data here
+            with self.lock:
+                self.num_updates += 1
+                if self.num_updates > params.NUM_UPDATES:
+                    self.update_model()
+                    self.num_updates = 0
+                    print(Fore.RED + "update" + Style.RESET_ALL)
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain
