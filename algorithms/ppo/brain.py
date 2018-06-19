@@ -117,7 +117,7 @@ class Brain:
 
         # yield control if there is not enough training data in the memory
         if len(self.memory) < num_samples:
-            print(Fore.RED + "memsleep" + Style.RESET_ALL)
+            #print(Fore.RED + "memsleep" + Style.RESET_ALL)
             time.sleep(0)
             return
 
