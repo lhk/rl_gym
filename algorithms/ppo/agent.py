@@ -17,10 +17,12 @@ import pygame
 class Agent(threading.Thread):
     def __init__(self, brain: Brain,
                  shared_memory: Memory,
+                 collect_data,
                  vis=False):
 
         threading.Thread.__init__(self)
 
+        self.collect_data = collect_data
         self.env = Environment()
 
         # a local memory, to store observations made by this agent
@@ -51,33 +53,49 @@ class Agent(threading.Thread):
             self.window = pygame.display.set_mode(self.canvas_size)
             pygame.display.set_caption("Pygame cheat sheet")
 
+    def reset(self):
+        # clear all local memory
+        self.seen_observations = []  # state of the environment
+        self.seen_values = []  # corresponding estimated values (given by network)
+        self.seen_policies = []  # policies predicted by the network
+        self.seen_states = []  # state of the model
+        self.seen_actions = []  # actions taken
+        self.seen_rewards = []  # rewards given
+
+        # reset n-step reward calculation
+        self.n_step_reward = 0  # reward for n consecutive steps
+
+        # reset environment
+        self.observation = self.env.reset()
+        self.observation = self.brain.preprocess(self.observation)
+        self.seen_observations = [self.observation]
+
+        # reset model
+        self.state = self.brain.get_initial_state()
+        self.seen_states = [self.state]
+
     def run_one_episode(self):
 
-        # reset state of the agent
-        observation = self.env.reset()
-        observation = self.brain.preprocess(observation)
-        self.seen_observations = [observation]
-
-        # the model can be stateful
-        # TODO: handle this in a clean way for models without state, I guess I'll just define no state as []
-        state = self.brain.get_initial_state()
-        self.seen_states = [state]
-
+        self.reset()
         total_reward = 0
-        self.n_step_reward = 0
 
         # runs until episode is over, or self.stop == True
         while True:
-            time.sleep(params.WAITING_TIME)
+
+            # when the brain starts training, this event will be cleared ( = set to false)
+            # then we reset the agent and wait for the event to be set again
+            if not self.collect_data.is_set():
+                self.collect_data.wait()
+                return
 
             # show current state to network and get predicted policy
-            policy, value, state = self.brain.predict(observation, state)
+            policy, value, self.state = self.brain.predict(self.observation, self.state)
 
             # flatten the output
             # TODO: predict flattened output by the model
             policy = policy[0]
-            if [] != state:
-                state = state[0]
+            if [] != self.state:
+                self.state = self.state[0]
             value = value[0, 0]
 
             action = np.random.choice(params.NUM_ACTIONS, p=policy)
@@ -86,7 +104,7 @@ class Agent(threading.Thread):
             reward *= params.REWARD_SCALE
 
             if done:
-                new_observation = np.zeros_like(observation)
+                new_observation = np.zeros_like(self.observation)
             else:
                 new_observation = self.brain.preprocess(new_observation)
 
@@ -95,7 +113,7 @@ class Agent(threading.Thread):
 
             # append observations to local memory
             self.seen_values.append(value)
-            self.seen_states.append(state)
+            self.seen_states.append(self.state)
             self.seen_policies.append(policy)
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)
@@ -104,6 +122,11 @@ class Agent(threading.Thread):
 
             assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
                                                                "local memory must be moved to shared memory"
+
+
+            # update state of agent
+            self.observation = new_observation
+            total_reward += reward
 
             # move local memory to shared memory
             if done:
@@ -114,10 +137,6 @@ class Agent(threading.Thread):
 
             elif len(self.seen_actions) == params.NUM_STEPS:
                 self.move_to_memory(done)
-
-            # update state of agent
-            observation = new_observation
-            total_reward += reward
 
             # TODO: implement openai render() on custom envs
             if self.vis:
@@ -150,7 +169,7 @@ class Agent(threading.Thread):
         # removes one set of observations from local memory
         # and pushes it to shared memory
 
-        # read the length first, before popping anything
+        #  read the length first, before popping anything
         length = len(self.seen_actions)
 
         advantage_gae = self.compute_gae(np.array(self.seen_rewards), np.array(self.seen_values), terminal)

@@ -7,7 +7,9 @@ import algorithms.ppo.params as params
 
 
 class Memory:
-    def __init__(self):
+    def __init__(self, collect_data):
+        self.collect_data = collect_data
+
         # from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length
         # the length is the number of steps between from and to
         # this allows the agents to push observations of arbitrary length
@@ -19,13 +21,19 @@ class Memory:
 
     def pop(self, size=1):
         with self.lock:
+            if size is None:
+                size = len(self)
             retval = [entry[:size] for entry in self.train_queue]
             self.train_queue = [entry[size:] for entry in self.train_queue]
 
             return retval
 
     def push(self, batch):
-        while (len(self) > params.MEM_SIZE):
+
+        if not self.collect_data.is_set():
+            return
+
+        while (len(self) >= params.MEM_SIZE):
             time.sleep(
                 params.WAITING_TIME)  # yield control, if all agents sleep, brain gets to optimize away the memory
 

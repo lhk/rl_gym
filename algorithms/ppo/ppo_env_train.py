@@ -24,12 +24,16 @@ class Optimizer(threading.Thread):
         while not self.stop:
             brain.optimize()
 
+from multiprocessing import Event
 
-memory = Memory()
-brain = Brain(memory, FullyConnectedModel)
+collect_data = Event()
+collect_data.set()
 
-agents = [Agent(brain, memory) for i in range(params.AGENTS)]
-agents.append(Agent(brain, memory, vis=True))  # one agent for the visualization
+memory = Memory(collect_data)
+brain = Brain(memory, FullyConnectedModel, collect_data)
+
+agents = [Agent(brain, memory, collect_data) for i in range(params.AGENTS)]
+#agents.append(Agent(brain, memory, collect_data,  vis=True))  # one agent for the visualization
 opts = [Optimizer(brain) for i in range(params.OPTIMIZERS)]
 
 for o in opts:

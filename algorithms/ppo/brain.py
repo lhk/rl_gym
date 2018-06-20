@@ -12,7 +12,10 @@ from algorithms.ppo.memory import Memory
 
 class Brain:
 
-    def __init__(self, memory: Memory, ModelClass: ConvLSTMModel):
+    def __init__(self, memory: Memory, ModelClass: ConvLSTMModel, collect_data):
+
+        self.collect_data = collect_data
+
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
@@ -22,10 +25,8 @@ class Brain:
         K.set_session(self.session)
         K.manual_variable_initialization(True)
 
-        # set up a model for policy and values
-        # set up placeholders for the inputs during training
-        self.old_model = ModelClass()
-        self.new_model = ModelClass()
+        # set up a model for policy and
+        self.model = ModelClass()
 
         # the model only contains the function approximator
         # the loss function for training is set up here
@@ -33,18 +34,13 @@ class Brain:
 
         # running tensorflow in a multithreaded environment requires additional setup work
         # and freezing the resulting graph
-        self.old_model.model._make_predict_function()
-        self.new_model.model._make_predict_function()
+        self.model.model._make_predict_function()
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
         self.default_graph.finalize()
 
         # a globally shared memory, this will be filled by the asynchronous agents
         self.memory = memory
-
-        # updating old to new policy needs to be synchronized
-        self.lock = Lock()
-        self.num_updates = 0
 
     def __setup_training(self):
         # due to keras' restrictions on loss functions,
@@ -59,7 +55,7 @@ class Brain:
         # the policies as predicted by old and new network
         # old policy should be cached in the memory, we can feed it here
         self.old_policy = Input(shape=(params.NUM_ACTIONS,), name="old_policy")
-        new_policy = self.new_model.pred_policy
+        new_policy = self.model.pred_policy
 
         # masking them, only looking at the action that was actually taken
         old_action = self.old_policy * self.action_mask
@@ -77,7 +73,7 @@ class Brain:
         # the values as predicted by old and new,
         # again we can feed the cached prediction
         self.old_value = Input(shape=(1,), name="old_value")
-        new_value = self.new_model.pred_value
+        new_value = self.model.pred_value
         new_value_clipped = self.old_value + tf.clip_by_value(new_value - self.old_value, -params.VALUE_CLIP_RANGE,
                                                               params.VALUE_CLIP_RANGE)
         value_loss_1 = (new_value - self.target_value) ** 2
@@ -91,13 +87,13 @@ class Brain:
         loss_entropy = params.LOSS_ENTROPY * loss_entropy
 
         # and we also add regularization
-        loss_regularization = self.new_model.loss_regularization
+        loss_regularization = self.model.loss_regularization
 
         # the sum of all losses is
         loss = tf.reduce_sum(loss_policy + loss_value + loss_regularization + loss_entropy)
 
         # set up a tensorflow minimizer
-        new_policy_variables = self.new_model.trainable_weights
+        new_policy_variables = self.model.trainable_weights
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
         gradients_variables = optimizer.compute_gradients(loss, new_policy_variables)
         if params.GRADIENT_NORM_CLIP is not None:
@@ -107,9 +103,6 @@ class Brain:
         minimize_step = optimizer.apply_gradients(gradients_variables)
 
         self.minimize_step = minimize_step
-
-        self.assignments = [tf.assign(to_var, from_var) for (to_var, from_var) in
-                            zip(self.old_model.trainable_weights, self.new_model.trainable_weights)]
 
     def optimize(self):
         # we train on blocks of this size
@@ -121,86 +114,76 @@ class Brain:
             time.sleep(0)
             return
 
-        with self.lock:
-            # get all training data from the memory
-            batch = self.memory.pop(None)
+        # start the updating process
+        # the agent processes will see that this event has been set
+        # they will wait for it to be cleared before continuing to generate samples
+        self.collect_data.clear()
 
-            (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
-             advantages,
-             terminals, lengths) = batch
+        # get all training data from the memory
+        batch = self.memory.pop(None)
 
-            from_observations = np.array(from_observations)
-            from_states = np.array(from_states)
-            to_observations = np.array(to_observations)
-            to_states = np.array(to_states)
-            pred_policies = np.array(pred_policies).reshape((-1, params.NUM_ACTIONS))
-            pred_values = np.array(pred_values).reshape((-1, 1))
-            actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
-            rewards = np.vstack(rewards)
-            terminals = np.vstack(terminals)
-            advantages = np.vstack(advantages).reshape((-1, 1))
-            lengths = np.vstack(lengths)
+        (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
+         advantages,
+         terminals, lengths) = batch
 
-            num_samples = from_observations.shape[0]
+        from_observations = np.array(from_observations)
+        from_states = np.array(from_states)
+        to_observations = np.array(to_observations)
+        to_states = np.array(to_states)
+        pred_policies = np.array(pred_policies).reshape((-1, params.NUM_ACTIONS))
+        pred_values = np.array(pred_values).reshape((-1, 1))
+        actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
+        rewards = np.vstack(rewards)
+        terminals = np.vstack(terminals)
+        advantages = np.vstack(advantages).reshape((-1, 1))
+        lengths = np.vstack(lengths)
 
-            # predict the final value
-            # _, end_values, _ = self.predict(to_observations, to_states)
-            # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+        num_samples = from_observations.shape[0]
 
-            # TODO: again, this is the baseline version. find out why the z normalize the advantages
-            target_values = advantages + pred_values
-            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        # predict the final value
+        # _, end_values, _ = self.predict(to_observations, to_states)
+        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
 
-            # now we iterate through the training data
-            # for each iteration, we slice a block of BATCH_SIZE out of it
-            for idx in range(num_samples//params.BATCH_SIZE):
-                lower_idx = idx * params.BATCH_SIZE
-                upper_idx = (idx + 1) * params.BATCH_SIZE
+        # TODO: again, this is the baseline version. find out why the z normalize the advantages
+        target_values = advantages + pred_values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-                batch_observations = from_observations[lower_idx: upper_idx]
-                batch_states = from_states[lower_idx: upper_idx]
-                batch_policies = pred_policies[lower_idx:upper_idx]
-                batch_values = pred_values[lower_idx:upper_idx]
-                batch_action_mask = actions[lower_idx: upper_idx]
-                batch_advantages = advantages[lower_idx: upper_idx]
-                batch_target_values = target_values[lower_idx: upper_idx]
+        # now we iterate through the training data
+        # for each iteration, we slice a block of BATCH_SIZE out of it
+        for idx in range(num_samples//params.BATCH_SIZE):
+            lower_idx = idx * params.BATCH_SIZE
+            upper_idx = (idx + 1) * params.BATCH_SIZE
 
-                # the model is responsible for plugging in observations and states as needed
-                old_model_feed_dict = self.old_model.create_feed_dict(batch_observations, batch_states)
-                new_model_feed_dict = self.new_model.create_feed_dict(batch_observations, batch_states)
+            batch_observations = from_observations[lower_idx: upper_idx]
+            batch_states = from_states[lower_idx: upper_idx]
+            batch_policies = pred_policies[lower_idx:upper_idx]
+            batch_values = pred_values[lower_idx:upper_idx]
+            batch_action_mask = actions[lower_idx: upper_idx]
+            batch_advantages = advantages[lower_idx: upper_idx]
+            batch_target_values = target_values[lower_idx: upper_idx]
 
-                self.session.run(self.minimize_step, feed_dict={
-                    **old_model_feed_dict,
-                    **new_model_feed_dict,
-                    self.old_policy: batch_policies,
-                    self.old_value: batch_values,
-                    self.action_mask: batch_action_mask,
-                    self.advantage: batch_advantages,
-                    self.target_value: batch_target_values})
+            # the model is responsible for plugging in observations and states as needed
+            new_model_feed_dict = self.model.create_feed_dict(batch_observations, batch_states)
 
-            # after some training runs, we update the model
-            # the infrastructure allows more than one optimizer
-            # tensorflow graphs are threadsafe, this num_updates is the only volatile data here
-            with self.lock:
-                self.num_updates += 1
-                if self.num_updates > params.NUM_UPDATES:
-                    self.update_model()
-                    self.num_updates = 0
-                    print(Fore.RED + "update" + Style.RESET_ALL)
+            self.session.run(self.minimize_step, feed_dict={
+                **new_model_feed_dict,
+                self.old_policy: batch_policies,
+                self.old_value: batch_values,
+                self.action_mask: batch_action_mask,
+                self.advantage: batch_advantages,
+                self.target_value: batch_target_values})
+
+        # tell the agents to collect data again
+        self.collect_data.set()
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain
     def predict(self, observation, state):
-        with self.lock:
-            with self.default_graph.as_default():
-                return self.old_model.predict(observation, state)
+        with self.default_graph.as_default():
+            return self.model.predict(observation, state)
 
     def preprocess(self, observation):
-        return self.old_model.preprocess(observation)
+        return self.model.preprocess(observation)
 
     def get_initial_state(self):
-        return self.old_model.get_initial_state()
-
-    def update_model(self):
-        with self.default_graph.as_default():
-            self.session.run(self.assignments)
+        return self.model.get_initial_state()

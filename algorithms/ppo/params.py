@@ -1,15 +1,12 @@
 # parameters for the training setup
 RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
-AGENTS = 12
+AGENTS = 1
 OPTIMIZERS = 1
 WAITING_TIME = 0.0001
 
-# params for the memory
-MEM_SIZE = 10000
-
 # parameters for the discount
-NUM_STEPS = 500  # basically always run till episode end
+NUM_STEPS = 10  # basically always run till episode end
 GAMMA = 0.99
 LAMBDA = 0.9
 REWARD_SCALE = 1
@@ -27,8 +24,11 @@ RATIO_CLIP_VALUE = 0.15
 VALUE_CLIP_RANGE = 0.15
 NUM_UPDATES = 5  # updates before we switch old and new policies
 
-NUM_BATCHES = 64
-BATCH_SIZE = 64
+NUM_BATCHES = 32
+BATCH_SIZE = 32
+
+# params for the memory
+MEM_SIZE = NUM_BATCHES * BATCH_SIZE
 
 L2_REG_CONV = 0  # 1e-3
 L2_REG_FULLY = 0  # 1e-3
