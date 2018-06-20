@@ -9,21 +9,22 @@ class FullyConnectedModel():
     def __init__(self):
         # some parameters now belong to the model
         self.INPUT_SHAPE = (7,)
-        self.FC_SIZE = 32
+        self.FC_SIZE = 64
 
         # build a model to predict action probabilities and values
         self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
-        # bnorm = BatchNormalization()(self.input_observation)
 
-        hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(
+        # predicting policy
+        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(self.input_observation)
+        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
+        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
+
+        # predicting value
+        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(
             self.input_observation)
-        bnorm = BatchNormalization()(hidden)
-
-        hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
-        bnorm = BatchNormalization()(hidden)
-
-        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
-        pred_value = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
+        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
+        pred_value = Dense(1, kernel_regularizer=l2(params.L2_REG_FULLY))(
+            hidden)
 
         model = Model(inputs=[self.input_observation], outputs=[pred_policy, pred_value])
 

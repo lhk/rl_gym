@@ -24,14 +24,14 @@ RATIO_CLIP_VALUE = 0.15
 VALUE_CLIP_RANGE = 0.15
 NUM_UPDATES = 5  # updates before we switch old and new policies
 
+L2_REG_CONV = 1e-3  # 1e-3
+L2_REG_FULLY = 1e-3  # 1e-3
 NUM_BATCHES = 32
 BATCH_SIZE = 32
 
 # params for the memory
 MEM_SIZE = NUM_BATCHES * BATCH_SIZE
 
-L2_REG_CONV = 0  # 1e-3
-L2_REG_FULLY = 0  # 1e-3
 
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True
