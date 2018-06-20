@@ -68,20 +68,16 @@ class FullyConnectedModel():
     STATEFUL = False
     def __init__(self):
         # some parameters now belong to the model
-        self.FC_SIZE = 32
+        self.FC_SIZE = 64
 
-        # build a model to predict action probabilities and values
-        self.input_observation = Input(shape=(*self.OBSERVATION_SHAPE,))
-        # bnorm = BatchNormalization()(self.input_observation)
+        self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
 
-        hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(
+        # predicting q values
+        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(
             self.input_observation)
-        bnorm = BatchNormalization()(hidden)
-
-        hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
-        bnorm = BatchNormalization()(hidden)
-
-        q_values = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
+        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
+        q_values = Dense(params.NUM_ACTIONS, kernel_regularizer=l2(params.L2_REG_FULLY))(
+            hidden)
 
         mask_layer = Input((params.NUM_ACTIONS,))
 
