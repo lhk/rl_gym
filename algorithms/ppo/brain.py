@@ -121,11 +121,9 @@ class Brain:
             time.sleep(0)
             return
 
-        # get all training data from the memory
-        batch = self.memory.pop(None)
-
-        # during training, prevent agents from pushing new data to the memory
-        with self.memory.lock:
+        with self.lock:
+            # get all training data from the memory
+            batch = self.memory.pop(None)
 
             (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
              advantages,
@@ -193,8 +191,9 @@ class Brain:
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain
     def predict(self, observation, state):
-        with self.default_graph.as_default():
-            return self.old_model.predict(observation, state)
+        with self.lock:
+            with self.default_graph.as_default():
+                return self.old_model.predict(observation, state)
 
     def preprocess(self, observation):
         return self.old_model.preprocess(observation)

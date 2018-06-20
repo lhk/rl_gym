@@ -25,10 +25,10 @@ LOSS_ENTROPY = .01
 GRADIENT_NORM_CLIP = 20
 RATIO_CLIP_VALUE = 0.15
 VALUE_CLIP_RANGE = 0.15
-NUM_UPDATES = 2  # updates before we switch old and new policies
+NUM_UPDATES = 5  # updates before we switch old and new policies
 
-NUM_BATCHES = 80
-BATCH_SIZE = 32
+NUM_BATCHES = 64
+BATCH_SIZE = 64
 
 L2_REG_CONV = 0  # 1e-3
 L2_REG_FULLY = 0  # 1e-3
