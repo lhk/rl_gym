@@ -68,7 +68,6 @@ class FullyConnectedModel():
     STATEFUL = False
     def __init__(self):
         # some parameters now belong to the model
-        self.INPUT_SHAPE = (7,)
         self.FC_SIZE = 32
 
         # build a model to predict action probabilities and values
@@ -82,25 +81,19 @@ class FullyConnectedModel():
         hidden = Dense(self.FC_SIZE, activation='relu', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
         bnorm = BatchNormalization()(hidden)
 
-        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(bnorm)
-        pred_value = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
+        q_values = keras.layers.Dense(params.NUM_ACTIONS)(hidden)
 
-        model = Model(inputs=[self.input_observation], outputs=[pred_policy, pred_value])
+        mask_layer = Input((params.NUM_ACTIONS,))
 
-        # the model is not compiled with any loss function
-        # but the regularizers are still exposed as losses
-        loss_regularization = sum(model.losses)
+        q_values_masked = Multiply()([q_values, mask_layer])
+        self.model = Model(inputs=(self.input_observation, mask_layer), outputs=q_values_masked)
 
-        # the model and its inputs
-        self.model = model
+        self.input_observation = self.input_observation
+        self.mask_layer = mask_layer
 
-        # the weights that can be updated
-        self.trainable_weights = model.trainable_weights
-
-        # tensors, these will be used for loss formulations
-        self.pred_policy = pred_policy
-        self.pred_value = pred_value
-        self.loss_regularization = loss_regularization
+        self.loss_regularization = sum(self.model.losses)
+        self.trainable_weights = self.model.trainable_weights
+        self.q_values_masked = q_values_masked
 
     def preprocess(self, observation):
         return observation
@@ -114,12 +107,12 @@ class FullyConnectedModel():
             raise AssertionError("this model is not stateful")
 
         # keras always needs a batch dimension
-        if observation.shape == self.INPUT_SHAPE:
-            observation = observation.reshape((-1, *self.INPUT_SHAPE))
+        if observation.shape == self.OBSERVATION_SHAPE:
+            observation = observation.reshape((-1, *self.OBSERVATION_SHAPE))
 
-        return [*self.model.predict(observation), []]
+        return self.model.predict([observation, np.ones((observation.shape[0], params.NUM_ACTIONS))]), None
 
-    def create_feed_dict(self, observation, state):
+    def create_feed_dict(self, observation, state, mask):
         if not state is None:
             raise AssertionError("this model is not stateful")
-        return {self.input_observation: observation}
+        return {self.input_observation: observation, self.mask_layer : mask}

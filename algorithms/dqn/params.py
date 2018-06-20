@@ -6,6 +6,7 @@
 RETRAIN = True
 
 # parameters for the structure of the neural network
+NUM_ACTIONS = 4
 FRAME_STACK = None  # number of consecutive frames to stack as input for the network
 BATCH_SIZE = 32
 
@@ -18,6 +19,8 @@ LEARNING_RATE = 0.00025
 RHO = 0.95
 EPSILON = 0.01
 GRADIENT_NORM_CLIP = None  # switched off
+L2_REG_CONV = 0  # 1e-3
+L2_REG_FULLY = 0  # 1e-3
 
 # parameters for the training
 TOTAL_INTERACTIONS = int(3e6)  # after this many interactions, the training stops
