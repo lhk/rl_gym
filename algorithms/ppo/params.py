@@ -1,7 +1,7 @@
 # parameters for the training setup
 RUN_TIME = 3600 * 10
 NUM_EPISODES = 1000000
-AGENTS = 1
+AGENTS = 24
 OPTIMIZERS = 1
 WAITING_TIME = 0.0001
 
@@ -26,7 +26,7 @@ NUM_UPDATES = 5  # updates before we switch old and new policies
 
 L2_REG_CONV = 1e-3  # 1e-3
 L2_REG_FULLY = 1e-3  # 1e-3
-NUM_BATCHES = 32
+NUM_BATCHES = 128
 BATCH_SIZE = 32
 
 # params for the memory
