@@ -70,7 +70,7 @@ class FullyConnectedModel():
         # some parameters now belong to the model
         self.FC_SIZE = 64
 
-        self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
+        self.input_observation = Input(shape=(*self.OBSERVATION_SHAPE,))
 
         # predicting q values
         hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(
