@@ -8,9 +8,10 @@ import algorithms.dqn.params as params
 import environments.obstacle_car.params as env_params
 from algorithms.dqn.agent import Agent
 from algorithms.dqn.memory import Priority_Memory
-from environments.obstacle_car.environment_graphical import Environment_Graphical as Environment
+#from environments.obstacle_car.environment_graphical import Environment_Graphical as Environment
+from environments.obstacle_car.environment_vec import Environment_Vec as Environment
 from algorithms.dqn.brain import Brain
-from algorithms.dqn.models import DQN_Model
+from algorithms.dqn.models import DQN_Model, FullyConnectedModel
 
 from util.loss_functions import huber_loss
 
@@ -23,8 +24,8 @@ if vis:
     window = pygame.display.set_mode(env_params.screen_size)
     pygame.display.set_caption("observations")
 
-memory = Priority_Memory(DQN_Model)
-brain = Brain(DQN_Model, memory, loss_func=huber_loss, load_path=None)
+memory = Priority_Memory(FullyConnectedModel)
+brain = Brain(FullyConnectedModel, memory, loss_func=huber_loss, load_path=None)
 env = Environment()
 agent = Agent(memory, brain, env)
 
