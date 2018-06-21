@@ -7,7 +7,7 @@ RETRAIN = True
 
 # parameters for the structure of the neural network
 NUM_ACTIONS = 4
-FRAME_STACK = None  # number of consecutive frames to stack as input for the network
+FRAME_STACK = 2  # number of consecutive frames to stack as input for the network
 BATCH_SIZE = 32
 
 # parameters for the reinforcement process

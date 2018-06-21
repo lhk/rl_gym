@@ -51,8 +51,8 @@ class DQN_Model():
             raise AssertionError("this model is not stateful")
 
         # keras only works if there is a batch dimension
-        if observation.shape == params.INPUT_SHAPE:
-            observation = observation.reshape((-1, *params.INPUT_SHAPE))
+        if observation.shape == self.OBSERVATION_SHAPE:
+            observation = observation.reshape((-1, *self.OBSERVATION_SHAPE))
         return self.model.predict([observation, np.ones((observation.shape[0], params.NUM_ACTIONS))]), None
 
     def get_initial_state(self):
