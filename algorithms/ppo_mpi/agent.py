@@ -21,6 +21,7 @@ class Agent():
                  comm,
                  rank,
                  vis=False):
+        self.Model = Model
         self.comm = comm
         self.rank = rank
 
@@ -61,11 +62,11 @@ class Agent():
 
         # reset environment
         self.observation = self.env.reset()
-        self.observation = self.brain.preprocess(self.observation)
+        self.observation = self.Model.preprocess(self.observation)
         self.seen_observations = [self.observation]
 
         # reset model
-        self.state = self.brain.get_initial_state()
+        self.state = self.Model.get_initial_state()
         self.seen_states = [self.state]
 
     def run_one_episode(self):
@@ -118,7 +119,7 @@ class Agent():
             if done:
                 new_observation = np.zeros_like(self.observation)
             else:
-                new_observation = self.brain.preprocess(new_observation)
+                new_observation = self.Model.preprocess(new_observation)
 
             actions_onehot = np.zeros(params.NUM_ACTIONS)
             actions_onehot[action] = 1

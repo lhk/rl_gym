@@ -162,9 +162,6 @@ class Brain:
 
         print(Fore.RED+"policy updated"+Style.RESET_ALL)
 
-        # tell the agents to collect data again
-        self.collect_data.set()
-
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain
     def predict(self, observation, state):

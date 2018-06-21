@@ -38,7 +38,7 @@ if rank == params.rank_brain:
             # we reset all agents
             # this prevents them from pushing observations to the memory
             for rank_agent in params.rank_agents:
-                comm.isend(dest = rank_agent, tag = params.message_reset)
+                comm.isend(0, dest = rank_agent, tag = params.message_reset)
 
             # update the network
             training_batch = comm.recv(source=params.rank_memory, tag=params.message_batch)
@@ -51,13 +51,10 @@ if rank == params.rank_brain:
         # the agents can request predictions
         for rank_agent in params.rank_agents:
             if comm.iprobe(source=rank_agent, tag = params.message_prediction):
-                print("probe for prediction successful")
                 observation_state = comm.recv(source=rank_agent, tag=params.message_prediction)
-                print("prediction received")
                 observation, state = observation_state
                 prediction = brain.predict(observation, state)
                 comm.send(prediction, dest=rank_agent)
-                print("prediction sent")
 
 if rank == params.rank_memory:
     # set up the memory
@@ -69,17 +66,20 @@ if rank == params.rank_memory:
         # if enough training data is in the memory, we send a training batch to the brain
         if len(memory) >= params.NUM_BATCHES * params.BATCH_SIZE:
             training_batch = memory.pop()
-            comm.send(dest = params.rank_memory, tag=params.message_batch)
+            comm.send(training_batch, dest = params.rank_brain, tag=params.message_batch)
+            print("observation message sent")
 
         # collect data from every agent
         for rank_agent in params.rank_agents:
             if comm.iprobe(source=rank_agent, tag=params.message_observation):
+                print("probe for observation message successful")
                 batch = comm.recv(source=rank_agent, tag=params.message_observation)
+                print("observation message received")
                 memory.push(batch)
 
 if rank in params.rank_agents:
     # set up an agent
-    agent = Agent(comm, rank)
+    agent = Agent(Model, comm, rank)
     print("set up agent")
     while True:
         agent.run_one_episode()
