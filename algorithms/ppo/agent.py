@@ -176,6 +176,12 @@ class Agent(threading.Thread):
         # removes one set of observations from local memory
         # and pushes it to shared memory
 
+        # we check wether collect_data is set on every loop entry
+        # but if an episode has ended, all the local memory is offloaded to memory
+        # this check prevents this
+        if not self.collect_data.is_set():
+            return
+
         #  read the length first, before popping anything
         length = len(self.seen_actions)
 

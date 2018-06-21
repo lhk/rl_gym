@@ -30,6 +30,7 @@ class Memory:
 
     def push(self, batch):
 
+        # don't accept new data while training the brain
         if not self.collect_data.is_set():
             return
 
