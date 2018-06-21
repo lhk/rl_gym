@@ -11,19 +11,19 @@ NUM_ACTIONS = 4
 LEARNING_RATE = 3e-4
 EPSILON = 1e-5
 LOSS_VALUE = .5
-LOSS_ENTROPY = 1e-6
+LOSS_ENTROPY = 0#1e-6
 GRADIENT_NORM_CLIP = 0.5
 RATIO_CLIP_VALUE = 0.2
 VALUE_CLIP_RANGE = 0.2
 
-L2_REG_CONV = 1e-3  # 1e-3
-L2_REG_FULLY = 1e-3  # 1e-3
+L2_REG_CONV = 0  # 1e-3
+L2_REG_FULLY = 0  # 1e-3
 NUM_BATCHES = 40
 BATCH_SIZE = 64
 NUM_EPOCHS = 10  # number of times we iterate through the observed data
 
 # parameters for the setup
-NUM_UPDATES = 100
+NUM_UPDATES = 1000
 
 # params for the memory
 MEM_SIZE = NUM_BATCHES * BATCH_SIZE
