@@ -173,6 +173,8 @@ class Brain:
                 self.advantage: batch_advantages,
                 self.target_value: batch_target_values})
 
+        print(Fore.RED+"policy updated"+Style.RESET_ALL)
+
         # tell the agents to collect data again
         self.collect_data.set()
 

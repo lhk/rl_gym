@@ -33,7 +33,8 @@ memory = Memory(collect_data)
 brain = Brain(memory, FullyConnectedModel, collect_data)
 
 agents = [Agent(brain, memory, collect_data) for i in range(params.AGENTS)]
-#agents.append(Agent(brain, memory, collect_data,  vis=True))  # one agent for the visualization
+#agents.append(Agent(brain, memory, collect_data, reset_queue,  vis=True))  # one agent for the visualization
+
 opts = [Optimizer(brain) for i in range(params.OPTIMIZERS)]
 
 for o in opts:
