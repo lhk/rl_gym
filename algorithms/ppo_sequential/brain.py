@@ -87,7 +87,7 @@ class Brain:
 
         # set up a tensorflow minimizer
         new_policy_variables = self.model.trainable_weights
-        optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
+        optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE, epsilon=params.EPSILON)
         gradients_variables = optimizer.compute_gradients(loss, new_policy_variables)
         if params.GRADIENT_NORM_CLIP is not None:
             gradients, variables = zip(*gradients_variables)
@@ -157,7 +157,9 @@ class Brain:
                     self.advantage: batch_advantages,
                     self.target_value: batch_target_values})
 
-        print(Fore.RED + "policy updated" + Style.RESET_ALL)
+        print(Fore.RED)
+        print("policy updated")
+        print(Style.RESET_ALL)
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain

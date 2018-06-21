@@ -70,6 +70,11 @@ class Agent():
 
         self.total_reward = 0
 
+
+    def reset_metadata(self):
+        self.num_episodes=0
+        self.episode_rewards=[]
+
     def act(self):
 
         # show current state to network and get predicted policy
@@ -134,9 +139,7 @@ class Agent():
         # and reset
         if done:
             self.num_episodes += 1
-            # print debug information
-            print("total reward: {}, after {} episodes".format(self.total_reward, self.num_episodes))
-
+            self.episode_rewards.append(self.total_reward)
             self.reset()
 
     def move_to_memory(self, terminal):
