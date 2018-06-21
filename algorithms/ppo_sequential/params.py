@@ -28,7 +28,6 @@ NUM_UPDATES = 100
 # params for the memory
 MEM_SIZE = NUM_BATCHES * BATCH_SIZE
 
-
 # parameters to control tensorflow behaviour (and logging)
 TF_ALLOW_GROWTH = True
 TF_LOG_DEVICE_PLACEMENT = False

@@ -1,13 +1,9 @@
-import time
-from threading import Lock
-
 import tensorflow as tf
 from colorama import Fore, Style
 from keras.models import *
 
 import algorithms.ppo_sequential.params as params
 from algorithms.ppo_sequential.conv_models import ConvLSTMModel
-from algorithms.ppo_sequential.memory import Memory
 
 
 class Brain:
@@ -127,14 +123,14 @@ class Brain:
 
         # TODO: again, this is the baseline version. find out why the z normalize the advantages
         target_values = advantages + pred_values
-        #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        # advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         indices = np.arange(num_samples)
 
         for epoch in range(params.NUM_EPOCHS):
             np.random.shuffle(indices)
 
-            for idx in range(num_samples//params.BATCH_SIZE):
+            for idx in range(num_samples // params.BATCH_SIZE):
                 lower_idx = idx * params.BATCH_SIZE
                 upper_idx = (idx + 1) * params.BATCH_SIZE
                 batch_indices = indices[lower_idx:upper_idx]
@@ -161,7 +157,7 @@ class Brain:
                     self.advantage: batch_advantages,
                     self.target_value: batch_target_values})
 
-        print(Fore.RED+"policy updated"+Style.RESET_ALL)
+        print(Fore.RED + "policy updated" + Style.RESET_ALL)
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain

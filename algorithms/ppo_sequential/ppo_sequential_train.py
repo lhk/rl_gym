@@ -9,12 +9,12 @@ from algorithms.ppo_sequential.fc_models import FullyConnectedModel
 from algorithms.ppo_sequential.memory import Memory
 import algorithms.ppo_sequential.params as params
 
-
 memory = Memory()
-brain = Brain(memory, FullyConnectedModel)
+brain = Brain(FullyConnectedModel)
 agent = Agent(brain, memory)
 
-for update in params.NUM_UPDATES:
+for update in range(params.NUM_UPDATES):
+    agent.reset()
     # generate training data with the agent
     while len(memory) < params.MEM_SIZE:
         agent.act()

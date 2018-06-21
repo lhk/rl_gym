@@ -2,17 +2,14 @@ import numpy as np
 
 np.seterr(all="raise")
 
-import time, threading
-
 import algorithms.ppo_sequential.params as params
 from algorithms.ppo_sequential.brain import Brain
 from algorithms.ppo_sequential.memory import Memory
 
 # from environments.obstacle_car.environment import Environment_Graphical as Environment
 from environments.obstacle_car.environment_vec import Environment_Vec as Environment
-#from environments.openai_gym.environment import Environment
+# from environments.openai_gym.environment import Environment
 import pygame
-from colorama import Fore, Style
 
 
 class Agent():
@@ -109,7 +106,6 @@ class Agent():
         assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
                                                            "local memory must be moved to shared memory"
 
-
         # update state of agent
         self.observation = new_observation
         self.total_reward += reward
@@ -119,7 +115,6 @@ class Agent():
             while len(self.seen_rewards) > 0:
                 self.move_to_memory(done)
                 self.n_step_reward /= params.GAMMA
-                time.sleep(params.WAITING_TIME)
 
         elif len(self.seen_actions) == params.NUM_STEPS:
             self.move_to_memory(done)
@@ -142,21 +137,11 @@ class Agent():
             # print debug information
             print("total reward: {}, after {} episodes".format(self.total_reward, self.num_episodes))
 
-            if self.num_episodes > params.NUM_EPISODES:
-                self.stop = True
-                print("stopping training for agent {}".format(threading.current_thread()))
-
             self.reset()
 
     def move_to_memory(self, terminal):
         # removes one set of observations from local memory
         # and pushes it to shared memory
-
-        # we check wether collect_data is set on every loop entry
-        # but if an episode has ended, all the local memory is offloaded to memory
-        # this check prevents this
-        if not self.collect_data.is_set():
-            return
 
         #  read the length first, before popping anything
         length = len(self.seen_actions)
