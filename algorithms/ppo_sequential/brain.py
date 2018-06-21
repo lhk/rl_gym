@@ -12,9 +12,7 @@ from algorithms.ppo_sequential.memory import Memory
 
 class Brain:
 
-    def __init__(self, memory: Memory, ModelClass: ConvLSTMModel, collect_data):
-
-        self.collect_data = collect_data
+    def __init__(self, ModelClass: ConvLSTMModel):
 
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
@@ -34,13 +32,12 @@ class Brain:
 
         # running tensorflow in a multithreaded environment requires additional setup work
         # and freezing the resulting graph
+        # this is the sequential version, but intuitively, freezing the graph sounds like a performance improvement
+        # TODO: check if this is useful
         self.model.model._make_predict_function()
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
         self.default_graph.finalize()
-
-        # a globally shared memory, this will be filled by the asynchronous agents
-        self.memory = memory
 
     def __setup_training(self):
         # due to keras' restrictions on loss functions,
@@ -104,23 +101,7 @@ class Brain:
 
         self.minimize_step = minimize_step
 
-    def optimize(self):
-        # we train on blocks of this size
-        num_samples = params.BATCH_SIZE * params.NUM_BATCHES
-
-        # yield control if there is not enough training data in the memory
-        if len(self.memory) < num_samples:
-            #print(Fore.RED + "memsleep" + Style.RESET_ALL)
-            time.sleep(0)
-            return
-
-        # start the updating process
-        # the agent processes will see that this event has been set
-        # they will wait for it to be cleared before continuing to generate samples
-        self.collect_data.clear()
-
-        # get all training data from the memory
-        batch = self.memory.pop(None)
+    def optimize(self, batch):
 
         (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
          advantages,
@@ -181,9 +162,6 @@ class Brain:
                     self.target_value: batch_target_values})
 
         print(Fore.RED+"policy updated"+Style.RESET_ALL)
-
-        # tell the agents to collect data again
-        self.collect_data.set()
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain

@@ -15,15 +15,11 @@ import pygame
 from colorama import Fore, Style
 
 
-class Agent(threading.Thread):
+class Agent():
     def __init__(self, brain: Brain,
                  shared_memory: Memory,
-                 collect_data,
                  vis=False):
 
-        threading.Thread.__init__(self)
-
-        self.collect_data = collect_data
         self.env = Environment()
 
         # a local memory, to store observations made by this agent
@@ -75,102 +71,82 @@ class Agent(threading.Thread):
         self.state = self.brain.get_initial_state()
         self.seen_states = [self.state]
 
-    def run_one_episode(self):
+        self.total_reward = 0
 
-        self.reset()
-        total_reward = 0
+    def act(self):
 
-        # runs until episode is over, or self.stop == True
-        while True:
+        # show current state to network and get predicted policy
+        policy, value, self.state = self.brain.predict(self.observation, self.state)
 
-            # when the brain starts training, this event will be cleared ( = set to false)
-            # if that happens, the remaining observations shouldn't be pushed to the memory
-            # if we return here, the Agent thread will simply execute run_one_episode() again
-            # which resets the agent and restarts the observation process
-            # TODO: this is a race condition:
-            # if the brain updates very quickly, then it is possible that the agent misses the clearing and resetting
-            # of this event. which causes the agent not to be reset.
-            if not self.collect_data.is_set():
-                print(Fore.GREEN+"agent waiting"+Style.RESET_ALL)
-                self.collect_data.wait()
-                return
+        # flatten the output
+        policy = policy[0]
+        if [] != self.state:
+            self.state = self.state[0]
+        value = value[0, 0]
 
-            # show current state to network and get predicted policy
-            policy, value, self.state = self.brain.predict(self.observation, self.state)
+        action = np.random.choice(params.NUM_ACTIONS, p=policy)
 
-            # flatten the output
-            # TODO: predict flattened output by the model
-            policy = policy[0]
-            if [] != self.state:
-                self.state = self.state[0]
-            value = value[0, 0]
+        new_observation, reward, done, _ = self.env.step(action)
+        reward *= params.REWARD_SCALE
 
-            action = np.random.choice(params.NUM_ACTIONS, p=policy)
+        if done:
+            new_observation = np.zeros_like(self.observation)
+        else:
+            new_observation = self.brain.preprocess(new_observation)
 
-            new_observation, reward, done, _ = self.env.step(action)
-            reward *= params.REWARD_SCALE
+        actions_onehot = np.zeros(params.NUM_ACTIONS)
+        actions_onehot[action] = 1
 
-            if done:
-                new_observation = np.zeros_like(self.observation)
-            else:
-                new_observation = self.brain.preprocess(new_observation)
+        # append observations to local memory
+        self.seen_values.append(value)
+        self.seen_states.append(self.state)
+        self.seen_policies.append(policy)
+        self.seen_actions.append(actions_onehot)
+        self.seen_rewards.append(reward)
+        self.seen_observations.append(new_observation)
+        self.n_step_reward = (self.n_step_reward + reward * params.GAMMA ** params.NUM_STEPS) / params.GAMMA
 
-            actions_onehot = np.zeros(params.NUM_ACTIONS)
-            actions_onehot[action] = 1
-
-            # append observations to local memory
-            self.seen_values.append(value)
-            self.seen_states.append(self.state)
-            self.seen_policies.append(policy)
-            self.seen_actions.append(actions_onehot)
-            self.seen_rewards.append(reward)
-            self.seen_observations.append(new_observation)
-            self.n_step_reward = (self.n_step_reward + reward * params.GAMMA ** params.NUM_STEPS) / params.GAMMA
-
-            assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
-                                                               "local memory must be moved to shared memory"
+        assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
+                                                           "local memory must be moved to shared memory"
 
 
-            # update state of agent
-            self.observation = new_observation
-            total_reward += reward
+        # update state of agent
+        self.observation = new_observation
+        self.total_reward += reward
 
-            # move local memory to shared memory
-            if done:
-                while len(self.seen_rewards) > 0:
-                    self.move_to_memory(done)
-                    self.n_step_reward /= params.GAMMA
-                    time.sleep(params.WAITING_TIME)
-
-            elif len(self.seen_actions) == params.NUM_STEPS:
+        # move local memory to shared memory
+        if done:
+            while len(self.seen_rewards) > 0:
                 self.move_to_memory(done)
+                self.n_step_reward /= params.GAMMA
+                time.sleep(params.WAITING_TIME)
 
-            # TODO: implement openai render() on custom envs
-            if self.vis:
-                self.canvas[:] = 0
-                self.env.render_to_canvas(self.canvas)
+        elif len(self.seen_actions) == params.NUM_STEPS:
+            self.move_to_memory(done)
 
-                surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
-                self.window.blit(surf, (0, 0))
+        # TODO: implement openai render() on custom envs
+        if self.vis:
+            self.canvas[:] = 0
+            self.env.render_to_canvas(self.canvas)
 
-                self.clock.tick(10)
-                pygame.display.update()
+            surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
+            self.window.blit(surf, (0, 0))
 
-            if done or self.stop:
-                break
+            self.clock.tick(10)
+            pygame.display.update()
 
-        self.num_episodes += 1
-        # print debug information
-        print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
+        # print meta information if the agent was done
+        # and reset
+        if done:
+            self.num_episodes += 1
+            # print debug information
+            print("total reward: {}, after {} episodes".format(self.total_reward, self.num_episodes))
 
-        if self.num_episodes > params.NUM_EPISODES:
-            self.stop = True
-            print("stopping training for agent {}".format(threading.current_thread()))
+            if self.num_episodes > params.NUM_EPISODES:
+                self.stop = True
+                print("stopping training for agent {}".format(threading.current_thread()))
 
-    def run(self):
-        print("starting training for agent {}".format(threading.current_thread()))
-        while not self.stop:
-            self.run_one_episode()
+            self.reset()
 
     def move_to_memory(self, terminal):
         # removes one set of observations from local memory
