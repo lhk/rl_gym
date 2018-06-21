@@ -43,10 +43,12 @@ class FullyConnectedModel():
         self.pred_value = pred_value
         self.loss_regularization = loss_regularization
 
-    def preprocess(self, observation):
+    @staticmethod
+    def preprocess(observation):
         return observation
 
-    def get_initial_state(self):
+    @staticmethod
+    def get_initial_state():
         return []
 
     def predict(self, observation, state):

@@ -7,11 +7,12 @@ import algorithms.ppo_mpi.params as params
 
 
 class ConvLSTMModel():
+    # some parameters now belong to the model
+    FRAME_SIZE = (84, 84)
+    INPUT_SHAPE = (*FRAME_SIZE, 3)
+    RNN_SIZE = 64
+
     def __init__(self):
-        # some parameters now belong to the model
-        self.FRAME_SIZE = (84, 84)
-        self.INPUT_SHAPE = (*self.FRAME_SIZE, 3)
-        self.RNN_SIZE = 64
 
         # build a model to predict action probabilities and values
         self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
@@ -56,18 +57,20 @@ class ConvLSTMModel():
         self.pred_value = pred_value
         self.loss_regularization = loss_regularization
 
-    def preprocess(self, observation):
-        downsampled = lycon.resize(observation, width=self.FRAME_SIZE[0], height=self.FRAME_SIZE[1],
+    @staticmethod
+    def preprocess(observation):
+        downsampled = lycon.resize(observation, width=ConvLSTMModel.FRAME_SIZE[0], height=ConvLSTMModel.FRAME_SIZE[1],
                                    interpolation=lycon.Interpolation.NEAREST)
 
         # grayscale = downsampled.mean(axis=-1)
-        return downsampled.reshape((self.INPUT_SHAPE))
+        return downsampled.reshape((ConvLSTMModel.INPUT_SHAPE))
 
-    def get_initial_state(self):
+    @staticmethod
+    def get_initial_state():
         # this model has a state: the rnn cell
         # the initial state of this rnn cell is given by the following code
         # read from the keras source for initializers
-        return np.random.rand(self.RNN_SIZE) * 0.1 - 0.05
+        return np.random.rand(ConvLSTMModel.RNN_SIZE) * 0.1 - 0.05
 
     def predict(self, observation, state):
 

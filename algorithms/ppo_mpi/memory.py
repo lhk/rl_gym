@@ -7,8 +7,7 @@ import algorithms.ppo_mpi.params as params
 
 
 class Memory:
-    def __init__(self, collect_data):
-        self.collect_data = collect_data
+    def __init__(self):
 
         # from_state, from_memory, to_state, to_memory, action, reward, advantage, terminal, length
         # the length is the number of steps between from and to

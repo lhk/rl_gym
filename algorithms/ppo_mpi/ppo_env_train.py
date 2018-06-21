@@ -1,5 +1,8 @@
 # the architecture of optimizers and agents is taken from: https://github.com/jaara/AI-blog/blob/master/CartPole-a3c_doom.py
 import numpy as np
+import sys
+import os
+sys.path.append(os.getcwd())
 
 np.seterr(all='raise')
 np.random.seed(0)
@@ -17,16 +20,20 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
+print(rank)
+
 Model = FullyConnectedModel
 
 if rank == params.rank_brain:
     # set up the brain
     brain = Brain(Model)
+    print("set up brain")
 
     # listen to events
     while True:
         # first we check if we have received training data from the memory, this has highest priority
         if comm.iprobe(source=params.rank_memory, tag=params.message_batch):
+            print("probe for batch message successful")
 
             # we reset all agents
             # this prevents them from pushing observations to the memory
@@ -35,6 +42,8 @@ if rank == params.rank_brain:
 
             # update the network
             training_batch = comm.recv(source=params.rank_memory, tag=params.message_batch)
+
+            print("batch received")
             brain.optimize(training_batch)
 
 
@@ -42,14 +51,18 @@ if rank == params.rank_brain:
         # the agents can request predictions
         for rank_agent in params.rank_agents:
             if comm.iprobe(source=rank_agent, tag = params.message_prediction):
+                print("probe for prediction successful")
                 observation_state = comm.recv(source=rank_agent, tag=params.message_prediction)
+                print("prediction received")
                 observation, state = observation_state
                 prediction = brain.predict(observation, state)
                 comm.send(prediction, dest=rank_agent)
+                print("prediction sent")
 
 if rank == params.rank_memory:
     # set up the memory
-    memory = Memory(Model)
+    memory = Memory()
+    print("set up mem")
 
     # listen to events
     while True:
@@ -67,5 +80,6 @@ if rank == params.rank_memory:
 if rank in params.rank_agents:
     # set up an agent
     agent = Agent(comm, rank)
+    print("set up agent")
     while True:
         agent.run_one_episode()

@@ -16,8 +16,8 @@ from colorama import Fore, Style
 
 
 class Agent():
-    def __init__(self, brain: Brain,
-                 shared_memory: Memory,
+    def __init__(self,
+                 Model,
                  comm,
                  rank,
                  vis=False):
@@ -35,12 +35,6 @@ class Agent():
         self.seen_actions = []  # actions taken
         self.seen_rewards = []  # rewards given
         self.n_step_reward = 0  # reward for n consecutive steps
-
-        # this is globally shared between agents
-        # local observations will be successively pushed to the shared memory
-        # as soon as we have enough for the N-step target
-        self.brain = brain
-        self.shared_memory = shared_memory
 
         self.num_episodes = 0
 

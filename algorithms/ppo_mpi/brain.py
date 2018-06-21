@@ -12,9 +12,8 @@ from algorithms.ppo_mpi.memory import Memory
 
 class Brain:
 
-    def __init__(self, memory: Memory, ModelClass: ConvLSTMModel, collect_data):
+    def __init__(self, ModelClass: ConvLSTMModel):
 
-        self.collect_data = collect_data
 
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
@@ -38,9 +37,6 @@ class Brain:
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
         self.default_graph.finalize()
-
-        # a globally shared memory, this will be filled by the asynchronous agents
-        self.memory = memory
 
     def __setup_training(self):
         # due to keras' restrictions on loss functions,
