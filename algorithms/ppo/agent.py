@@ -12,6 +12,7 @@ from algorithms.ppo.memory import Memory
 from environments.obstacle_car.environment_vec import Environment_Vec as Environment
 #from environments.openai_gym.environment import Environment
 import pygame
+from colorama import Fore, Style
 
 
 class Agent(threading.Thread):
@@ -83,8 +84,14 @@ class Agent(threading.Thread):
         while True:
 
             # when the brain starts training, this event will be cleared ( = set to false)
-            # then we reset the agent and wait for the event to be set again
+            # if that happens, the remaining observations shouldn't be pushed to the memory
+            # if we return here, the Agent thread will simply execute run_one_episode() again
+            # which resets the agent and restarts the observation process
+            # TODO: this is a race condition:
+            # if the brain updates very quickly, then it is possible that the agent misses the clearing and resetting
+            # of this event. which causes the agent not to be reset.
             if not self.collect_data.is_set():
+                print(Fore.GREEN+"agent waiting"+Style.RESET_ALL)
                 self.collect_data.wait()
                 return
 
