@@ -3,7 +3,7 @@ from keras.layers import *
 from keras.models import *
 from keras.regularizers import l2
 
-import algorithms.ppo.params as params
+import algorithms.ppo_sequential.params as params
 
 
 class ConvLSTMModel():

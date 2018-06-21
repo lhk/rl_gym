@@ -5,15 +5,16 @@ import tensorflow as tf
 from colorama import Fore, Style
 from keras.models import *
 
-import algorithms.ppo_mpi.params as params
-from algorithms.ppo_mpi.conv_models import ConvLSTMModel
-from algorithms.ppo_mpi.memory import Memory
+import algorithms.ppo_sequential.params as params
+from algorithms.ppo_sequential.conv_models import ConvLSTMModel
+from algorithms.ppo_sequential.memory import Memory
 
 
 class Brain:
 
-    def __init__(self, ModelClass: ConvLSTMModel):
+    def __init__(self, memory: Memory, ModelClass: ConvLSTMModel, collect_data):
 
+        self.collect_data = collect_data
 
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
@@ -38,6 +39,9 @@ class Brain:
         self.default_graph = tf.get_default_graph()
         self.default_graph.finalize()
 
+        # a globally shared memory, this will be filled by the asynchronous agents
+        self.memory = memory
+
     def __setup_training(self):
         # due to keras' restrictions on loss functions,
         # we use tensorflow to create a minimization step for the custom loss
@@ -60,7 +64,7 @@ class Brain:
         old_action = K.sum(old_action, axis=-1, keepdims=True)
         new_action = K.sum(new_action, axis=-1, keepdims=True)
 
-        # set up the policy loss of ppo_threading
+        # set up the policy loss of ppo_sequential
         ratio = K.exp(K.log(new_action) - K.log(old_action))
         loss1 = ratio * self.advantage
         loss2 = tf.clip_by_value(ratio, 1.0 - params.RATIO_CLIP_VALUE, 1.0 + params.RATIO_CLIP_VALUE) * self.advantage
@@ -100,7 +104,23 @@ class Brain:
 
         self.minimize_step = minimize_step
 
-    def optimize(self, batch):
+    def optimize(self):
+        # we train on blocks of this size
+        num_samples = params.BATCH_SIZE * params.NUM_BATCHES
+
+        # yield control if there is not enough training data in the memory
+        if len(self.memory) < num_samples:
+            #print(Fore.RED + "memsleep" + Style.RESET_ALL)
+            time.sleep(0)
+            return
+
+        # start the updating process
+        # the agent processes will see that this event has been set
+        # they will wait for it to be cleared before continuing to generate samples
+        self.collect_data.clear()
+
+        # get all training data from the memory
+        batch = self.memory.pop(None)
 
         (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
          advantages,
@@ -161,6 +181,9 @@ class Brain:
                     self.target_value: batch_target_values})
 
         print(Fore.RED+"policy updated"+Style.RESET_ALL)
+
+        # tell the agents to collect data again
+        self.collect_data.set()
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain

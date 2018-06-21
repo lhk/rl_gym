@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-import algorithms.ppo.params as params
+import algorithms.ppo_threading.params as params
 
 
 class Memory:

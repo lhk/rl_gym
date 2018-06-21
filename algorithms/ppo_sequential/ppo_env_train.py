@@ -6,11 +6,11 @@ np.random.seed(0)
 
 import time, threading, os
 
-from algorithms.ppo.agent import Agent
-from algorithms.ppo.brain import Brain
-from algorithms.ppo.fc_models import FullyConnectedModel
-from algorithms.ppo.memory import Memory
-import algorithms.ppo.params as params
+from algorithms.ppo_sequential.agent import Agent
+from algorithms.ppo_sequential.brain import Brain
+from algorithms.ppo_sequential.fc_models import FullyConnectedModel
+from algorithms.ppo_sequential.memory import Memory
+import algorithms.ppo_sequential.params as params
 
 
 class Optimizer(threading.Thread):

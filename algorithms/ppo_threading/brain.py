@@ -5,9 +5,9 @@ import tensorflow as tf
 from colorama import Fore, Style
 from keras.models import *
 
-import algorithms.ppo.params as params
-from algorithms.ppo.conv_models import ConvLSTMModel
-from algorithms.ppo.memory import Memory
+import algorithms.ppo_threading.params as params
+from algorithms.ppo_threading.conv_models import ConvLSTMModel
+from algorithms.ppo_threading.memory import Memory
 
 
 class Brain:
@@ -64,7 +64,7 @@ class Brain:
         old_action = K.sum(old_action, axis=-1, keepdims=True)
         new_action = K.sum(new_action, axis=-1, keepdims=True)
 
-        # set up the policy loss of ppo
+        # set up the policy loss of ppo_threading
         ratio = K.exp(K.log(new_action) - K.log(old_action))
         loss1 = ratio * self.advantage
         loss2 = tf.clip_by_value(ratio, 1.0 - params.RATIO_CLIP_VALUE, 1.0 + params.RATIO_CLIP_VALUE) * self.advantage
@@ -146,32 +146,39 @@ class Brain:
 
         # TODO: again, this is the baseline version. find out why the z normalize the advantages
         target_values = advantages + pred_values
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        #advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-        # now we iterate through the training data
-        # for each iteration, we slice a block of BATCH_SIZE out of it
-        for idx in range(num_samples//params.BATCH_SIZE):
-            lower_idx = idx * params.BATCH_SIZE
-            upper_idx = (idx + 1) * params.BATCH_SIZE
+        indices = np.arange(num_samples)
 
-            batch_observations = from_observations[lower_idx: upper_idx]
-            batch_states = from_states[lower_idx: upper_idx]
-            batch_policies = pred_policies[lower_idx:upper_idx]
-            batch_values = pred_values[lower_idx:upper_idx]
-            batch_action_mask = actions[lower_idx: upper_idx]
-            batch_advantages = advantages[lower_idx: upper_idx]
-            batch_target_values = target_values[lower_idx: upper_idx]
+        for epoch in range(params.NUM_EPOCHS):
+            np.random.shuffle(indices)
 
-            # the model is responsible for plugging in observations and states as needed
-            new_model_feed_dict = self.model.create_feed_dict(batch_observations, batch_states)
+            for idx in range(num_samples//params.BATCH_SIZE):
+                lower_idx = idx * params.BATCH_SIZE
+                upper_idx = (idx + 1) * params.BATCH_SIZE
+                batch_indices = indices[lower_idx:upper_idx]
 
-            self.session.run(self.minimize_step, feed_dict={
-                **new_model_feed_dict,
-                self.old_policy: batch_policies,
-                self.old_value: batch_values,
-                self.action_mask: batch_action_mask,
-                self.advantage: batch_advantages,
-                self.target_value: batch_target_values})
+                batch_observations = from_observations[batch_indices]
+                batch_states = from_states[batch_indices]
+                batch_policies = pred_policies[batch_indices]
+                batch_values = pred_values[batch_indices]
+                batch_action_mask = actions[batch_indices]
+                batch_advantages = advantages[batch_indices]
+                batch_target_values = target_values[batch_indices]
+
+                # z-normalization
+                batch_advantages = (batch_advantages - batch_advantages.mean()) / (batch_advantages.std() + 1e-8)
+
+                # the model is responsible for plugging in observations and states as needed
+                new_model_feed_dict = self.model.create_feed_dict(batch_observations, batch_states)
+
+                self.session.run(self.minimize_step, feed_dict={
+                    **new_model_feed_dict,
+                    self.old_policy: batch_policies,
+                    self.old_value: batch_values,
+                    self.action_mask: batch_action_mask,
+                    self.advantage: batch_advantages,
+                    self.target_value: batch_target_values})
 
         print(Fore.RED+"policy updated"+Style.RESET_ALL)
 
