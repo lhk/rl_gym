@@ -25,7 +25,7 @@ VALUE_CLIP_RANGE = 0.15
 
 L2_REG_CONV = 1e-3  # 1e-3
 L2_REG_FULLY = 1e-3  # 1e-3
-NUM_BATCHES = 2
+NUM_BATCHES = 40
 BATCH_SIZE = 64
 NUM_EPOCHS = 10  # number of times we iterate through the observed data
 
