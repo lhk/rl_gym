@@ -1,1 +1,1 @@
-ENV_NAME = "CartPole-v0"
+ENV_NAME = "SpaceInvaders-v0"

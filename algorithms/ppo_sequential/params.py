@@ -18,9 +18,9 @@ VALUE_CLIP_RANGE = 0.1
 
 L2_REG_CONV = 0  # 1e-3
 L2_REG_FULLY = 0  # 1e-3
-NUM_BATCHES = 256
+NUM_BATCHES = 1024
 BATCH_SIZE = 32
-NUM_EPOCHS = 10  # number of times we iterate through the observed data
+NUM_EPOCHS = 5  # number of times we iterate through the observed data
 
 # parameters for the setup
 NUM_UPDATES = 1000
