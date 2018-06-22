@@ -25,7 +25,7 @@ for update in range(params.NUM_UPDATES):
     agent.reset()
     agent.reset_metadata()
     # generate training data with the agent
-    pbar = tqdm(total=params.MEM_SIZE, dynamic_ncols=True)
+    pbar = tqdm(total=params.MEM_SIZE, desc="collecting observations")
     while len(memory) < params.MEM_SIZE:
         agent.act()
         pbar.update()

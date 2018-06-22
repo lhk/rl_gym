@@ -128,7 +128,7 @@ class Brain:
 
         indices = np.arange(num_samples)
 
-        for epoch in tqdm(range(params.NUM_EPOCHS)):
+        for epoch in tqdm(range(params.NUM_EPOCHS), desc="training on collected data"):
             np.random.shuffle(indices)
 
             for idx in range(num_samples // params.BATCH_SIZE):
