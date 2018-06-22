@@ -5,28 +5,28 @@ from keras.regularizers import l2
 import algorithms.ppo_sequential.params as params
 
 
-class FullyConnectedModel():
+class FCModel():
+    INPUT_SHAPE = (7,)
+    FC_SIZE = 64
+    NUM_HIDDEN_LAYERS = 2
     def __init__(self):
         # some parameters now belong to the model
-        self.INPUT_SHAPE = (7,)
-        self.FC_SIZE = 64
 
         # build a model to predict action probabilities and values
         self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
 
         # predicting policy
-        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(
-            self.input_observation)
-        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
-        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(
-            hidden)
+        layer = self.input_observation
+        for _ in range(self.NUM_HIDDEN_LAYERS):
+            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
+
+        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
 
         # predicting value
-        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(
-            self.input_observation)
-        hidden = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(hidden)
-        pred_value = Dense(1, kernel_regularizer=l2(params.L2_REG_FULLY))(
-            hidden)
+        layer = self.input_observation
+        for _ in range(self.NUM_HIDDEN_LAYERS):
+            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
+        pred_value = Dense(1, kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
 
         model = Model(inputs=[self.input_observation], outputs=[pred_policy, pred_value])
 
@@ -60,3 +60,19 @@ class FullyConnectedModel():
 
     def create_feed_dict(self, observation, state):
         return {self.input_observation: observation}
+
+class FCCartPole(FCModel):
+    INPUT_SHAPE = (4,)
+    FC_SIZE = 16
+    NUM_HIDDEN_LAYERS = 1
+
+    def __init__(self):
+        FCModel.__init__(self)
+
+class FCRadialCar(FCModel):
+    INPUT_SHAPE = (7,)
+    FC_SIZE = 32
+    NUM_HIDDEN_LAYERS = 2
+
+    def __init__(self):
+        FCModel.__init__(self)
