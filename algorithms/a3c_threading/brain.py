@@ -6,7 +6,7 @@ from keras.models import *
 
 import algorithms.a3c_threading.params as params
 from algorithms.a3c_threading.memory import Memory
-
+from util.loss_functions import huber_loss
 
 class Brain:
 
@@ -59,10 +59,11 @@ class Brain:
 
         # value is trained on n_step TD-lambda value estimation
         # TODO: this is very high variance, maybe switch to Huber loss
-        loss_value = params.LOSS_VALUE * (self.target_value - pred_values) ** 2
+        #loss_value = params.LOSS_VALUE * (self.target_value - pred_values) ** 2
+        loss_value = params.LOSS_VALUE * huber_loss(self.target_value, pred_values)
 
         # entropy is maximized
-        eps = 1e-10
+        eps = 1e-8
         loss_entropy = - params.LOSS_ENTROPY * K.sum(policy * K.log(policy + eps), axis=-1, keepdims=True)
 
         loss_regularization = self.model.loss_regularization
