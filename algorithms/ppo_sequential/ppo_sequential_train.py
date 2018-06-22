@@ -5,15 +5,21 @@ np.random.seed(0)
 
 from algorithms.ppo_sequential.agent import Agent
 from algorithms.ppo_sequential.brain import Brain
-from algorithms.ppo_sequential.fc_models import FullyConnectedModel
+from algorithms.ppo_sequential.conv_models import ConvLSTMModel
 from algorithms.ppo_sequential.memory import Memory
 import algorithms.ppo_sequential.params as params
+
+# from environments.obstacle_car.environment import Environment_Graphical as Environment
+# from environments.obstacle_car.environment_vec import Environment_Vec as Environment
+from environments.openai_gym.environment import Environment
+
 from colorama import Fore, Style
 from tqdm import tqdm
 
+Model = ConvLSTMModel
 memory = Memory()
-brain = Brain(FullyConnectedModel)
-agent = Agent(brain, memory)
+brain = Brain(Model)
+agent = Agent(brain, memory, Environment)
 
 for update in range(params.NUM_UPDATES):
     agent.reset()

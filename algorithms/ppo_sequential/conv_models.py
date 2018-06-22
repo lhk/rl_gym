@@ -22,7 +22,7 @@ class ConvLSTMModel():
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(conv)
 
         conv_flattened = Flatten()(conv)
-        dense = Dense(64, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
+        dense = Dense(64, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
 
         # shape = [batch_size, time_steps, input_dim]
         dense = Reshape((1, 64))(dense)
@@ -30,7 +30,7 @@ class ConvLSTMModel():
         # apply an rnn
         # expose the state of the cell, so that we can recreate the setup
         # of the cell during training
-        gru_cell = GRU(self.RNN_SIZE, return_state=True, kernel_regularizer=l2(params.L2_REG_FULLY))
+        gru_cell = GRU(self.RNN_SIZE, return_state=True, kernel_regularizer=l2(params.L2_REG_FULLY), activation="tanh")
         self.input_state = Input(shape=(self.RNN_SIZE,))
         gru_tensor, output_memory = gru_cell(dense, initial_state=self.input_state)
 

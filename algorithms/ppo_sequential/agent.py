@@ -6,18 +6,17 @@ import algorithms.ppo_sequential.params as params
 from algorithms.ppo_sequential.brain import Brain
 from algorithms.ppo_sequential.memory import Memory
 
-# from environments.obstacle_car.environment import Environment_Graphical as Environment
-from environments.obstacle_car.environment_vec import Environment_Vec as Environment
-# from environments.openai_gym.environment import Environment
 import pygame
 
 
 class Agent():
-    def __init__(self, brain: Brain,
+    def __init__(self,
+                 brain: Brain,
                  shared_memory: Memory,
+                 Env,
                  vis=False):
 
-        self.env = Environment()
+        self.env = Env()
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
@@ -70,10 +69,9 @@ class Agent():
 
         self.total_reward = 0
 
-
     def reset_metadata(self):
-        self.num_episodes=0
-        self.episode_rewards=[]
+        self.num_episodes = 0
+        self.episode_rewards = []
 
     def act(self):
 

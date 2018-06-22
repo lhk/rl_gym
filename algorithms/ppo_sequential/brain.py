@@ -1,6 +1,7 @@
 import tensorflow as tf
 from colorama import Fore, Style
 from keras.models import *
+from tqdm import tqdm
 
 import algorithms.ppo_sequential.params as params
 from algorithms.ppo_sequential.conv_models import ConvLSTMModel
@@ -127,7 +128,7 @@ class Brain:
 
         indices = np.arange(num_samples)
 
-        for epoch in range(params.NUM_EPOCHS):
+        for epoch in tqdm(range(params.NUM_EPOCHS)):
             np.random.shuffle(indices)
 
             for idx in range(num_samples // params.BATCH_SIZE):
