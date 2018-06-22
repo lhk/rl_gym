@@ -6,7 +6,7 @@ from colorama import Fore, Style
 from keras.models import *
 
 import algorithms.ppo_mpi.params as params
-from algorithms.ppo_mpi.conv_models import ConvLSTMModel
+from algorithms.policy_models.conv_models import ConvLSTMModel
 from algorithms.ppo_mpi.memory import Memory
 
 

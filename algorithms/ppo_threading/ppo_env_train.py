@@ -8,7 +8,7 @@ import time, threading, os
 
 from algorithms.ppo_threading.agent import Agent
 from algorithms.ppo_threading.brain import Brain
-from algorithms.ppo_threading.fc_models import FullyConnectedModel
+from algorithms.policy_models.fc_models import FullyConnectedModel
 from algorithms.ppo_threading.memory import Memory
 import algorithms.ppo_threading.params as params
 

@@ -5,7 +5,7 @@ np.random.seed(0)
 
 from algorithms.ppo_sequential.agent import Agent
 from algorithms.ppo_sequential.brain import Brain
-from algorithms.ppo_sequential.conv_models import ConvLSTMModel
+from algorithms.policy_models.conv_models import ConvLSTMModel
 from algorithms.ppo_sequential.memory import Memory
 import algorithms.ppo_sequential.params as params
 

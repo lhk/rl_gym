@@ -11,7 +11,7 @@ import time, threading, os
 
 from algorithms.ppo_mpi.agent import Agent
 from algorithms.ppo_mpi.brain import Brain
-from algorithms.ppo_mpi.fc_models import FullyConnectedModel
+from algorithms.policy_models.fc_models import FullyConnectedModel
 from algorithms.ppo_mpi.memory import Memory
 import algorithms.ppo_mpi.params as params
 

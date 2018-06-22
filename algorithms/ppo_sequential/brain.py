@@ -4,7 +4,7 @@ from keras.models import *
 from tqdm import tqdm
 
 import algorithms.ppo_sequential.params as params
-from algorithms.ppo_sequential.conv_models import ConvLSTMModel
+from algorithms.policy_models.conv_models import ConvLSTMModel
 
 
 class Brain:
