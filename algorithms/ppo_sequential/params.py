@@ -2,10 +2,10 @@
 NUM_STEPS = 100  # basically always run till episode end
 GAMMA = 0.99
 LAMBDA = 0.95
-REWARD_SCALE = 0.1
+REWARD_SCALE = 1
 
 # parameters for the neural network
-NUM_ACTIONS = 4
+NUM_ACTIONS = 2
 
 # parameters for the training
 LEARNING_RATE = 3e-4
@@ -18,7 +18,7 @@ VALUE_CLIP_RANGE = 0.1
 
 L2_REG_CONV = 0  # 1e-3
 L2_REG_FULLY = 0  # 1e-3
-NUM_BATCHES = 1024
+NUM_BATCHES = 64
 BATCH_SIZE = 32
 NUM_EPOCHS = 5  # number of times we iterate through the observed data
 
