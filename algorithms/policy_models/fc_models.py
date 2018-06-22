@@ -2,13 +2,15 @@ from keras.layers import *
 from keras.models import *
 from keras.regularizers import l2
 
-import algorithms.ppo_sequential.params as params
-
 
 class FCModel():
     INPUT_SHAPE = (7,)
     FC_SIZE = 64
     NUM_HIDDEN_LAYERS = 2
+    NUM_ACTIONS = 1
+
+    L2_REG_FULLY = 1e-3
+
     def __init__(self):
         # some parameters now belong to the model
 
@@ -18,15 +20,15 @@ class FCModel():
         # predicting policy
         layer = self.input_observation
         for _ in range(self.NUM_HIDDEN_LAYERS):
-            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
+            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
 
-        pred_policy = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
+        pred_policy = Dense(self.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
 
         # predicting value
         layer = self.input_observation
         for _ in range(self.NUM_HIDDEN_LAYERS):
-            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
-        pred_value = Dense(1, kernel_regularizer=l2(params.L2_REG_FULLY))(layer)
+            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
+        pred_value = Dense(1, kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
 
         model = Model(inputs=[self.input_observation], outputs=[pred_policy, pred_value])
 
@@ -66,6 +68,8 @@ class FCCartPole(FCModel):
     FC_SIZE = 16
     NUM_HIDDEN_LAYERS = 1
 
+    NUM_ACTIONS = 2
+
     def __init__(self):
         FCModel.__init__(self)
 
@@ -73,6 +77,8 @@ class FCRadialCar(FCModel):
     INPUT_SHAPE = (7,)
     FC_SIZE = 32
     NUM_HIDDEN_LAYERS = 2
+
+    NUM_ACTIONS = 4
 
     def __init__(self):
         FCModel.__init__(self)
