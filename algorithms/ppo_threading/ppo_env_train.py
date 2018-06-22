@@ -8,7 +8,7 @@ import time, threading, os
 
 from algorithms.ppo_threading.agent import Agent
 from algorithms.ppo_threading.brain import Brain
-from algorithms.policy_models.fc_models import FullyConnectedModel
+from algorithms.policy_models.fc_models import FCModel
 from algorithms.ppo_threading.memory import Memory
 import algorithms.ppo_threading.params as params
 
@@ -30,7 +30,7 @@ collect_data = Event()
 collect_data.set()
 
 memory = Memory(collect_data)
-brain = Brain(memory, FullyConnectedModel, collect_data)
+brain = Brain(memory, FCModel, collect_data)
 
 agents = [Agent(brain, memory, collect_data) for i in range(params.AGENTS)]
 #agents.append(Agent(brain, memory, collect_data, reset_queue,  vis=True))  # one agent for the visualization

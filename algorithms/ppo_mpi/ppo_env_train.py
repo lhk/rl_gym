@@ -11,7 +11,7 @@ import time, threading, os
 
 from algorithms.ppo_mpi.agent import Agent
 from algorithms.ppo_mpi.brain import Brain
-from algorithms.policy_models.fc_models import FullyConnectedModel
+from algorithms.policy_models.fc_models import FCModel
 from algorithms.ppo_mpi.memory import Memory
 import algorithms.ppo_mpi.params as params
 
@@ -22,7 +22,7 @@ rank = comm.Get_rank()
 
 print(rank)
 
-Model = FullyConnectedModel
+Model = FCModel
 
 if rank == params.rank_brain:
     # set up the brain
