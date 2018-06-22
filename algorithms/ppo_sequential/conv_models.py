@@ -11,7 +11,8 @@ class ConvLSTMModel():
         # some parameters now belong to the model
         self.FRAME_SIZE = (84, 84)
         self.INPUT_SHAPE = (*self.FRAME_SIZE, 3)
-        self.RNN_SIZE = 64
+        self.DENSE_SIZE = 128
+        self.RNN_SIZE = 128
 
         # build a model to predict action probabilities and values
         self.input_observation = Input(shape=(*self.INPUT_SHAPE,))
@@ -22,10 +23,10 @@ class ConvLSTMModel():
         conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(conv)
 
         conv_flattened = Flatten()(conv)
-        dense = Dense(64, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
+        dense = Dense(self.DENSE_SIZE, activation="tanh", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
 
         # shape = [batch_size, time_steps, input_dim]
-        dense = Reshape((1, 64))(dense)
+        dense = Reshape((1, self.DENSE_SIZE))(dense)
 
         # apply an rnn
         # expose the state of the cell, so that we can recreate the setup
