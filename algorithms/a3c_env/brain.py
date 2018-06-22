@@ -1,14 +1,11 @@
 import time
 
 import tensorflow as tf
-from keras.layers import *
+from colorama import Fore, Style
 from keras.models import *
-from keras.regularizers import l2
 
 import algorithms.a3c_env.params as params
 from algorithms.a3c_env.memory import Memory
-
-from colorama import Fore, Style
 
 
 class Brain:
