@@ -8,10 +8,9 @@ import algorithms.a3c_env.params as params
 from algorithms.a3c_env.brain import Brain
 from algorithms.a3c_env.memory import Memory
 
-import lycon
-
-from environments.obstacle_car.environment_graphical import Environment_Graphical as Environment
-
+# from environments.obstacle_car.environment import Environment_Graphical as Environment
+#from environments.obstacle_car.environment_vec import Environment_Vec as Environment
+from environments.openai_gym.environment import Environment
 import pygame
 
 
@@ -22,16 +21,14 @@ class Agent(threading.Thread):
 
         threading.Thread.__init__(self)
 
-        # chance of sampling a random action
-        self.exploration = params.INITIAL_EXPLORATION
-
         self.env = Environment()
 
         # a local memory, to store observations made by this agent
         # action 0 and reward 0 are between state 0 and 1
-        self.seen_states = []  # state of the environment
+        self.seen_observations = []  # state of the environment
         self.seen_values = []  # corresponding estimated values (given by network)
-        self.seen_memories = []  # internal states of the rnns
+        self.seen_policies = []  # policies predicted by the network
+        self.seen_states = []  # state of the model
         self.seen_actions = []  # actions taken
         self.seen_rewards = []  # rewards given
         self.n_step_reward = 0  # reward for n consecutive steps
@@ -47,86 +44,80 @@ class Agent(threading.Thread):
 
         self.vis = vis
         if self.vis:
+            self.canvas_size = (500, 500)
+            self.canvas = np.zeros([*self.canvas_size, 3])
             pygame.init()
             self.clock = pygame.time.Clock()
-            self.window = pygame.display.set_mode(params.FRAME_SIZE)
+            self.window = pygame.display.set_mode(self.canvas_size)
             pygame.display.set_caption("Pygame cheat sheet")
 
-    def preprocess_state(self, new_state):
-        downsampled = lycon.resize(new_state, width=params.FRAME_SIZE[0], height=params.FRAME_SIZE[1],
-                                   interpolation=lycon.Interpolation.NEAREST)
-        if len(downsampled.shape) == 2:
-            new_state = np.expand_dims(downsampled, axis=-1)
-        elif downsampled.shape[2] > 1 and params.INPUT_SHAPE[2] == 1:
-            grayscale = downsampled.mean(axis=-1)
-            new_state = grayscale.reshape((params.INPUT_SHAPE))
-        else:
-            new_state = downsampled.reshape((params.INPUT_SHAPE))
-        return new_state
+    def reset(self):
+        # clear all local memory
+        self.seen_observations = []  # state of the environment
+        self.seen_values = []  # corresponding estimated values (given by network)
+        self.seen_policies = []  # policies predicted by the network
+        self.seen_states = []  # state of the model
+        self.seen_actions = []  # actions taken
+        self.seen_rewards = []  # rewards given
+
+        # reset n-step reward calculation
+        self.n_step_reward = 0  # reward for n consecutive steps
+
+        # reset environment
+        self.observation = self.env.reset()
+        self.observation = self.brain.preprocess(self.observation)
+        self.seen_observations = [self.observation]
+
+        # reset model
+        self.state = self.brain.get_initial_state()
+        self.seen_states = [self.state]
 
     def run_one_episode(self):
 
-        # reset state of the agent
-        self.env.reset()
-        state = self.env.render()
-        state = self.preprocess_state(state)
-        self.seen_states = [state]
-
-        # our network always needs to know the state of the internal rnn layers
-        # since the network is used by many agents at once, each agent needs to keep track
-        # of the memory on his own
-        # and at the beginning of a new episode, he needs to initialize this memory:
-        # the values for the random noise have been read from the keras source code,
-        # compare with TODO: link initializer source
-        memory = np.random.rand(1, params.RNN_SIZE) * 0.1 - 0.05
-        self.seen_memories = [memory[0]]
-
+        self.reset()
         total_reward = 0
-        self.n_step_reward = 0
 
         # runs until episode is over, or self.stop == True
         while True:
-            time.sleep(params.WAITING_TIME)
 
             # show current state to network and get predicted policy
-            actions, value, memory = self.brain.predict(state, memory)
+            policy, value, self.state = self.brain.predict(self.observation, self.state)
 
             # flatten the output
-            actions = actions[0]
-            memory = memory[0]
+            # TODO: predict flattened output by the model
+            policy = policy[0]
+            if [] != self.state:
+                self.state = self.state[0]
             value = value[0, 0]
 
-            # get next action, explore with probability self.eps
-            if np.random.rand() < self.exploration:
-                action_index = np.random.randint(params.NUM_ACTIONS)
-            else:
-                action_index = np.random.choice(params.NUM_ACTIONS, p=actions)
+            action = np.random.choice(params.NUM_ACTIONS, p=policy)
 
-            # anneal epsilon
-            if self.exploration > params.FINAL_EXPLORATION:
-                self.exploration -= params.EXPLORATION_STEP
-
-            new_state, reward, done = self.env.step(action_index)
+            new_observation, reward, done, _ = self.env.step(action)
             reward *= params.REWARD_SCALE
 
             if done:
-                new_state = np.zeros_like(state)
+                new_observation = np.zeros_like(self.observation)
             else:
-                new_state = self.preprocess_state(new_state)
+                new_observation = self.brain.preprocess(new_observation)
 
             actions_onehot = np.zeros(params.NUM_ACTIONS)
-            actions_onehot[action_index] = 1
+            actions_onehot[action] = 1
 
             # append observations to local memory
             self.seen_values.append(value)
-            self.seen_memories.append(memory)
+            self.seen_states.append(self.state)
+            self.seen_policies.append(policy)
             self.seen_actions.append(actions_onehot)
             self.seen_rewards.append(reward)
-            self.seen_states.append(new_state)
+            self.seen_observations.append(new_observation)
             self.n_step_reward = (self.n_step_reward + reward * params.GAMMA ** params.NUM_STEPS) / params.GAMMA
 
             assert len(self.seen_actions) <= params.NUM_STEPS, "as soon as N steps are reached, " \
                                                                "local memory must be moved to shared memory"
+
+            # update state of agent
+            self.observation = new_observation
+            total_reward += reward
 
             # move local memory to shared memory
             if done:
@@ -138,14 +129,13 @@ class Agent(threading.Thread):
             elif len(self.seen_actions) == params.NUM_STEPS:
                 self.move_to_memory(done)
 
-            # update state of agent
-            state = new_state
-            total_reward += reward
-
+            # TODO: implement openai render() on custom envs
             if self.vis:
-                render_frame = state.copy()
-                render_surf = pygame.surfarray.make_surface(render_frame)
-                self.window.blit(render_surf, (0, 0))
+                self.canvas[:] = 0
+                self.env.render_to_canvas(self.canvas)
+
+                surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
+                self.window.blit(surf, (0, 0))
 
                 self.clock.tick(10)
                 pygame.display.update()
@@ -156,7 +146,6 @@ class Agent(threading.Thread):
         self.num_episodes += 1
         # print debug information
         print("total reward: {}, after {} episodes".format(total_reward, self.num_episodes))
-        print("with exploration {}".format(self.exploration))
 
         if self.num_episodes > params.NUM_EPISODES:
             self.stop = True
@@ -170,7 +159,6 @@ class Agent(threading.Thread):
     def move_to_memory(self, terminal):
         # removes one set of observations from local memory
         # and pushes it to shared memory
-
         #  read the length first, before popping anything
         length = len(self.seen_actions)
 

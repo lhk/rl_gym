@@ -9,7 +9,7 @@ import time, threading, os
 from algorithms.a3c_env.agent import Agent
 from algorithms.a3c_env.brain import Brain
 from algorithms.a3c_env.memory import Memory
-from algorithms.policy_models.fc_models import FullyConnectedModel
+from algorithms.policy_models.fc_models import FCCartPole
 import algorithms.a3c_env.params as params
 
 
@@ -25,7 +25,7 @@ class Optimizer(threading.Thread):
             brain.optimize()
 
 
-Model = FullyConnectedModel
+Model = FCCartPole
 memory = Memory()
 brain = Brain(Model, memory)
 

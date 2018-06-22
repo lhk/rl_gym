@@ -29,7 +29,7 @@ class Brain:
 
         # running tensorflow in a multithreaded environment requires additional setup work
         # and freezing the resulting graph
-        self.model._make_predict_function()
+        self.model.model._make_predict_function()
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
         self.default_graph.finalize()
@@ -113,16 +113,37 @@ class Brain:
 
         # TODO: again, this is the baseline version. find out why the z normalize the advantages
         target_values = advantages + pred_values
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        # advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-        # the model is responsible for plugging in observations and states as needed
-        new_model_feed_dict = self.model.create_feed_dict(from_observations, from_states)
+        indices = np.arange(num_samples)
 
-        self.session.run(self.minimize_step, feed_dict={
-            **new_model_feed_dict,
-            self.action_mask: actions,
-            self.advantage: advantages,
-            self.target_value: target_values})
+        for epoch in range(params.NUM_EPOCHS):
+            np.random.shuffle(indices)
+
+            for idx in range(num_samples // params.BATCH_SIZE):
+                lower_idx = idx * params.BATCH_SIZE
+                upper_idx = (idx + 1) * params.BATCH_SIZE
+                batch_indices = indices[lower_idx:upper_idx]
+
+                batch_observations = from_observations[batch_indices]
+                batch_states = from_states[batch_indices]
+                batch_policies = pred_policies[batch_indices]
+                batch_values = pred_values[batch_indices]
+                batch_action_mask = actions[batch_indices]
+                batch_advantages = advantages[batch_indices]
+                batch_target_values = target_values[batch_indices]
+
+                # z-normalization
+                batch_advantages = (batch_advantages - batch_advantages.mean()) / (batch_advantages.std() + 1e-8)
+
+                # the model is responsible for plugging in observations and states as needed
+                model_feed_dict = self.model.create_feed_dict(batch_observations, batch_states)
+
+                self.session.run(self.minimize_step, feed_dict={
+                    **model_feed_dict,
+                    self.action_mask: batch_action_mask,
+                    self.advantage: batch_advantages,
+                    self.target_value: batch_target_values})
 
         print(Fore.RED)
         print("policy updated")
