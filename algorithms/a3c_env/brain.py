@@ -8,10 +8,12 @@ from keras.regularizers import l2
 import algorithms.a3c_env.params as params
 from algorithms.a3c_env.memory import Memory
 
+from colorama import Fore, Style
+
 
 class Brain:
 
-    def __init__(self, memory: Memory):
+    def __init__(self, ModelClass, memory: Memory):
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
@@ -21,17 +23,12 @@ class Brain:
         K.set_session(self.session)
         K.manual_variable_initialization(True)
 
-        # set up a model for policy and values
-        # set up placeholders for the inputs during training
-        model, input_state, input_memory, action_mask, t_step_reward, advantage, minimize_step = self.__setup_model()
+        # set up a model for policy and
+        self.model = ModelClass()
 
-        self.model = model
-        self.input_state = input_state
-        self.input_memory = input_memory
-        self.action_mask = action_mask
-        self.t_step_reward = t_step_reward
-        self.advantage = advantage
-        self.minimize_step = minimize_step
+        # the model only contains the function approximator
+        # the loss function for training is set up here
+        self.__setup_training()
 
         # running tensorflow in a multithreaded environment requires additional setup work
         # and freezing the resulting graph
@@ -43,77 +40,48 @@ class Brain:
         # a globally shared memory, this will be filled by the asynchronous agents
         self.memory = memory
 
-    def __setup_model(self):
-
-        # build a model to predict action probabilities and values
-        input_state = Input(shape=(*params.INPUT_SHAPE,))
-
-        rescaled = Lambda(lambda x: x / 255.)(input_state)
-        conv = Conv2D(16, (8, 8), strides=(4, 4), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(
-            rescaled)
-        conv = Conv2D(32, (4, 4), strides=(2, 2), activation='relu', kernel_regularizer=l2(params.L2_REG_CONV))(conv)
-
-        conv_flattened = Flatten()(conv)
-        dense = Dense(64, activation="relu", kernel_regularizer=l2(params.L2_REG_FULLY))(conv_flattened)
-
-        # shape = [batch_size, time_steps, input_dim]
-        dense = Reshape((1, 64))(dense)
-
-        # apply an rnn
-        # expose the state of the cell, so that we can recreate the setup
-        # of the cell during training
-        gru_cell = GRU(params.RNN_SIZE, return_state=True, kernel_regularizer=l2(params.L2_REG_FULLY))
-        input_memory = Input(shape=(params.RNN_SIZE,))
-        gru_tensor, output_memory = gru_cell(dense, initial_state=input_memory)
-
-        pred_actions = Dense(params.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(params.L2_REG_FULLY))(
-            gru_tensor)
-        pred_values = Dense(1, activation='linear', kernel_regularizer=l2(params.L2_REG_FULLY))(gru_tensor)
-
-        model = Model(inputs=[input_state, input_memory], outputs=[pred_actions, pred_values, output_memory])
-
-        # the model is not compiled with any loss function
-        # but the regularizers are still exposed as losses
-        loss_regularization = sum(model.losses)
-
+    def __setup_training(self):
         # due to keras' restrictions on loss functions,
-        # the above can't be trained with a simple keras loss function
         # we use tensorflow to create a minimization step for the custom loss
 
         # placeholders
-        action_mask = Input(shape=(params.NUM_ACTIONS,))
+        self.action_mask = Input(shape=(params.NUM_ACTIONS,), name="action_mask")
 
-        # TODO: rename n_step_reward, this also includes the target value at the end
-        n_step_reward = Input(shape=(1,))
-        advantage = Input(shape=(1,))
+        self.target_value = Input(shape=(1,), name="target_value")
+        self.advantage = Input(shape=(1,), name="advantage")
 
-        # loss formulation of a3c_env
-        chosen_action = pred_actions * action_mask
-        chosen_action = K.sum(chosen_action, axis=-1, keepdims=True)
-        log_prob = K.log(chosen_action)
+        pred_values = self.model.pred_value
+        policy = self.model.pred_policy
+
+        # loss formulation of A3C
+        chosen_action = policy * self.action_mask
+        log_prob = K.log(K.sum(chosen_action, axis=-1, keepdims=True))
 
         # policy is the standard loss for a policy update with advantage function as weight
-        loss_policy = -log_prob * advantage
+        loss_policy = -log_prob * self.advantage
 
         # value is trained on n_step TD-lambda value estimation
         # TODO: this is very high variance, maybe switch to Huber loss
-        loss_value = params.LOSS_VALUE * (n_step_reward - pred_values) ** 2
+        loss_value = params.LOSS_VALUE * (self.target_value - pred_values) ** 2
 
         # entropy is maximized
         eps = 1e-10
-        entropy = - params.LOSS_ENTROPY * K.sum(pred_actions * K.log(pred_actions + eps), axis=-1, keepdims=True)
+        loss_entropy = - params.LOSS_ENTROPY * K.sum(policy * K.log(policy + eps), axis=-1, keepdims=True)
 
-        loss = tf.reduce_sum(loss_policy + loss_value + loss_regularization + entropy)
+        loss_regularization = self.model.loss_regularization
+
+        loss = tf.reduce_sum(loss_policy + loss_value + loss_regularization + loss_entropy)
 
         # we have to use tensorflow, this is not possible withing a custom keras loss function
         optimizer = tf.train.AdamOptimizer(learning_rate=params.LEARNING_RATE)
         gradients_variables = optimizer.compute_gradients(loss)
-        gradients, variables = zip(*gradients_variables)
-        gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
-        gradients_variables = zip(gradients, variables)
+        if params.GRADIENT_NORM_CLIP is not None:
+            gradients, variables = zip(*gradients_variables)
+            gradients, gradient_norms = tf.clip_by_global_norm(gradients, params.GRADIENT_NORM_CLIP)
+            gradients_variables = zip(gradients, variables)
         minimize_step = optimizer.apply_gradients(gradients_variables)
 
-        return model, input_state, input_memory, action_mask, n_step_reward, advantage, minimize_step
+        self.minimize_step = minimize_step
 
     def optimize(self):
 
@@ -122,43 +90,55 @@ class Brain:
             time.sleep(0)
             return
 
-        # get up to MAX_BATCH items from the training queue
-        from_states, from_memories, to_states, to_memories, actions, rewards, advantages, terminal, length = self.memory.pop(
-            params.MAX_BATCH)
+        batch = self.memory.pop()
+
+        (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
+         advantages,
+         terminals, lengths) = batch
+
+        from_observations = np.array(from_observations)
         from_states = np.array(from_states)
-        from_memories = np.array(from_memories)
+        to_observations = np.array(to_observations)
         to_states = np.array(to_states)
-        to_memories = np.array(to_memories)
-        actions = np.vstack(actions)
+        pred_policies = np.array(pred_policies).reshape((-1, params.NUM_ACTIONS))
+        pred_values = np.array(pred_values).reshape((-1, 1))
+        actions = np.vstack(actions).reshape((-1, params.NUM_ACTIONS))
         rewards = np.vstack(rewards)
-        terminal = np.vstack(terminal)
-        advantages = np.vstack(advantages)
-        length = np.vstack(length)
+        terminals = np.vstack(terminals)
+        advantages = np.vstack(advantages).reshape((-1, 1))
+        lengths = np.vstack(lengths)
+
+        num_samples = from_observations.shape[0]
 
         # predict the final value
-        # TODO: this is incorrect, if the local memory of the states unrols after an episode end. it might not be N steps into the future
-        _, end_values, _ = self.predict(to_states, to_memories)
-        n_step_reward = rewards + params.GAMMA ** length * end_values * (1 - terminal)
+        # _, end_values, _ = self.predict(to_observations, to_states)
+        # target_values = rewards + params.GAMMA ** length * end_values * (1 - terminals)
+
+        # TODO: again, this is the baseline version. find out why the z normalize the advantages
+        target_values = advantages + pred_values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+        # the model is responsible for plugging in observations and states as needed
+        new_model_feed_dict = self.model.create_feed_dict(from_observations, from_states)
 
         self.session.run(self.minimize_step, feed_dict={
-            self.input_state: from_states,
-            self.input_memory: from_memories,
+            **new_model_feed_dict,
             self.action_mask: actions,
             self.advantage: advantages,
-            self.t_step_reward: n_step_reward})
+            self.target_value: target_values})
 
-        # print("step")
+        print(Fore.RED)
+        print("policy updated")
+        print(Style.RESET_ALL)
 
-    def predict(self, state, memory):
-        # keras always needs a batch dimension
-        if state.shape == params.INPUT_SHAPE:
-            state = state.reshape((-1, *params.INPUT_SHAPE))
-
-        # the memory shape is given by the number of cells in the rnn layer
-        # I don't want to move that to a parameter, so right now, it is a "magic number"
-        # TODO: maybe a parameter after all ?
-        if memory.shape == (params.RNN_SIZE,):
-            memory = memory.reshape((-1, params.RNN_SIZE))
-
+    # the following methods will simply be routed to the model
+    # this routing is not really elegant but I didn't want to expose the model outside of the brain
+    def predict(self, observation, state):
         with self.default_graph.as_default():
-            return self.model.predict([state, memory])
+            return self.model.predict(observation, state)
+
+    def preprocess(self, observation):
+        return self.model.preprocess(observation)
+
+    def get_initial_state(self):
+        return self.model.get_initial_state()

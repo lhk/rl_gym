@@ -9,6 +9,7 @@ import time, threading, os
 from algorithms.a3c_env.agent import Agent
 from algorithms.a3c_env.brain import Brain
 from algorithms.a3c_env.memory import Memory
+from algorithms.policy_models.fc_models import FullyConnectedModel
 import algorithms.a3c_env.params as params
 
 
@@ -24,8 +25,9 @@ class Optimizer(threading.Thread):
             brain.optimize()
 
 
+Model = FullyConnectedModel
 memory = Memory()
-brain = Brain(memory)
+brain = Brain(Model, memory)
 
 agents = [Agent(brain, memory) for i in range(params.AGENTS)]
 # agents.append(Agent(brain, memory, vis=True)) # one agent for the visualization

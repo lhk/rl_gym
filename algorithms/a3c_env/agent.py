@@ -171,37 +171,43 @@ class Agent(threading.Thread):
         # removes one set of observations from local memory
         # and pushes it to shared memory
 
-        # read the length first, before popping anything
+        #  read the length first, before popping anything
         length = len(self.seen_actions)
 
-        # compute gae advantage
-        # the series of rewards seen in the memory
-        # the last reward is replaced with the predicted value of the last state
-        rewards = np.array(self.seen_rewards)
+        advantage_gae = self.compute_gae(np.array(self.seen_rewards), np.array(self.seen_values), terminal)
+
+        from_observation = self.seen_observations.pop(0)
+        from_state = self.seen_states.pop(0)
+        to_observation = self.seen_observations[-1]
+        to_state = self.seen_states[-1]
+        action = self.seen_actions.pop(0)
+        reward = self.seen_rewards.pop(0)
+        pred_value = self.seen_values.pop(0)
+        pred_policy = self.seen_policies.pop(0)
+
+        batch = (
+            from_observation, from_state, to_observation, to_state, pred_policy, pred_value, action, reward,
+            advantage_gae,
+            terminal, length)
+        self.shared_memory.push(batch)
+
+        self.n_step_reward = (self.n_step_reward - reward)
+
+    def compute_gae(self, rewards, values, terminal):
+        length = len(rewards)
 
         # delta functions are 1 step TD lambda
-        # delta functions are 1 step TD lambda
-        values = np.zeros((length + 1,))
-        values[:-1] = self.seen_values[:]
-        values[-1] = self.seen_values[-1] * (1 - terminal)
-        deltas = rewards[:-1] + params.GAMMA * values[1:] - values[:-1]
+        padded_values = np.zeros((length + 1,))
+        padded_values[:-1] = values
+        padded_values[-1] = values[-1] * (1 - terminal)
+
+        deltas = rewards + params.GAMMA * padded_values[1:] - padded_values[:-1]
 
         # gae advantage uses a weighted sum of deltas,
         # compare (16) in the gae paper
         discount_factor = params.GAMMA * params.LAMBDA
-        weights = np.geomspace(1, discount_factor ** len(deltas), len(deltas))
+        weights = np.geomspace(1, discount_factor ** (len(deltas) - 1), len(deltas))
         weighted_series = deltas * weights
         advantage_gae = weighted_series.sum()
 
-        from_state = self.seen_states.pop(0)
-        from_memory = self.seen_memories.pop(0)
-        to_state = self.seen_states[-1]
-        to_memory = self.seen_memories[-1]
-        first_action = self.seen_actions.pop(0)
-        first_reward = self.seen_rewards.pop(0)
-        first_value = self.seen_values.pop(0)
-
-        self.shared_memory.push(from_state, from_memory, to_state, to_memory, first_action, self.n_step_reward,
-                                advantage_gae, terminal, length)
-
-        self.n_step_reward = (self.n_step_reward - first_reward)
+        return advantage_gae
