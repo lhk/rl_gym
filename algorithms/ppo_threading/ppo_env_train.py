@@ -54,4 +54,4 @@ for o in opts:
 for o in opts:
     o.join()
 
-brain.model.save(os.getcwd() + "/a3c_env/weights.hdf5")
+brain.model.save(os.getcwd() + "/a3c_threading/weights.hdf5")

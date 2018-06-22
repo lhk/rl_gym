@@ -4,8 +4,8 @@ import tensorflow as tf
 from colorama import Fore, Style
 from keras.models import *
 
-import algorithms.a3c_env.params as params
-from algorithms.a3c_env.memory import Memory
+import algorithms.a3c_threading.params as params
+from algorithms.a3c_threading.memory import Memory
 
 
 class Brain:

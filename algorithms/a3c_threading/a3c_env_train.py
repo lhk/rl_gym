@@ -6,11 +6,11 @@ np.random.seed(0)
 
 import time, threading, os
 
-from algorithms.a3c_env.agent import Agent
-from algorithms.a3c_env.brain import Brain
-from algorithms.a3c_env.memory import Memory
+from algorithms.a3c_threading.agent import Agent
+from algorithms.a3c_threading.brain import Brain
+from algorithms.a3c_threading.memory import Memory
 from algorithms.policy_models.fc_models import FCCartPole
-import algorithms.a3c_env.params as params
+import algorithms.a3c_threading.params as params
 
 
 class Optimizer(threading.Thread):
@@ -50,4 +50,4 @@ for o in opts:
 for o in opts:
     o.join()
 
-brain.model.save(os.getcwd() + "/a3c_env/weights.hdf5")
+brain.model.save(os.getcwd() + "/a3c_threading/weights.hdf5")

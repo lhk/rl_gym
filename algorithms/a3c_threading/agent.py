@@ -4,9 +4,9 @@ np.seterr(all="raise")
 
 import time, threading
 
-import algorithms.a3c_env.params as params
-from algorithms.a3c_env.brain import Brain
-from algorithms.a3c_env.memory import Memory
+import algorithms.a3c_threading.params as params
+from algorithms.a3c_threading.brain import Brain
+from algorithms.a3c_threading.memory import Memory
 
 # from environments.obstacle_car.environment import Environment_Graphical as Environment
 #from environments.obstacle_car.environment_vec import Environment_Vec as Environment

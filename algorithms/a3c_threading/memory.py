@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-import algorithms.a3c_env.params as params
+import algorithms.a3c_threading.params as params
 
 
 class Memory:
