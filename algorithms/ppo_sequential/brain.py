@@ -9,10 +9,12 @@ from algorithms.policy_models.conv_models import ConvLSTMModel
 
 class Brain:
 
-    def __init__(self, ModelClass: ConvLSTMModel):
+    def __init__(self, ModelClass: ConvLSTMModel, cpu_cores = 4):
 
         # use this to influence the tensorflow behaviour
-        config = tf.ConfigProto()
+        config = tf.ConfigProto(
+                            intra_op_parallelism_threads=cpu_cores,
+                            inter_op_parallelism_threads=cpu_cores)
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
         config.log_device_placement = params.TF_LOG_DEVICE_PLACEMENT
 
