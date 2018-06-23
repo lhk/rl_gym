@@ -11,13 +11,13 @@ from algorithms.ppo_sequential.memory import Memory
 import algorithms.ppo_sequential.params as params
 
 # from environments.obstacle_car.environment import Environment_Graphical as Environment
-#from environments.obstacle_car.environment_vec import Environment_Vec as Environment
-from environments.openai_gym.environment import Environment
+from environments.obstacle_car.environment_vec import Environment_Vec as Environment
+#from environments.openai_gym.environment import Environment
 
 from colorama import Fore, Style
 from tqdm import tqdm
 
-Model = FCCartPole
+Model = FCRadialCar
 memory = Memory()
 brain = Brain(Model)
 agent = Agent(brain, memory, Environment)

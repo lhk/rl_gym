@@ -75,10 +75,12 @@ class FCCartPole(FCModel):
 
 class FCRadialCar(FCModel):
     INPUT_SHAPE = (7,)
-    FC_SIZE = 32
+    FC_SIZE = 64
     NUM_HIDDEN_LAYERS = 2
 
     NUM_ACTIONS = 4
+
+    L2_REG_FULLY = 0
 
     def __init__(self):
         FCModel.__init__(self)
