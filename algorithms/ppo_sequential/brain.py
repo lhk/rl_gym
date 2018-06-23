@@ -98,7 +98,7 @@ class Brain:
 
         self.minimize_step = minimize_step
 
-    def optimize(self, batch):
+    def optimize(self, batch, save = True):
 
         (from_observations, from_states, to_observations, to_states, pred_policies, pred_values, actions, rewards,
          advantages,
@@ -161,6 +161,15 @@ class Brain:
         print(Fore.RED)
         print("policy updated")
         print(Style.RESET_ALL)
+
+        if save:
+            if not os.path.exists(os.getcwd()+"/algorithms/ppo_sequential/checkpoints/"):
+                os.mkdir(os.getcwd()+"/algorithms/ppo_sequential/checkpoints/")
+            self.model.model.save_weights(os.getcwd()+"/algorithms/ppo_sequential/checkpoints/weights.hdf5")
+
+    def load_weights(self):
+        self.model.model.load_weights(os.getcwd() + "/algorithms/ppo_sequential/checkpoints/weights.hdf5")
+
 
     # the following methods will simply be routed to the model
     # this routing is not really elegant but I didn't want to expose the model outside of the brain
