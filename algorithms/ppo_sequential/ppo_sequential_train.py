@@ -20,11 +20,11 @@ from tqdm import tqdm
 Model = FCRadialCar
 memory = Memory()
 brain = Brain(Model)
-#brain.load_weights()
-agent = Agent(brain, memory, Environment, vis=False)
+brain.load_weights()
+agent = Agent(brain, memory, Environment, vis=True)
 
-#agent.reset()
-#agent.reset_metadata()
+agent.reset()
+agent.reset_metadata()
 for update in range(params.NUM_UPDATES):
     agent.reset()
     agent.reset_metadata()
@@ -38,7 +38,7 @@ for update in range(params.NUM_UPDATES):
     # pop training data for brain
     training_data = memory.pop()
 
-    # continue
+    continue
 
     # in this training data, we have value predictions, empirical rewards, etc
     # we can log metrics here
