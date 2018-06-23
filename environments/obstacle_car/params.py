@@ -17,7 +17,7 @@ max_dist = 1.05
 # parameters for simulation
 dT = 1.5
 min_speed = -8
-max_speed = 10
+max_speed = 8
 stop_on_border_collision = True
 
 # parameters for car

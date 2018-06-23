@@ -73,8 +73,9 @@ class FCCartPole(FCModel):
     def __init__(self):
         FCModel.__init__(self)
 
+import environments.obstacle_car.params
 class FCRadialCar(FCModel):
-    INPUT_SHAPE = (7,)
+    INPUT_SHAPE = (environments.obstacle_car.params.num_obstacles*2 + 2 + 1,)
     FC_SIZE = 64
     NUM_HIDDEN_LAYERS = 2
 
