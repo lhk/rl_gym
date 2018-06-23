@@ -34,7 +34,7 @@ class Brain:
         self.model.model._make_predict_function()
         self.session.run(tf.global_variables_initializer())
         self.default_graph = tf.get_default_graph()
-        self.default_graph.finalize()
+        #self.default_graph.finalize()
 
     def __setup_training(self):
         # due to keras' restrictions on loss functions,
