@@ -1,9 +1,9 @@
 # parameters for setup of environment
-screen_size = (400, 400)
-car_size = (20, 40)
+screen_size = (400, 300)
+car_size = (10, 10)
 obstacle_size = (10, 10)
 goal_size = (60, 20)
-num_obstacles = 5
+num_obstacles = 8
 distance_rescale = 100 # only used in radial environment
 
 # parameters for mrp
