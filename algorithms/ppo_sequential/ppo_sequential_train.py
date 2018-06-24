@@ -1,5 +1,4 @@
 import numpy as np
-
 np.seterr(all='raise')
 np.random.seed(0)
 
@@ -20,14 +19,18 @@ from tqdm import tqdm
 Model = FCRadialCar
 memory = Memory()
 brain = Brain(Model)
-#brain.load_weights()
-agent = Agent(brain, memory, Environment, vis=False)
 
-#agent.reset()
-#agent.reset_metadata()
-for update in range(params.NUM_UPDATES):
+vis = True
+agent = Agent(brain, memory, Environment, vis=vis)
+if vis:
+    brain.load_weights()
     agent.reset()
     agent.reset_metadata()
+
+for update in range(params.NUM_UPDATES):
+    if not vis:
+        agent.reset()
+        agent.reset_metadata()
     # generate training data with the agent
     pbar = tqdm(total=params.MEM_SIZE, desc="collecting observations")
     while len(memory) < params.MEM_SIZE:
@@ -38,7 +41,8 @@ for update in range(params.NUM_UPDATES):
     # pop training data for brain
     training_data = memory.pop()
 
-    #continue
+    if vis:
+        continue
 
     # in this training data, we have value predictions, empirical rewards, etc
     # we can log metrics here

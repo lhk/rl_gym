@@ -5,8 +5,7 @@ from keras.regularizers import l2
 
 class FCModel():
     INPUT_SHAPE = (7,)
-    FC_SIZE = 64
-    NUM_HIDDEN_LAYERS = 2
+    FC_SIZES=[64]
     NUM_ACTIONS = 1
 
     L2_REG_FULLY = 1e-3
@@ -19,15 +18,15 @@ class FCModel():
 
         # predicting policy
         layer = self.input_observation
-        for _ in range(self.NUM_HIDDEN_LAYERS):
-            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
+        for fc_size in self.FC_SIZES:
+            layer = Dense(fc_size, activation="tanh", kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
 
         pred_policy = Dense(self.NUM_ACTIONS, activation='softmax', kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
 
         # predicting value
         layer = self.input_observation
-        for _ in range(self.NUM_HIDDEN_LAYERS):
-            layer = Dense(self.FC_SIZE, activation="tanh", kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
+        for fc_size in self.FC_SIZES:
+            layer = Dense(fc_size, activation="tanh", kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
         pred_value = Dense(1, kernel_regularizer=l2(self.L2_REG_FULLY))(layer)
 
         model = Model(inputs=[self.input_observation], outputs=[pred_policy, pred_value])
@@ -65,9 +64,7 @@ class FCModel():
 
 class FCCartPole(FCModel):
     INPUT_SHAPE = (4,)
-    FC_SIZE = 16
-    NUM_HIDDEN_LAYERS = 1
-
+    FC_SIZES = [16]
     NUM_ACTIONS = 2
 
     def __init__(self):
@@ -76,8 +73,7 @@ class FCCartPole(FCModel):
 import environments.obstacle_car.params
 class FCRadialCar(FCModel):
     INPUT_SHAPE = (environments.obstacle_car.params.num_obstacles*2 + 2 + 1,)
-    FC_SIZE = 64
-    NUM_HIDDEN_LAYERS = 2
+    FC_SIZES = [64, 32, 16]
 
     NUM_ACTIONS = 4
 
