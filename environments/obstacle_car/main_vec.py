@@ -55,6 +55,7 @@ while True:
     observation, reward, done = env.make_action((acceleration, steering_angle))
     total_reward += reward
     if done:
+        print("c")
         print("collision")
 
     pygame.display.update()

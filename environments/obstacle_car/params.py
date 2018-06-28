@@ -1,10 +1,15 @@
 # parameters for setup of environment
-screen_size = (400, 300)
+R = 400
+
+screen_size = (400, 400)
 car_size = (10, 10)
 obstacle_size = (10, 10)
-goal_size = (60, 20)
+obs_x_spread = 200
+goal_size = (40, 40)
+
 num_obstacles = 8
-distance_rescale = 100 # only used in radial environment
+distance_rescale = R/4 # only used in radial environment
+x_tolerance = R/4
 
 # parameters for mrp
 reward_goal = 2.
