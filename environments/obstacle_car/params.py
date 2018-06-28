@@ -8,8 +8,8 @@ obs_x_spread = 200
 goal_size = (40, 40)
 
 num_obstacles = 8
-distance_rescale = R/4 # only used in radial environment
-x_tolerance = R/4
+distance_rescale = R / 4  # only used in radial environment
+x_tolerance = R / 4
 
 # parameters for mrp
 reward_goal = 2.

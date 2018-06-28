@@ -1,6 +1,6 @@
 import gym
-from gym import spaces
 import numpy as np
+from gym import spaces
 from gym.utils import seeding
 from skimage.io import imread
 from skimage.transform import resize

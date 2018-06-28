@@ -28,10 +28,10 @@ class Environment_Vec(gym.Env):
         self.action_space = spaces.Discrete(self.num_actions)
         if self.polar_coords:
             min = np.array([params.min_speed,
-                           *[0,-np.pi]*3])
+                            *[0, -np.pi] * 3])
 
             max = np.array([params.max_speed,
-                           *[np.finfo(np.float32).max,+np.pi]*3])
+                            *[np.finfo(np.float32).max, +np.pi] * 3])
         else:
             min = np.array([params.min_speed,
                             *[-np.finfo(np.float32).max, -np.finfo(np.float32).max] * 3])
@@ -106,12 +106,14 @@ class Environment_Vec(gym.Env):
 
         # set up car, obstacle and goal positions
         car_position = np.array([0, 0], dtype=np.float64)
-        car_position[0] = params.screen_size[0]//2 # self.np_random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
+        car_position[0] = params.screen_size[
+                              0] // 2  # self.np_random.uniform(params.car_size[0] / 2, params.screen_size[0] - params.car_size[0] / 2)
         car_position[1] = params.screen_size[1] - params.car_size[1] / 2
         self.car.pos = car_position
 
         goal_position = np.array([0, 0])
-        goal_position[0] = params.screen_size[0]//2 # self.np_random.uniform(0, params.screen_size[0] - params.goal_size[0])
+        goal_position[0] = params.screen_size[
+                               0] // 2  # self.np_random.uniform(0, params.screen_size[0] - params.goal_size[0])
         goal_position[1] = params.goal_size[1] / 2
         self.goal_pos = goal_position
 
@@ -126,8 +128,8 @@ class Environment_Vec(gym.Env):
         self.obstacle_positions = []
         for i in range(params.num_obstacles):
             while True:
-                obs_x = params.screen_size[0]//2 + (self.np_random.rand()-0.5) * params.obs_x_spread
-                obs_y = params.screen_size[1]*self.np_random.rand()
+                obs_x = params.screen_size[0] // 2 + (self.np_random.rand() - 0.5) * params.obs_x_spread
+                obs_y = params.screen_size[1] * self.np_random.rand()
                 obstacle_position = np.array([obs_x, obs_y])
                 # obstacle must be away from car and goal
                 car_dist = np.linalg.norm(obstacle_position - self.car.pos)
@@ -195,7 +197,7 @@ class Environment_Vec(gym.Env):
         relative_goal_position = self.car.pos - self.goal_pos
         x_distance = abs(relative_goal_position[0])
 
-        if x_distance>params.x_tolerance:
+        if x_distance > params.x_tolerance:
             return observation_vector, params.reward_collision, True
 
         if self.polar_coords:
@@ -210,11 +212,11 @@ class Environment_Vec(gym.Env):
             return observation_vector, params.reward_collision, True
 
         rel_goal_dist = distances[0]
-        if rel_goal_dist < 1/2*(self.car_dim+ self.goal_dim):
+        if rel_goal_dist < 1 / 2 * (self.car_dim + self.goal_dim):
             return observation_vector, params.reward_goal, True
 
         rel_obs_dist = distances[1:]
-        if np.any(rel_obs_dist < 1/2*(self.car_dim+self.obs_dim)):
+        if np.any(rel_obs_dist < 1 / 2 * (self.car_dim + self.obs_dim)):
             return observation_vector, params.reward_collision, True
 
         self.steps += 1
