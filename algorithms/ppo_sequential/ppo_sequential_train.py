@@ -20,7 +20,7 @@ Model = FCRadialCar
 memory = Memory()
 brain = Brain(Model)
 
-vis = True
+vis = False
 agent = Agent(brain, memory, Environment, vis=vis)
 if vis:
     brain.load_weights()

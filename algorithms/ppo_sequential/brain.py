@@ -14,7 +14,8 @@ class Brain:
         # use this to influence the tensorflow behaviour
         config = tf.ConfigProto(
                             intra_op_parallelism_threads=cpu_cores,
-                            inter_op_parallelism_threads=cpu_cores)
+                            inter_op_parallelism_threads=cpu_cores,
+                            device_count={"GPU":0})
         config.gpu_options.allow_growth = params.TF_ALLOW_GROWTH
         config.log_device_placement = params.TF_LOG_DEVICE_PLACEMENT
 
