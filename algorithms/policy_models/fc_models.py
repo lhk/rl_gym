@@ -73,7 +73,7 @@ class FCCartPole(FCModel):
 import environments.obstacle_car.params
 class FCRadialCar(FCModel):
     INPUT_SHAPE = (environments.obstacle_car.params.num_obstacles*2 + 2 + 1,)
-    FC_SIZES = [64, 32, 16]
+    FC_SIZES = [32, 16, 8]
 
     NUM_ACTIONS = 4
 
