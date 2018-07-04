@@ -53,6 +53,7 @@ class Environment_Vec(gym.Env):
         coords = np.stack([x, y], axis=-1)
 
         observation = self.get_observation()
+        print(observation)
 
         # first observation is speed, throw it away
         # the rest has to be rescaled to the original range
@@ -166,6 +167,8 @@ class Environment_Vec(gym.Env):
             distances = distances / params.distance_rescale
             angles = np.arctan2(targets[:, 0], targets[:, 1])
             distance_angles = np.array(list(zip(distances, angles)))
+            idx_sorted = np.argsort(distance_angles[1:], axis=0)[:,0]
+            distance_angles[1:] = distance_angles[1:][idx_sorted]
             observation_vector = np.stack([self.car.speed, *distance_angles.flatten()])
         else:
             targets = targets / params.distance_rescale

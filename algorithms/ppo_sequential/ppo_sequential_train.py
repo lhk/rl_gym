@@ -20,7 +20,7 @@ Model = FCRadialCar
 memory = Memory()
 brain = Brain(Model)
 
-vis = False
+vis = True
 agent = Agent(brain, memory, Environment, vis=vis)
 if vis:
     brain.load_weights()
@@ -34,7 +34,7 @@ for update in range(params.NUM_UPDATES):
     # generate training data with the agent
     pbar = tqdm(total=params.MEM_SIZE, desc="collecting observations")
     while len(memory) < params.MEM_SIZE:
-        agent.act()
+        agent.act(greedy = vis)
         pbar.update()
     pbar.close()
 

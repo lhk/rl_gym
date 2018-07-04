@@ -73,7 +73,7 @@ class Agent():
         self.num_episodes = 0
         self.episode_rewards = []
 
-    def act(self):
+    def act(self, greedy = False):
 
         # show current state to network and get predicted policy
         policy, value, self.state = self.brain.predict(self.observation, self.state)
@@ -84,7 +84,10 @@ class Agent():
             self.state = self.state[0]
         value = value[0, 0]
 
-        action = np.random.choice(params.NUM_ACTIONS, p=policy)
+        if greedy:
+            action = np.argmax(policy)
+        else:
+            action = np.random.choice(params.NUM_ACTIONS, p=policy)
 
         new_observation, reward, done, _ = self.env.step(action)
         reward *= params.REWARD_SCALE
