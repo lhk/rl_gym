@@ -46,6 +46,9 @@ class Agent():
             self.window = pygame.display.set_mode(self.canvas_size)
             pygame.display.set_caption("Pygame cheat sheet")
 
+            self.fails = 0
+            self.wins = 0
+
     def reset(self):
         # clear all local memory
         self.seen_observations = []  # state of the environment
@@ -133,7 +136,7 @@ class Agent():
             surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
             self.window.blit(surf, (0, 0))
 
-            self.clock.tick(10)
+            self.clock.tick(60)
             pygame.display.update()
 
         # print meta information if the agent was done
@@ -142,6 +145,14 @@ class Agent():
             self.num_episodes += 1
             self.episode_rewards.append(self.total_reward)
             self.reset()
+
+            if reward > 0:
+                self.wins += 1
+            else:
+                self.fails += 1
+
+            print("episode {} ended, {} wins, {} fails, {:.2f} overall positive rate".format(self.num_episodes, self.wins, self.fails, self.wins/(self.wins + self.fails)))
+
 
     def move_to_memory(self, terminal):
         # removes one set of observations from local memory

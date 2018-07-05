@@ -53,7 +53,6 @@ class Environment_Vec(gym.Env):
         coords = np.stack([x, y], axis=-1)
 
         observation = self.get_observation()
-        print(observation)
 
         # first observation is speed, throw it away
         # the rest has to be rescaled to the original range
