@@ -15,6 +15,7 @@ class Agent():
                  shared_memory: Memory,
                  Env,
                  vis=False,
+                 bookkeeping = False,
                  vis_fps = 20):
 
         self.env = Env()
@@ -47,9 +48,12 @@ class Agent():
             self.window = pygame.display.set_mode(self.canvas_size)
             pygame.display.set_caption("Pygame cheat sheet")
 
+            self.vis_fps = vis_fps
+
+        self.bookkeeping = bookkeeping
+        if self.bookkeeping:
             self.fails = 0
             self.wins = 0
-            self.vis_fps = vis_fps
 
     def reset(self):
         # clear all local memory
@@ -148,12 +152,13 @@ class Agent():
             self.episode_rewards.append(self.total_reward)
             self.reset()
 
-            if reward > 0:
-                self.wins += 1
-            else:
-                self.fails += 1
+            if self.bookkeeping:
+                if reward > 0:
+                    self.wins += 1
+                else:
+                    self.fails += 1
 
-            print("episode {} ended, {} wins, {} fails, {:.2f} overall positive rate".format(self.num_episodes, self.wins, self.fails, self.wins/(self.wins + self.fails)))
+                print("episode {} ended, {} wins, {} fails, {:.2f} overall positive rate".format(self.num_episodes, self.wins, self.fails, self.wins/(self.wins + self.fails)))
 
 
     def move_to_memory(self, terminal):
