@@ -34,7 +34,7 @@ for update in range(params.NUM_UPDATES):
     # generate training data with the agent
     pbar = tqdm(total=params.MEM_SIZE, desc="collecting observations")
     while len(memory) < params.MEM_SIZE:
-        agent.act(greedy = False)
+        agent.act(greedy = vis)
         pbar.update()
     pbar.close()
 
