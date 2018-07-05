@@ -14,7 +14,8 @@ class Agent():
                  brain: Brain,
                  shared_memory: Memory,
                  Env,
-                 vis=False):
+                 vis=False,
+                 vis_fps = 20):
 
         self.env = Env()
 
@@ -48,6 +49,7 @@ class Agent():
 
             self.fails = 0
             self.wins = 0
+            self.vis_fps = vis_fps
 
     def reset(self):
         # clear all local memory
@@ -136,7 +138,7 @@ class Agent():
             surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
             self.window.blit(surf, (0, 0))
 
-            self.clock.tick(60)
+            self.clock.tick(self.vis_fps)
             pygame.display.update()
 
         # print meta information if the agent was done
