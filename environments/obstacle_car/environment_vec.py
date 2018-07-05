@@ -197,8 +197,6 @@ class Environment_Vec(gym.Env):
         observation_vector = self.get_observation()
         targets = observation_vector[1:].reshape((-1, 2))
 
-        observation_vector[3:] = np.sort(targets[1:], axis=0).flatten()
-
         relative_goal_position = self.car.pos - self.goal_pos
         x_distance = abs(relative_goal_position[0])
 
