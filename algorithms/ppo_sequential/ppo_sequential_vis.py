@@ -21,7 +21,7 @@ memory = Memory()
 brain = Brain(Model)
 
 vis = True
-agent = Agent(brain, memory, Environment, vis=vis, vis_fps=500)
+agent = Agent(brain, memory, Environment, vis=vis, vis_fps=500, bookkeeping=True)
 if vis:
     brain.load_weights()
     agent.reset()

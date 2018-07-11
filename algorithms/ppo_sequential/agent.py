@@ -7,7 +7,8 @@ from algorithms.ppo_sequential.brain import Brain
 from algorithms.ppo_sequential.memory import Memory
 
 import pygame
-
+from moviepy.editor import ImageSequenceClip
+import os
 
 class Agent():
     def __init__(self,
@@ -49,6 +50,7 @@ class Agent():
             pygame.display.set_caption("Pygame cheat sheet")
 
             self.vis_fps = vis_fps
+            self.frames = []
 
         self.bookkeeping = bookkeeping
         if self.bookkeeping:
@@ -77,6 +79,16 @@ class Agent():
         self.seen_states = [self.state]
 
         self.total_reward = 0
+
+        if self.vis:
+            if len(self.frames)>0:
+                clip = ImageSequenceClip(self.frames, fps=self.vis_fps)
+                if os.path.exists(params.VIDEO_OUT_DIR):
+                    clip.write_gif(params.VIDEO_OUT_DIR+"/"+str(self.num_episodes)+".gif")
+                else:
+                    print("video export directory not found")
+
+            self.frames=[]
 
     def reset_metadata(self):
         self.num_episodes = 0
@@ -138,8 +150,10 @@ class Agent():
         if self.vis:
             self.canvas[:] = 0
             self.env.render_to_canvas(self.canvas)
+            frame = (self.canvas * 255).astype(np.uint8)
+            self.frames.append(np.transpose(frame, [1,0,2])) # numpy axes are not the same as moviepy or cv axes
 
-            surf = pygame.surfarray.make_surface((self.canvas * 255).astype(np.uint8))
+            surf = pygame.surfarray.make_surface(frame)
             self.window.blit(surf, (0, 0))
 
             self.clock.tick(self.vis_fps)
