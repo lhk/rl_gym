@@ -3,7 +3,8 @@
 This repository collects implementations for common reinforcement learning algorithms.
 So far I've implemented the following algorithms:
  - DQN with many varieties: DDQN, Dueling-Q-Learning, prioritized experience replay
- - A3C
+ - A3C (threading based) 
+ - PPO (sequential/threading and gpu/cpu) 
  
 Currently I'm working on refactoring, there is a lot of duplicated code.
 Initially, I wanted every algorithm to be self-contained: 
