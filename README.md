@@ -20,18 +20,7 @@ A small update on the refactoring: I decided to keep the following classes
  - Model: The function approximator for policy, values, Q-values, whatever you are using
  - Brain: Wrapper around the model, responsible for training and updates
 
-The structure can be explained with PPO as an example: I'm working on implementing PPO, with a parallel architecture like A3C.
-Each agent has it's own environment and they run episodes in parallel and push their observations to a buffer.
-As opposed to the usual A3C where each agent updates its own network on CPU, here the network is allocated on the gpu.
-It is represented by a single brain.
-The brain is trained by optimizer threads. All they do is invoke the optimize() method on the brain again and again.
-In this method the brain pops training data from the observation buffer and updates its model.
-
-This sounds like an implementation of A3C. But it uses the clipped ratio surrogate loss of PPO.
-My A3C code is extremely similar, but not yet refactored to move the Model out of the brain.
-
-Eventually, I'll also refactor DQN to expose a model.
-
+The refactoring is mostly done now. A3C, PPO and DQN all follow the same design principles.
 (Also note: Before the refactoring, I've trained the various algorithms against doom and atari. I'll do that again to check if something has been broken. TODO: remove this text after the tests have been successful :) )
 
 Next to the refactoring, I've started to look at homebrew environments for reinforcement learning.
