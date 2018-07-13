@@ -32,6 +32,6 @@ For the homebrewing, I've added a very small interface which wraps:
  - openai atari
  - homebrew car simulation
 
-The following is a policy learned by PPO on the car simulation. The white dot is the car, it must navigate towards the green dot, while avoiding the red dots. This environment returns a list of positions in polar coordinates.
+The following is a policy learned by PPO on the car simulation. The green dot is the car, it must navigate towards the white dot, while avoiding the red dots. This environment returns a list of positions in polar coordinates.
 The repository contains lots of helper methods, for example to render the polar coordinate representation to a numpy array and export it as gif:
 ![homebrew](https://media.giphy.com/media/2vrzoHJa8C9qDhOWzY/giphy.gif)
